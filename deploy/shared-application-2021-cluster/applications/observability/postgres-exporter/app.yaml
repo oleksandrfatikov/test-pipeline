@@ -1,0 +1,43 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: observability-postges-exporter
+  namespace: argocd
+  labels:
+    service: "postgres-exporter"
+    owner: "team-infra-ms-obs"
+    environment: "stg"
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/LedgerHQ/ms-tools.git
+        revision: master
+        directories:
+          - path: monitoring/postgres-exporter/shared-application-2021-cluster/helm/values/*
+  template:
+    metadata:
+      name: 'postgres-exporter-{{.path.basenameNormalized}}'
+    spec:
+      project: internal
+      sources:
+        - repoURL: https://github.com/LedgerHQ/internal-helm-charts.git
+          targetRevision: master
+          path: 'postgres-exporter'
+          helm:
+            valueFiles:
+              - '$values/monitoring/postgres-exporter/shared-application-2021-cluster/helm/values/{{.path.basename}}/values.yaml'
+        - repoURL: https://github.com/LedgerHQ/ms-tools.git
+          targetRevision: master
+          ref: values
+      destination:
+        server: "https://kubernetes.default.svc"
+        namespace: "observability"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

@@ -1,0 +1,103 @@
+---
+controller:
+  kind: DaemonSet
+  nodeSelector:
+    role.ledger.com/haproxy: "true"
+  extraArgs:
+    - --healthz-bind-port=1042
+    - --stats-bind-port=1024
+    - --localpeer-port=10000
+    - --prometheus
+    # Additional global and default configuration
+  config:
+    maxconn: '200000'
+    http-buffer-request: "true"
+    declare-capture-request: "len 4000000"
+    http-request-capture: "req.body id 0"
+    log-format: >-
+      "%ci:%cp [%tr] %ft %b/%s %TR/%Tw/%Tc/%Tr/%Ta %ST %B %CC %CS %tsc %ac/%fc/%bc/%sc/%rc %sq/%bq start-body:%[capture.req.hdr(0),json]:end-body %[capture.req.hdr(2)] %{+Q}r"
+    http-response-del-header: "Server"
+    http-response-del-header-1: "x-powered-by"
+  containerPort:
+    http: 80
+    https: 443
+    stat: 1024
+    healthz: 1042
+  ingressClass: haproxy
+  ingressClassResource:
+    enabled: false
+    name: haproxy
+    default: false
+  defaultTLSSecret:
+    enabled: false
+  service:
+    enabled: true
+    type: ClusterIP
+    ports:
+      http: 80
+      https: 443
+      stat: 1024
+      healthz: 1042
+  daemonset:
+    useHostPort: true
+    hostPorts:
+      http: 80
+      https: 443
+      stat: 1024
+      healthz: ""
+    prometheus: ""
+  logging:
+    level: warning
+    traffic:
+      address: stdout
+      format: raw
+      facility: daemon
+  livenessProbe:
+    timeoutSeconds: 2
+  startupProbe:
+    periodSeconds: 10
+    timeoutSeconds: 5
+  podAnnotations:
+    ad.datadoghq.com/kubernetes-ingress-controller.checks: |
+      {
+        "haproxy": {
+          "init_config": {},
+          "instances": [
+            {
+              "openmetrics_endpoint": "http://%%host%%:%%port_stat%%/metrics",
+              "use_openmetrics": true,
+              "exclude_metrics_by_labels": {
+                "proxy": [".*internal_stat*.", ".*internal_healthz*."]
+              }
+            }
+          ]
+        },
+        "openmetrics": {
+          "init_config": {},
+          "instances": [
+            {
+              "openmetrics_endpoint": "http://%%host%%:6060/metrics",
+              "use_openmetrics": true,
+              "namespace": "haproxycustom",
+              "exclude_metrics": [
+                "go_.*",
+                "process_.*"
+              ]
+            }
+          ]
+        }
+      }
+    ad.datadoghq.com/kubernetes-ingress-controller.logs: |
+      [
+        {
+          "source": "haproxy",
+          "service": "haproxy-kubernetes-ingress",
+          "log_processing_rules": [
+            {
+              "type": "include_at_match",
+              "name": "include_warn_and_error",
+              "pattern": "(WARN|ERROR)"
+            }
+          ]
+        }
+      ]

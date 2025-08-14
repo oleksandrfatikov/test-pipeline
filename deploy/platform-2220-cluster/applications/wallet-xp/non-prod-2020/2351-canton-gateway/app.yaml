@@ -1,0 +1,33 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: canton-gateway=ghcr.io/ledgerhq/canton-gateway
+    argocd-image-updater.argoproj.io/write-back-method: argocd
+    argocd-image-updater.argoproj.io/canton-gateway.update-strategy: semver
+    argocd-image-updater.argoproj.io/canton-gateway.allow-tags: regexp:^\d+\.\d+\.\d+(-(?i)(M|RC)\.?\d+)?$
+    argocd.ledger.fr/environment: "Staging"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: canton-gateway
+  namespace: argocd-central
+  labels:
+    environment: "stg"
+    owner: "cloud-wallet"
+    project: "2351"
+    organization: "wallet-services"
+    service: "canton-gateway"
+spec:
+  project: canton-gateway
+  source:
+    repoURL: https://github.com/LedgerHQ/canton-gateway.git
+    targetRevision: main
+    path: argocd/stg
+  destination:
+    name: stg-atlas-ovh-sbg
+    namespace: 1226-intnodes-canton-gateway
+  syncPolicy:
+    automated: {}
+    syncOptions:
+      - CreateNamespace=true

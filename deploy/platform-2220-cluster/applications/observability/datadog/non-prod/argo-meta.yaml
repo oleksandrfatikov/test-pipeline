@@ -1,0 +1,27 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: observability
+  namespace: argocd-central
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: "Project for observability tools"
+  sourceRepos:
+    - "*"
+  destinations:
+    - namespace: "monitoring"
+      server: "*"
+  clusterResourceWhitelist:
+    - group: ""
+      kind: "Namespace"
+    - group: "rbac.authorization.k8s.io"
+      kind: "ClusterRole"
+    - group: "rbac.authorization.k8s.io"
+      kind: "ClusterRoleBinding"
+    - group: "apiregistration.k8s.io"
+      kind: "APIService"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

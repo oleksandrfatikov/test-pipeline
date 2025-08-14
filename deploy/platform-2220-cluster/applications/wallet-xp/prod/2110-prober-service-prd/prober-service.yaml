@@ -1,0 +1,29 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: prober-service-prd
+  namespace: argocd-central
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2110"
+    organization: "consumer"
+    service: "prober-service"
+spec:
+  project: prober-service-prd
+  source:
+    repoURL: https://github.com/LedgerHQ/prober-service.git
+    targetRevision: master
+    path: argocd/prd
+    helm:
+      releaseName: prober-service-lb
+  destination:
+    name: shared-application-2086-cluster
+    namespace: 2110-prober-service
+  syncPolicy:
+    automated: {}
+    syncOptions:
+      - CreateNamespace=true

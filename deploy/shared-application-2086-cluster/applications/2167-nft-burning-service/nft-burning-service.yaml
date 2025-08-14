@@ -1,0 +1,46 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nft-burning-service-burner-prd
+  namespace: argocd
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2167"
+    organization: "consumer"
+    service: "nft-burning-service"
+spec:
+  project: nft-burning-service
+  source:
+    repoURL: https://github.com/LedgerHQ/nft-burning-service.git
+    targetRevision: master
+    path: argocd/burner/prd
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2167-nft-burning-service-prd
+  syncPolicy:
+    automated: {}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nft-burning-service-lam-prd
+  namespace: argocd
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2167"
+    organization: "consumer"
+    service: "nft-burning-service"
+spec:
+  project: nft-burning-service
+  source:
+    repoURL: https://github.com/LedgerHQ/nft-burning-service.git
+    targetRevision: master
+    path: argocd/lam/prd
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2167-nft-burning-service-prd
+  syncPolicy:
+    automated: {}

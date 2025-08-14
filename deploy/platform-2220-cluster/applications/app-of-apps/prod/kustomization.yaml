@@ -1,0 +1,15 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ./app-of-apps.yaml
+  - ./consumers.yaml
+  - ./observability
+  - ./ptx.yaml
+  - ./tools.yaml
+  - ./trust-services.yaml
+  - ./vault.yaml
+  - ./wallet-xp-non-prod.yaml
+  - ./wallet-xp-prod.yaml
+  - ./ecom.yaml

@@ -1,0 +1,51 @@
+---
+datadog:
+  apiKeyExistingSecret: datadog-secrets
+  appKeyExistingSecret: datadog-secrets
+  clusterName: internal-systems-2018-cluster
+  site: datadoghq.eu
+  nodeLabelsAsTags:
+    topology.kubernetes.io/zone: availability-zone
+    group: group
+    node.kubernetes.io/instance-type: instance-type
+  podLabelsAsTags:
+    app: application
+  logs:
+    enabled: true
+    containerCollectAll: true
+  apm:
+    enabled: true
+    portEnabled: true
+    socketEnabled: false
+    instrumentation:
+      skipKPITelemetry: true
+  env:
+    - name: DD_CONTAINER_EXCLUDE_LOGS
+      value: "kube_namespace:.*"
+    - name: DD_CONTAINER_EXCLUDE_METRICS
+      value: "kube_namespace:.*"
+    - name: DD_CONTAINER_INCLUDE_LOGS
+      value: "kube_namespace:internal-systems-bo-new-2018 kube_namespace:pii-archive-2018 kube_namespace:manufacturing-traceability-2018 kube_namespace:tools"
+    - name: DD_CONTAINER_INCLUDE_METRICS
+      value: "kube_namespace:internal-systems-bo-new-2018 kube_namespace:pii-archive-2018 kube_namespace:manufacturing-traceability-2018 kube_namespace:tools"
+    - name: DD_PROFILING_ENABLED
+      value: "false"
+  processAgent:
+    processCollection: true
+  remoteConfiguration:
+    enabled: false
+clusterAgent:
+  rbac:
+    flareAdditionalPermissions: false
+  metricsProvider:
+    enabled: true
+  admissionController:
+    mutateUnlabelled: true
+agents:
+  customAgentConfig:
+    apm_config:
+      enabled: true
+      apm_non_local_traffic: true
+    jmx_use_container_support: true
+remoteConfiguration:
+  enabled: false

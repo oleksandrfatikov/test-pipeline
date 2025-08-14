@@ -1,0 +1,66 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: buy-sell-ui-prx
+spec:
+  # Ignore argocd image updater change
+  ignoreApplicationDifferences:
+    - jsonPointers:
+        - /spec/source/helm/parameters
+  generators:
+    - pullRequest:
+        requeueAfterSeconds: 1800
+        github:
+          owner: LedgerHQ
+          repo: buy-sell-ui
+          appSecretName: ledgerhq-repository
+          labels:
+            - argocd/preview
+  template:
+    metadata:
+      name: "buy-sell-ui-pr{{ number }}"
+      namespace: argocd-central
+      annotations:
+        argocd.ledger.fr/environment: "Preview - ArgoCD"
+        notifications.argoproj.io/subscribe.github: ""
+        argocd-image-updater.argoproj.io/image-list: ptx=ghcr.io/ledgerhq/buy-sell-ui:pr-{{ number }}
+        argocd-image-updater.argoproj.io/update-strategy: digest
+        argocd-image-updater.argoproj.io/ptx.helm.image-name: app-template.image.repository
+        argocd-image-updater.argoproj.io/ptx.helm.image-tag: app-template.image.tag
+      labels:
+        environment: "prx"
+        owner: "team-infra-sre"
+        project: "2215"
+        organization: "consumer"
+        service: "buy-sell-ui"
+    spec:
+      project: ptx-services
+      source:
+        repoURL: https://github.com/LedgerHQ/buy-sell-ui.git
+        targetRevision: "{{ branch }}"
+        path: argocd/prx
+        helm:
+          valuesObject:
+            app-template:
+              image:
+                tag: "pr-{{ number }}"
+              ingress:
+                main:
+                  hosts:
+                    - host: buy-pr{{ number }}.aws.stg.ldg-tech.com
+                      paths:
+                        - path: /
+                          pathType: Prefix
+                  tls:
+                    - secretName: buy-sell-ui-tls
+                      hosts:
+                        - buy-pr{{ number }}.aws.stg.ldg-tech.com
+      destination:
+        name: shared-application-2021-cluster
+        namespace: "2215-buy-sell-ui-pr{{ number }}"
+      syncPolicy:
+        automated:
+          prune: true
+  syncPolicy:
+    preserveResourcesOnDeletion: true

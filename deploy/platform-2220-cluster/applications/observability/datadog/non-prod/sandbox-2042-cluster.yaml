@@ -1,0 +1,65 @@
+---
+datadog:
+  apiKeyExistingSecret: datadog-secrets
+  appKeyExistingSecret: datadog-secrets
+  clusterName: sandbox-2042-cluster
+  site: datadoghq.eu
+  nodeLabelsAsTags:
+    topology.kubernetes.io/zone: availability-zone
+    group: group
+    node.kubernetes.io/instance-type: instance-type
+  podLabelsAsTags:
+    app: application
+  logs:
+    enabled: true
+    containerCollectAll: true
+  apm:
+    enabled: true
+    portEnabled: true
+    socketEnabled: false
+    instrumentation:
+      skipKPITelemetry: true
+  dogstatsd:
+    port: 8125
+    useHostPort: true
+    nonLocalTraffic: true
+  otlp:
+    receiver:
+      protocols:
+        grpc:
+          enabled: true
+  env:
+    - name: DD_CONTAINER_EXCLUDE_LOGS
+      value: "kube_namespace:.*"
+    - name: DD_CONTAINER_EXCLUDE_METRICS
+      value: "kube_namespace:.*"
+    - name: DD_CONTAINER_INCLUDE_LOGS
+      value: "kube_namespace:minivault-apm.*-sbx kube_namespace:.*cc-.* kube_namespace:ledger-wp-website-.* kube_namespace:nft-voucher kube_namespace:nft-indexer-evm-sbx kube_namespace:vault-remote kube_namespace:minirecover-.* name:ingress-nginx-.* name:external-.* name:cert-manager-.*"
+    - name: DD_CONTAINER_INCLUDE_METRICS
+      value: "kube_namespace:ledger-wp-website-.* kube_namespace:ledger-assistant kube_namespace:obs-1095-* kube_namespace:obs-1169-* kube_namespace:0000-training-*"
+    - name: DD_PROFILING_ENABLED
+      value: "true"
+  processAgent:
+    processCollection: true
+  remoteConfiguration:
+    enabled: false
+clusterAgent:
+  rbac:
+    flareAdditionalPermissions: false
+  metricsProvider:
+    enabled: true
+  admissionController:
+    mutateUnlabelled: true
+agents:
+  containers:
+    traceAgent:
+      env:
+        - name: DD_APM_FILTER_TAGS_REJECT
+          value: "no_trace:no_trace"
+  customAgentConfig:
+    apm_config:
+      enabled: true
+      apm_non_local_traffic: true
+    jmx_use_container_support: true
+remoteConfiguration:
+  enabled: false

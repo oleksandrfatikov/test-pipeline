@@ -1,0 +1,64 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: 1075-intnodes-ada
+  namespace: argocd-central
+spec:
+  strategy:
+    type: RollingSync
+    rollingSync:
+      steps:
+        - matchExpressions:
+            - key: datacenter.ledger.com/intnodes
+              operator: In
+              values:
+                - "true"
+          maxUpdate: 30%
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            application.ledger.com/intnodes: "true"
+            environment.ledger.com/staging: "true"
+            datacenter.ledger.com/sbg5: "true"
+        values:
+          maintenance: "false"
+          datacenter: stg-sbg
+          dbAddress: 10.99.5.44
+          annotation_project_id: c-m-2tdhjscq:p-fhgrw
+          label_project_id: p-fhgrw
+  template:
+    metadata:
+      name: "{{name}}-1075-intnodes-ada-node"
+      annotations:
+        argocd.ledger.fr/environment: "Staging"
+      labels:
+        service: "1075-intnodes-ada"
+        env: "staging"
+        coin: "ada"
+        type: "int-node"
+    spec:
+      project: 1054-intnodes
+      sources:
+        - repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+          targetRevision: main
+          path: 'deploy/staging/internal-blockchain-nodes/1075-intnodes-ada'
+          helm:
+            releaseName: int-ada-testnet-node
+            values: |
+              intnodes-ada:
+                maintenance: "{{values.maintenance}}"
+                datacenter: "{{values.datacenter}}"
+                dbAddress: "{{values.dbAddress}}"
+      destination:
+        server: "{{server}}"
+        namespace: "1075-intnodes-ada"
+      syncPolicy:
+        managedNamespaceMetadata:
+          annotations:
+            field.cattle.io/projectId: "{{values.annotation_project_id}}"
+          labels:
+            field.cattle.io/projectId: "{{values.label_project_id}}"
+        syncOptions:
+          - CreateNamespace=true

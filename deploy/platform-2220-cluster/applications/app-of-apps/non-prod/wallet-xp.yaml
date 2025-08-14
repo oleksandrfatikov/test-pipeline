@@ -1,0 +1,22 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: app-of-apps-wallet-xp
+  namespace: argocd-central
+  labels:
+    owner: "wallet-services"
+    project: "internal"
+    organization: "infrastructure"
+    service: "internal"
+spec:
+  project: internal
+  source:
+    repoURL: https://github.com/LedgerHQ/sre-argocd.git
+    targetRevision: main
+    path: deploy/platform-2220-cluster/applications/wallet-xp/non-prod-2020
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: argocd-central
+  syncPolicy:
+    automated: {}

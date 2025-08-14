@@ -1,0 +1,1737 @@
+---
+appset:
+  categoryValues:
+    default:
+      path: argocd/base
+      syncPolicyMode: prd
+      inlineValues:
+        valueBundles:
+          eksPrd:
+            enabled: true
+        datadog:
+          env: ppr
+        custom:
+          awsEnv: ppr
+          env: ppr
+          vaultProjectId: "2060"
+          lamaNamespace: 2060-vault-ppr
+          wdProjectId: "2060"
+          wdDBNamespace: 2060-vault-ppr
+          hsmEnv: "cluster-preprod"
+          ledgerVaultDomain: vault.ledger-ppr.com
+          eksClusterId: "2094"
+
+    all:
+      path: argocd/base
+
+    upstream:
+      disableDefaultTagRevision: true
+      path: ""
+      allowManualReplicasScaling: true
+
+    gates-override:
+      repoUrl: https://github.com/LedgerHQ/ledger-vault-api
+      targetRevision: 8.11.14
+      inlineValues:
+        custom:
+          calVersion: 2025.40.2645
+        hsmSanityCheck:
+          enabled: false
+        serviceAccount:
+          annotations:
+            eks.amazonaws.com/role-arn: arn:aws:iam::{{ .Values.custom.awsAccountId }}:role/gate-app-role-ppr
+        env:
+          VAULT_BALANCE_TTL: 10
+          VAULT_MAX_NUMBER_OF_PROCESSES: 8
+          VAULT_MIN_NUMBER_OF_PROCESSES: 4
+          VAULT_PROCESS_TIMEOUT: "1800"
+          VAULT_TIMEOUT_API_CALL: "150"
+          VAULT_PRICING_PLAN_NAME: starter
+          VAULT_WALLET_DAEMON_HISTORY_WORKERS: 16
+          VAULT_UTXO_PICKING_STRATEGY: OPTIMIZE_SIZE
+          VAULT_ENABLE_HSM_RULE_SET_V2: "true"
+
+        app:
+          resources:
+            requests:
+              cpu: "0.2"
+              memory: 768Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+        worker:
+          resources:
+            requests:
+              cpu: "0.1"
+              memory: 256Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+        checkApiEndpoints:
+          podDisruptionBudget:
+            enabled: false
+
+    gates-us:
+      extendCategories: [gates-base, gates-self-version, gates-current, gates-override]
+      inlineValues:
+        env:
+          VAULT_HSM_DRIVER_NAME: us
+          VAULT_WALLET_DAEMON_NAME: us-lama
+
+    gates-emea:
+      extendCategories: [gates-base, gates-self-version, gates-current, gates-override]
+      inlineValues:
+        env:
+          VAULT_HSM_DRIVER_NAME: emea
+          VAULT_WALLET_DAEMON_NAME: emea-lama
+
+    gates-apac:
+      extendCategories: [gates-base, gates-self-version, gates-current, gates-override]
+      inlineValues:
+        env:
+          VAULT_HSM_DRIVER_NAME: apac
+          VAULT_WALLET_DAEMON_NAME: apac-lama
+
+    gates-internal:
+      extendCategories: [gates-base, gates-self-version, gates-current, gates-override]
+      inlineValues:
+        env:
+          VAULT_HSM_DRIVER_NAME: internal
+          VAULT_WALLET_DAEMON_NAME: internal-lama
+
+    gates-komainu:
+      extendCategories: [gates-base, gates-self-version, gates-current, gates-override]
+      inlineValues:
+        env:
+          VAULT_HSM_DRIVER_NAME: komainu
+          VAULT_WALLET_DAEMON_NAME: komainudigital-lama
+
+    gates-ppr:
+      extendCategories: [gates-base, gates-self-version, gates-current, gates-override]
+      inlineValues:
+        app:
+          resources:
+            requests:
+              cpu: "1"
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+        worker:
+          resources:
+            requests:
+              cpu: "1"
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+        controller:
+          replicas: 1
+        env:
+          VAULT_HSM_DRIVER_NAME: ppr
+          VAULT_WALLET_DAEMON_NAME: internal-lama
+          VAULT_PRICING_PLAN_NAME: enterprise
+
+    hsmdrivers:
+      inlineValues:
+        custom:
+          hsmEnv: "cluster-preprod"
+        env:
+          AWS_DEFAULT_REGION: "eu-west-1"
+          VAULT_HSM_ENDPOINT: https://vault-cluster-ppr.hsm.pa6.ldg-prd.net/process
+          VAULT_HSM_ENV: PROD
+          VAULT_HSM_TIMEOUT: 2000
+          VAULT_HSM_BACKOFF_DELAY: 2000
+          # feature flags not yet in configcat
+          VAULT_HSM_DRIVER_ENABLE_TRANSACTION_V2: "true"
+          VAULT_HSM_DRIVER_BACKGROUND_TASK_MAXIMUM_RETRIES: "5"
+          VAULT_HSM_DRIVER_CAPPED_BACKOFF_ARRAY: "3,5,10"
+        resources:
+          limits:
+            cpu: "2"
+            memory: "2Gi"
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+
+    hsmproxys:
+      inlineValues:
+        custom:
+          s3Env: "prd"
+        env:
+          VAULT_HSM_ENDPOINT: https://vault-cluster-ppr.hsm.pa6.ldg-prd.net
+          VAULT_HSM_GATEWAY_CALROOTURL: "https://ledger-crypto-assets.s3.eu-west-1.amazonaws.com/atps"
+          VAULT_HSM_SELFS_APPGROUPS3BUCKET: "vault-hsm-gateway-schema-prd"
+
+    hsmproxysequencers:
+      inlineValues:
+        custom:
+          s3Env: "prd"
+        env:
+          VAULT_HSM_ENDPOINT: https://vault-cluster-ppr.hsm.pa6.ldg-prd.net
+
+    wds:
+      inlineValues:
+        controller:
+          replicas: 1
+        custom:
+          env: "ppr"
+        env:
+          CORE_LOG_LEVEL: "DEBUG"
+          DAEMON_LOG_LEVEL: "DEBUG"
+          CORE_OPS_THREADS_FACTOR: 4
+          CORE_PG_CONNECTION_POOL_SIZE_PER_WALLET_POOL: 4
+          FALLBACK_TIMEOUT: 7000
+          DD_INTEGRATIONS_ENABLED: "true"
+          DD_RUNTIME_METRICS_ENABLED: "true"
+          DD_JMXFETCH_ENABLED: "true"
+          DD_PROFILING_ENABLED: "false"
+        resources:
+          limits:
+            cpu: "2"
+            memory: "3Gi"
+          requests:
+            cpu: "1"
+            memory: "1Gi"
+
+  projectValues:
+    upstream:
+      common-secrets:
+        inlineValues:
+          valueBundles:
+            eksPrd:
+              enabled: true
+          externalSecret:
+            postgresql:
+              enabled: true
+              dataFrom:
+                - extract:
+                    key: 2060/tf-postgresql
+            rabbitmq:
+              enabled: true
+              dataFrom:
+                - extract:
+                    key: 2060/tf-rabbitmq
+            keycloak:
+              enabled: true
+              dataFrom:
+                - extract:
+                    key: keycloak-ppr/tf-keycloak
+      vault-rabbitmq:
+        inlineValues:
+          clustering:
+            forceBoot: true
+          image:
+            registry: jfrog.ledgerlabs.net
+            repository: ossproxy-oci-proxy-dockerio/bitnami/rabbitmq
+            pullSecrets:
+              - name: container-registries
+          ingress:
+            enabled: true
+            hostname: vault-rabbitmq-ppr.aws.ppr.ldg-tech.com
+      keycloak:
+        targetRevision: 24.6.3
+        inlineValues:
+          image:
+            registry: jfrog.ledgerlabs.net
+            repository: ossproxy-oci-proxy-dockerio/bitnami/keycloak
+            pullSecrets:
+              - name: container-registries
+          global:
+            security:
+              allowInsecureImages: true
+          production: true
+          ingress:
+            enabled: true
+            hostname: vault-keycloak-ppr.aws.ppr.ldg-tech.com
+            hostnameStrict: true
+            tls: true
+            ingressClassName: trusted
+            annotations:
+              cert-manager.io/cluster-issuer: letsencrypt-prod
+          adminIngress:
+            enabled: false
+          tls:
+            enabled: true
+            autoGenerated: true
+          externalDatabase:
+            host: pg-main.2060-vault-ppr.aws.ldg-prd.net
+          metrics:
+            enabled: true
+          podAnnotations:
+            ad.datadoghq.com/keycloak.checks: |
+              {
+                "openmetrics": {
+                  "init_config": {},
+                  "instances": [
+                    {
+                      "openmetrics_endpoint": "http://%%host%%:8080/realms/master/metrics",
+                      "namespace": "keycloak",
+                      "metrics": [
+                        "jvm_memory_bytes_used",
+                        "jvm_memory_bytes_max",
+                        "jvm_memory_bytes_committed",
+                        "keycloak_logins*",
+                        "keycloak_response*",
+                        "keycloak_client_logins*",
+                        "keycloak_failed_login_attempts*",
+                        "keycloak_request_duration*"
+                      ],
+                      "tag_by_endpoint": false,
+                      "collect_histogram_buckets": true,
+                      "histogram_buckets_as_distributions": true,
+                      "collect_counters_with_distributions": true
+                    }
+                  ]
+                }
+              }
+
+    all:
+      # for the love of MS/SRE sanity, please keep the apps in alphabetical order
+      api-gateway:
+        inlineValues:
+          env:
+            PROCESS_TIMEOUT: "600"
+            TIMEOUT_API_CALL: "60"
+            MIN_NUMBER_OF_PROCESSES: 4
+            MAX_NUMBER_OF_PROCESSES: 16
+            RATELIMIT_ENABLED: "true"
+            RATELIMIT_DEFAULT: "10 per minute"
+            RATELIMIT_DEFAULT_TX_CREATION: "50 per hour"
+            RATELIMIT_FOR_LOGIN: "100 per minute"
+            GUNICORN_WORKERS: 2
+            GUNICORN_TIMEOUT: 600
+          resources:
+            limits:
+              cpu: "8"
+              memory: "12Gi"
+            requests:
+              cpu: "2"
+              memory: "4Gi"
+          probes:
+            liveness:
+              spec:
+                failureThreshold: 6
+            readiness:
+              spec:
+                timeoutSeconds: 1
+
+      aus:
+        repoUrl: https://github.com/LedgerHQ/vault-aus-api
+        targetRevision: 0.9.0
+
+      apdu-connector:
+        repoUrl: https://github.com/LedgerHQ/vault-apdu-connector
+        useAppTemplate: true
+        targetRevision: 0d3651d2f90fcf54aed4f2433d8680598300c82d #! current = c70f608bfba5773a9edc51c82faafecdb2746baf
+        inlineValues:
+          image:
+            tag: 1.1.3
+
+      api-keys:
+        inlineValues:
+          probes:
+            startup:
+              spec:
+                initialDelaySeconds: 20
+                timeoutSeconds: 2
+                periodSeconds: 10
+
+      aum-api:
+        inlineValues:
+          env:
+            VAULT_AUM_API_MAX_NUMBER_OF_PROCESSES: 16
+            VAULT_AUM_API_MIN_NUMBER_OF_PROCESSES: 2
+            VAULT_AUM_API_WORKSPACE_TIMEOUT: 1800
+            VAULT_AUM_API_CLI_WORKSPACE_CONCURRENCY: 3
+          resources:
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+            requests:
+              cpu: "250m"
+              memory: "128Mi"
+
+      coin-gateway:
+        inlineValues:
+          env:
+            CATAPLASM_WORKSPACES: '{"alphanodecapitalppr": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_alphanodecapitalppr"}, "bdacsdepository1ppr": {"url": "http://wd-apac-lama", "schema": "libcoreexmoexchangeppr_apac-lama_bdacsdepository1ppr"}, "cgppr": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_cgppr"}, "cguatppr": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_cguatppr"}, "coinswitchppr": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_coinswitchppr"}, "cryptocomppr": {"url": "http://wd-cryptocomppr-lama", "schema": "libcore_cryptocomppr-lama_cryptocomppr"}, "dauppr": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_dauppr"}, "ducatofinanceppr": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_ducatofinanceppr"}, "etppr": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_etppr"}, "fnctppr": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_fnctppr"}, "hayvnppr": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_hayvnppr"}, "kryptodianppr": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_kryptodianppr"}, "legacytrustppr": {"url": "http://wd-legacytrustppr-lama", "schema": "libcore_legacytrustppr-lama_legacytrustppr"}, "shareringppr": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_shareringppr"}, "starstormppr": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_starstormppr"}, "suncryptoppr": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_suncryptoppr"}, "uminersppr": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_uminersppr"}, "zebpayppr": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_zebpayppr"}, "demoapacppr": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_demoapacppr"}, "demoemeappr": {"url": "http://wd-internal-nft2", "schema": "libcore_internal-nft2_demoemeappr"}, "demoemeaxlppr": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_demoemeaxlppr"}, "demoopsppr": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_demoopsppr"}, "demoproductppr": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_demoproductppr"}, "demovaultppr": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_demovaultppr"}, "demousppr": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_demousppr"}, "ledgercorporateppr": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_ledgercorporateppr"}, "ledgernftppr": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_ledgernftppr"}, "qafundsppr": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_qafundsppr"}, "test3clusterppr": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_test3clusterppr"}, "vaultengppr": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_vaultengppr"}, "121gppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_121gppr"}, "binanceusppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_binanceusppr"}, "blockalphappr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_blockalphappr"}, "blocktowerppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_blocktowerppr"}, "blockwareppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_blockwareppr"}, "bmaxppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_bmaxppr"}, "brickppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_brickppr"}, "coinvestorsppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_coinvestorsppr"}, "cowrieppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_cowrieppr"}, "dacppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_dacppr"}, "delchainppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_delchainppr"}, "eonppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_eonppr"}, "equitytrustcoldppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_equitytrustcoldppr"}, "equitytrusthotppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_equitytrusthotppr"}, "etanappr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_etanappr"}, "foodchainppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_foodchainppr"}, "goldentreeppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_goldentreeppr"}, "hpfppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_hpfppr"}, "hyperampppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_hyperampppr"}, "jgeppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_jgeppr"}, "littlefishppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_littlefishppr"}, "minefficiencyppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_minefficiencyppr"},  "ndaxppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_ndaxppr"}, "netvrkppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_netvrkppr"}, "oneofppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_oneofppr"}, "orishacapitalppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_orishacapitalppr"}, "ralphlaurenppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_ralphlaurenppr"}, "rockwalletppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_rockwalletppr"}, "rssppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_rssppr"}, "sugarblockppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_sugarblockppr"}, "tarippr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_tarippr"}, "tetratestppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_tetratestppr"}, "tetratrustcompanyppr": {"url": "http://wd-tetratrustppr-lama", "schema": "libcore_tetratrustppr-lama_tetratrustcompanyppr"}, "timeppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_timeppr"}, "toklasppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_toklasppr"}, "uccryptoppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_uccryptoppr"}, "udappr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_udappr"}, "upholduatppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_upholduatppr"}, "voyagerppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_voyagerppr"}, "whitetowerppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_whitetowerppr"}, "wicklowcapitalppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_wicklowcapitalppr"}, "workdaoppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_workdaoppr"}, "yugalabsppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_yugalabsppr"}, "zionppr": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_zionppr"}, "alkimippr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_alkimippr"}, "arianeeppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_arianeeppr"}, "b2bppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_b2bppr"}, "b2c2ppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_b2c2ppr"}, "baanxppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_baanxppr"}, "bankfrickppr": {"url": "http://wd-bankfrickppr-lama", "schema": "libcore_bankfrickppr-lama_bankfrickppr"}, "bankfrickuatppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_bankfrickuatppr"}, "banksytrustppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_banksytrustppr"}, "bit2meppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_bit2meppr"}, "bitstampuatppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_bitstampuatppr"}, "bitvavoppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_bitvavoppr"}, "bosonprotocolppr": {"url": "http://wd-bosonprotocolppr-lama", "schema": "libcore_bosonprotocolppr-lama_bosonprotocolppr"}, "bts999ppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_bts999ppr"}, "caizppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_caizppr"}, "changecryptoppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_changecryptoppr"}, "coinhousecsppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_coinhousecsppr"}, "coinhouseppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_coinhouseppr"}, "coinmotionppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_coinmotionppr"}, "coinspaidppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_coinspaidppr"}, "coinstreetppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_coinstreetppr"}, "cointresorppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_cointresorppr"}, "colossusppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_colossusppr"}, "collaterizeppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_collaterizeppr"}, "creandppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_creandppr"}, "crypto4winnersppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_crypto4winnersppr"}, "deblockppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_deblockppr"}, "diorppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_diorppr"}, "ecoinomyppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_ecoinomyppr"}, "ethtrustppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_ethtrustppr"}, "etoroppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_etoroppr"}, "exmovaultppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_exmovaultppr"}, "f11groupppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_f11groupppr"}, "flowdeskppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_flowdeskppr"}, "fortunacustodyppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_fortunacustodyppr"}, "fumbippr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_fumbippr"}, "guerlainppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_guerlainppr"}, "hiveonppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_hiveonppr"}, "hodlgibfundppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_hodlgibfundppr"}, "hodlppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_hodlppr"}, "hyperwebppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_hyperwebppr"}, "jobchainppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_jobchainppr"}, "keringpocppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_keringpocppr"}, "komainuuatppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_komainuuatppr"}, "lacollectionppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_lacollectionppr"}, "leximppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_leximppr"}, "lofficielppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_lofficielppr"}, "lushppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_lushppr"}, "lvmhdemoppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_lvmhdemoppr"}, "lvmhppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_lvmhppr"}, "lvmhtestppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_lvmhtestppr"}, "mazarsppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_mazarsppr"}, "metaltradingcompanyppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_metaltradingcompanyppr"}, "mettradeppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_mettradeppr"}, "nexoppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_nexoppr"}, "nucocloudppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_nucocloudppr"}, "okazioppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_okazioppr"}, "operappr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_operappr"}, "p2pppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_p2pppr"}, "pmuppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_pmuppr"}, "polluxppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_polluxppr"}, "pradappr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_pradappr"}, "procapitalppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_procapitalppr"}, "procapitaltestppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_procapitaltestppr"}, "quartysppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_quartysppr"}, "sguiwulddgddryueppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_sguiwulddgddryueppr"}, "sibachainppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_sibachainppr"}, "solanafoundationppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_solanafoundationppr"}, "sorareppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_sorareppr"}, "starknetfoundationppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_starknetfoundationppr"}, "starkwareppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_starkwareppr"}, "tanganyppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_tanganyppr"}, "tanganytestppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_tanganytestppr"}, "thesandboxppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_thesandboxppr"}, "tungstencustodyppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_tungstencustodyppr"}, "uapppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_uapppr"}, "unblockcapitalppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_unblockcapitalppr"}, "upholdppr": {"url": "http://wd-upholdppr-lama", "schema": "libcore_upholdppr-lama_upholdppr"},"upholdreserveppr": {"url": "http://wd-upholdppr-lama", "schema": "libcore_upholdppr-lama_upholdreserveppr"}, "upholduat2ppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_upholduat2ppr"}, "vengappr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_vengappr"}, "veroppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_veroppr"}, "wellappr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_wellappr"}, "youhodlerppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_youhodlerppr"}, "komainudigitalppr": {"url": "http://wd-komainudigitalppr-lama", "schema": "libcore_komainudigitalppr-lama_komainudigitalppr"}, "komainudubaippr": {"url": "http://wd-komainudigitalppr-lama", "schema": "libcore_komainudigitalppr-lama_komainudubaippr"}, "komainupsppr": {"url": "http://wd-komainupsppr-lama", "schema": "libcore_komainupsppr-lama_komainupsppr"}, "komainuuatppr": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_komainuuatppr"}, "komainuukppr": {"url": "http://wd-komainudigitalppr-lama", "schema": "libcore_komainudigitalppr-lama_komainuukppr"}, "garabitique": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_garabitique"}, "qappr1": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_qappr1"}}'
+            DD_LOGS_INJECTION: "false"
+          limits:
+            cpu: "4"
+            memory: "4Gi"
+          requests:
+            cpu: "2"
+            memory: "2Gi"
+          ### temporary for testing purposes, should be removed later
+          persistence:
+            tcpdump:
+              enabled: true
+              type: emptyDir
+          sidecars:
+            tcpdump:
+              enabled: true
+              image: "jfrog.ledgerlabs.net/ossproxy-oci-proxy-dockerio/corfr/tcpdump"
+              securityContext:
+                capabilities:
+                  add: ["NET_ADMIN", "NET_RAW"]
+              volumeMounts:
+                - name: tcpdump
+                  mountPath: /tcpdump
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  mkdir -p /tcpdump;
+                  tcpdump -i any -nn -s 0 \
+                    -w /tcpdump/trace-$(hostname)-$(date +%Y%m%d%H%M).pcap \
+                    -C 50 -Z root &
+
+                  while true; do
+                    find /tcpdump -type f -name "*.pcap*" ! -name "*.gz" -mmin +5 -exec gzip {} \;
+                    sleep 300
+                  done
+
+      device-registry:
+        inlineValues:
+          resources:
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+            requests:
+              cpu: "250m"
+              memory: "128Mi"
+
+      nfts-api:
+        inlineValues:
+          env:
+            DD_TRACE_ENABLED: true
+
+      notification-center:
+        inlineValues:
+          env:
+            DD_JMXFETCH_ENABLED: false
+          resources:
+            requests:
+              memory: "64Mi"
+
+      notifier:
+        inlineValues:
+          env:
+            DD_LOGS_INJECTION: "true"
+            DD_RUNTIME_METRICS_ENABLED: "true"
+            DD_PROFILING_ENABLED: "false"
+          app:
+            resources:
+              limits:
+                cpu: "2"
+                memory: "1Gi"
+              requests:
+                cpu: "1"
+                memory: "256Mi"
+          consumer:
+            resources:
+              limits:
+                cpu: "1"
+                memory: "3Gi"
+              requests:
+                cpu: "500m"
+                memory: "1Gi"
+          webhook:
+            resources:
+              limits:
+                cpu: "1"
+                memory: "1Gi"
+              requests:
+                cpu: "500m"
+                memory: "256Mi"
+          websocket:
+            resources:
+              limits:
+                cpu: "1"
+                memory: "1Gi"
+              requests:
+                cpu: "500m"
+                memory: "256Mi"
+
+      organizations-api:
+        inlineValues:
+          resources:
+            requests:
+              memory: "64Mi"
+
+      platform-manager:
+        targetRevision: "2.4.0"
+        initContainers:
+          init-db-postgres:
+            image:
+              repo: jfrog.ledgerlabs.net/vault-oci-prod-green/postgres-initdb
+              tag: "v14.12"
+        inlineValues:
+          image:
+            tag: "2.4.0"
+          custom:
+            postgresPlatformManagerHost: pg.vault-platform-manager-ppr.aws.ppr.ldg-tech.com
+          app:
+            resources:
+              limits:
+                cpu: "1"
+                memory: "4Gi"
+              requests:
+                cpu: "1"
+                memory: "2Gi"
+          worker:
+            resources:
+              limits:
+                cpu: "2"
+                memory: "2Gi"
+              requests:
+                cpu: "1"
+                memory: "1536Mi"
+          flower:
+            resources:
+              limits:
+                cpu: "700m"
+                memory: "12Gi"
+              requests:
+                cpu: "500m"
+                memory: "500Mi"
+
+      revault-api:
+        inlineValues:
+          app:
+            initContainers:
+              init-db-postgres:
+                env:
+                  POSTGRES_ADDITIONAL_RO_ROLES: "read_only data_team_readonly"
+          env:
+            # this enable /debug router that contains some useful endpoints
+            # for debugging (e.g: list all workspaces, users, ...)
+            ENABLE_DEBUG_PROCEDURES: "1"
+
+      revault-onboarding:
+        inlineValues:
+          custom:
+            blueAppVersion: "6.2.0"
+            staxAppVersion: "2.0.2"
+            staxFirmwareVersion: "1.8.0"
+
+      tx-scheduler:
+        inlineValues:
+          env:
+            BROADCASTER_LOOP_SECONDS: "1"
+
+      tradelink:
+        repoUrl: https://github.com/LedgerHQ/vault-tradelink
+        targetRevision: faa1b2f535ef90b061f1399b28c79105889d74ad
+        useAppTemplate: true
+
+      web3-handler-api:
+        inlineValues:
+          env:
+            DD_JMXFETCH_ENABLED: "false"
+            DD_RUNTIME_METRICS_ENABLED: "true"
+
+      web3checks-vault:
+        inlineValues:
+          env:
+            WEB3CHECKS_VAULT_BACKEND_URL: "https://web3checks-backend.api.aws.stg.ldg-tech.com"
+
+    gates-us:
+      gate-121gppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 357
+      gate-binanceusppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 392
+      gate-blockalphappr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 432
+      gate-blocktowerppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 422
+            VAULT_PRICING_PLAN_NAME: business
+      gate-blockwareppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 351
+      gate-bmaxppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 455
+      gate-brickppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 365
+            VAULT_PRICING_PLAN_NAME: business
+      gate-coinvestorsppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 411
+      gate-cowrieppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 453
+      gate-dacppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 208
+      gate-delchainppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 223
+            VAULT_PRICING_PLAN_NAME: business
+      gate-eonppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 438
+      gate-equitytrustcoldppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 409
+            VAULT_PRICING_PLAN_NAME: enterprise
+      gate-equitytrusthotppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 408
+            VAULT_PRICING_PLAN_NAME: enterprise
+      gate-etanappr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 395
+            VAULT_PRICING_PLAN_NAME: enterprise
+      gate-foodchainppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 375
+      gate-goldentreeppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 366
+      gate-hpfppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 305
+            VAULT_ATTESTATION_ID: 228
+            VAULT_PRICING_PLAN_NAME: business
+
+      gate-hyperampppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 306
+            VAULT_ATTESTATION_ID: 228
+            VAULT_PRICING_PLAN_NAME: business
+      gate-jgeppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 431
+      gate-littlefishppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 433
+      gate-minefficiencyppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 326
+      gate-ndaxppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 132
+            VAULT_PRICING_PLAN_NAME: legacy
+      gate-netvrkppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 397
+            VAULT_PRICING_PLAN_NAME: enterprise
+      gate-oneofppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 373
+      gate-orishacapitalppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 318
+      gate-ralphlaurenppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 364
+            VAULT_PRICING_PLAN_NAME: business
+      gate-rockwalletppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 401
+      gate-rssppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 310
+      gate-sugarblockppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 324
+      gate-tarippr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 346
+      gate-tetratestppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 437
+      gate-tetratrustcompanyppr:
+        inlineValues:
+          app:
+            podAnnotations:
+              cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+            resources:
+              limits:
+                cpu: 500m
+                memory: 2Gi
+          env:
+            VAULT_COMPARTMENT_ID: 301
+            VAULT_MAX_NUMBER_OF_PROCESSES: 16
+            VAULT_WALLET_DAEMON_NAME: tetratrustppr-lama
+            VAULT_PRICING_PLAN_NAME: enterprise
+      gate-timeppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 388
+      gate-toklasppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 353
+      gate-uccryptoppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 406
+      gate-udappr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 435
+      gate-upholduatppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 159
+            VAULT_MAX_NUMBER_OF_PROCESSES: 16
+            VAULT_PRICING_PLAN_NAME: enterprise
+      gate-voyagerppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 355
+            VAULT_PRICING_PLAN_NAME: enterprise
+      gate-whitetowerppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 334
+            VAULT_ATTESTATION_ID: 139
+            VAULT_PRICING_PLAN_NAME: legacy
+      gate-wicklowcapitalppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 309
+      gate-workdaoppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 367
+      gate-yugalabsppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 423
+      gate-zionppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 439
+
+    gates-emea:
+      gate-alkimippr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 315
+          resources:
+            limits:
+              cpu: 2
+              memory: "2Gi"
+      gate-arianeeppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 385
+
+      gate-b2bppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 360
+            VAULT_PRICING_PLAN_NAME: business
+
+      gate-b2c2ppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 379
+
+      gate-baanxppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 303
+
+      gate-bankfrickppr:
+        inlineValues:
+          app:
+            podAnnotations:
+              cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+            resources:
+              limits:
+                cpu: 1500m
+                memory: 2Gi
+          env:
+            VAULT_MAX_NUMBER_OF_PROCESSES: 16
+            VAULT_COMPARTMENT_ID: 123
+            VAULT_WALLET_DAEMON_NAME: bankfrickppr-lama
+            VAULT_PRICING_PLAN_NAME: enterprise
+      gate-bankfrickuatppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 341
+            VAULT_ATTESTATION_ID: 196
+
+      gate-banksytrustppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 405
+
+      gate-bit2meppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 349
+            VAULT_PRICING_PLAN_NAME: business
+
+      gate-bitstampuatppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 327
+            VAULT_ATTESTATION_ID: 147
+            VAULT_PRICING_PLAN_NAME: business
+
+      gate-bitvavoppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 381
+
+      gate-bosonprotocolppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 213
+            VAULT_WALLET_DAEMON_NAME: bosonprotocolppr-lama
+            VAULT_PRICING_PLAN_NAME: business
+
+      gate-bts999ppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 153
+            VAULT_PRICING_PLAN_NAME: business
+
+      gate-caizppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 333
+
+      gate-changecryptoppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 369
+            VAULT_MAX_NUMBER_OF_PROCESSES: 16
+            # VAULT_PROCESS_TIMEOUT: "800"
+            VAULT_PROCESS_TIMEOUT: "1800"
+          worker:
+            resources:
+              limits:
+                cpu: 1
+
+      gate-coinhousecsppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 138
+            VAULT_PRICING_PLAN_NAME: enterprise
+
+      gate-coinhouseppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 102
+            VAULT_PRICING_PLAN_NAME: enterprise
+
+      gate-coinhouse2ppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 443
+            VAULT_PRICING_PLAN_NAME: enterprise
+
+      gate-coinmotionppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 322
+            VAULT_ATTESTATION_ID: 177
+            VAULT_PRICING_PLAN_NAME: business
+
+      gate-coinspaidppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 344
+            VAULT_PRICING_PLAN_NAME: enterprise_v4
+            VAULT_TIMEOUT_ACCOUNT_BATCH_RECONCILE: 20
+
+      gate-coinstreetppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 172
+
+      gate-cointresorppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 300
+
+      gate-colossusppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 427
+            VAULT_PRICING_PLAN_NAME: enterprise
+
+      gate-collaterizeppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 458
+
+      gate-creandppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 449
+
+      gate-crypto4winnersppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 187
+            VAULT_PRICING_PLAN_NAME: enterprise
+
+      gate-deblockppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 402
+            VAULT_PRICING_PLAN_NAME: enterprise
+
+      gate-diorppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 394
+
+      gate-ecoinomyppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 361
+            VAULT_PRICING_PLAN_NAME: business
+
+      gate-ethtrustppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 338
+
+      gate-etoroppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 383
+
+      gate-exaionppr:
+        inlineValues:
+          custom:
+            pricingPlans:
+              custom_exaion:
+                planLabel: "custom exaion"
+                planMaxAccounts: 100
+                planMaxEntities: 5
+                planMaxGroups: 20
+                planMaxUsers: 20
+                planMaxWhitelists: 300
+                planTxRate: 50
+                planApprovalRate: 200
+                planReadRate: 1000
+                planAddressRate: 50
+          env:
+            VAULT_COMPARTMENT_ID: 442
+            VAULT_PRICING_PLAN_NAME: custom_exaion
+
+      gate-exclusivemarketsltdppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 441
+            VAULT_PRICING_PLAN_NAME: light
+
+      gate-exmovaultppr:
+        inlineValues:
+          custom:
+            pricingPlans:
+              custom_exmovaultppr:
+                planLabel: "custom exmovaultppr"
+                planMaxAccounts: 2000
+                planMaxEntities: 0
+                planMaxGroups: 300
+                planMaxUsers: 250
+                planMaxWhitelists: 300
+                planTxRate: 500
+                planApprovalRate: 400
+                planReadRate: 200
+                planAddressRate: 100
+          env:
+            VAULT_COMPARTMENT_ID: 451
+
+      gate-f11groupppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 316
+            VAULT_PRICING_PLAN_NAME: business
+
+      gate-flowdeskppr:
+        inlineValues:
+          app:
+            resources:
+              limits:
+                cpu: 1500m
+                memory: 2Gi
+          worker:
+            resources:
+              limits:
+                cpu: 1
+          env:
+            VAULT_COMPARTMENT_ID: 347
+            VAULT_PRICING_PLAN_NAME: enterprise
+
+      gate-fortunacustodyppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 311
+
+      gate-fumbippr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 185
+            VAULT_PRICING_PLAN_NAME: legacy
+
+      gate-guerlainppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 342
+
+      gate-hiveonppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 370
+
+      gate-hodlgibfundppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 398
+
+      gate-hodlppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 204
+
+      gate-hyperwebppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 313
+
+      gate-jobchainppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 420
+
+      gate-keringpocppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 382
+
+      gate-komainuuatppr:
+        inlineValues:
+          custom:
+            pricingPlans:
+              custom_komainuuatppr:
+                planLabel: "custom komainuuatppr"
+                planMaxAccounts: 10000
+                planMaxEntities: 0
+                planMaxGroups: 1250
+                planMaxUsers: 2500
+                planMaxWhitelists: 500
+                planTxRate: 500
+                planApprovalRate: 2000
+                planReadRate: 2000
+                planAddressRate: 500
+          app:
+            resources:
+              limits:
+                cpu: "1500m"
+                memory: "2Gi"
+          worker:
+            resources:
+              limits:
+                cpu: "1"
+          env:
+            VAULT_COMPARTMENT_ID: 156
+            VAULT_ATTESTATION_ID: 156
+            VAULT_MAX_NUMBER_OF_PROCESSES: 16
+            VAULT_PRICING_PLAN_NAME: custom_komainuuatppr
+
+      gate-lacollectionppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 387
+
+      gate-leximppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 456
+            VAULT_ATTESTATION_ID: 429
+
+      gate-lofficielppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 389
+
+      gate-lushppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 352
+
+      gate-lvmhdemoppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 340
+
+      gate-lvmhppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 377
+
+      gate-lvmhtestppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 419
+
+      gate-mazarsppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 378
+
+      gate-metaltradingcompanyppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 308
+
+      gate-mettradeppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 317
+
+      gate-nexoppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 414
+
+      gate-nucocloudppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 216
+
+      gate-okazioppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 450
+            VAULT_PRICING_PLAN_NAME: light
+
+      gate-operappr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 348
+
+      gate-p2pppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 452
+
+      gate-pmuppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 386
+
+      gate-polluxppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 359
+
+      gate-pradappr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 416
+
+      gate-procapitalppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 384
+
+      gate-procapitaltestppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 418
+
+      gate-quartysppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 186
+            VAULT_PRICING_PLAN_NAME: legacy
+
+      gate-sguiwulddgddryueppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 335
+
+      gate-sibachainppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 410
+            VAULT_REVAULT_STREAM_MAX_LENGTH: "100000"
+            VAULT_WORKER_CELERY_MIN_PROCESS: 2
+
+      gate-solanafoundationppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 424
+            VAULT_PRICING_PLAN_NAME: business
+
+      gate-sorareppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 399
+
+      gate-starknetfoundationppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 415
+            VAULT_ATTESTATION_ID: 396
+
+      gate-starkwareppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 356
+            VAULT_ATTESTATION_ID: 325
+            VAULT_PRICING_PLAN_NAME: business
+
+      gate-tanganyppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 461
+
+      gate-tanganytestppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 459
+
+      gate-thesandboxppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 404
+
+      gate-tungstencustodyppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 448
+            VAULT_PRICING_PLAN_NAME: starter
+
+      gate-uapppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 307
+            VAULT_ATTESTATION_ID: 225
+
+      gate-unblockcapitalppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 380
+
+      gate-upholdppr:
+        inlineValues:
+          app:
+            podAnnotations:
+              cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+            resources:
+              limits:
+                cpu: "1"
+          env:
+            VAULT_COMPARTMENT_ID: 135
+            VAULT_WALLET_DAEMON_NAME: upholdppr-lama
+            VAULT_PRICING_PLAN_NAME: enterprise
+
+      gate-upholdreserveppr:
+        inlineValues:
+          app:
+            podAnnotations:
+              cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+            resources:
+              limits:
+                cpu: "1"
+          env:
+            VAULT_COMPARTMENT_ID: 460
+            VAULT_ATTESTATION_ID: 135
+            VAULT_WALLET_DAEMON_NAME: upholdppr-lama
+            VAULT_PRICING_PLAN_NAME: enterprise
+
+      gate-upholduat2ppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 447
+            VAULT_PRICING_PLAN_NAME: enterprise
+
+      gate-vengappr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 436
+
+      gate-veroppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 376
+
+      gate-wellappr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 371
+
+      gate-youhodlerppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 179
+            VAULT_PRICING_PLAN_NAME: legacy
+
+    gates-apac:
+      gate-alphanodecapitalppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 426
+      gate-bdacsdepository1ppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 417
+      gate-cgppr:
+        inlineValues:
+          custom:
+            pricingPlans:
+              custom_cgppr:
+                planLabel: "custom_cgppr"
+                planMaxAccounts: 2000
+                planMaxEntities: 10
+                planMaxGroups: 200
+                planMaxUsers: 200
+                planMaxWhitelists: 200
+                planTxRate: 500
+                planApprovalRate: 1000
+                planReadRate: 500
+          env:
+            VAULT_COMPARTMENT_ID: 374
+            VAULT_ATTESTATION_ID: 374
+            VAULT_PRICING_PLAN_NAME: custom_cgppr
+      gate-cguatppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 454
+      gate-coinstashppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 440
+            VAULT_PRICING_PLAN_NAME: light
+      gate-coinswitchppr:
+        inlineValues:
+          custom:
+            pricingPlans:
+              custom_coinswitchppr:
+                planLabel: "custom coinswitchppr"
+                planMaxAccounts: 2500
+                planMaxEntities: 0
+                planMaxGroups: 300
+                planMaxUsers: 500
+                planMaxWhitelists: 300
+                planTxRate: 500
+                planApprovalRate: 2000
+                planReadRate: 1000
+                planAddressRate: 500
+          env:
+            VAULT_COMPARTMENT_ID: 226
+            VAULT_PRICING_PLAN_NAME: custom_coinswitchppr
+      gate-cryptocomppr:
+        inlineValues:
+          app:
+            podAnnotations:
+              cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+            resources:
+              limits:
+                cpu: 1500m
+                memory: 2Gi
+          env:
+            VAULT_COMPARTMENT_ID: 116
+            VAULT_WALLET_DAEMON_NAME: cryptocomppr-lama
+            VAULT_PRICING_PLAN_NAME: enterprise
+            VAULT_REVAULT_STREAM_MAX_LENGTH: "100000"
+
+      gate-dauppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 429
+      gate-ducatofinanceppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 302
+      gate-etppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 413
+      gate-fnctppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 372
+      gate-hayvnppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 425
+      gate-kryptodianppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 358
+            VAULT_ATTESTATION_ID: 144
+            VAULT_PRICING_PLAN_NAME: enterprise
+      gate-legacytrustppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 129
+            VAULT_WALLET_DAEMON_NAME: legacytrustppr-lama
+            VAULT_PRICING_PLAN_NAME: business
+      gate-shareringppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 215
+      gate-starstormppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 330
+            VAULT_PRICING_PLAN_NAME: enterprise
+      gate-suncryptoppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 350
+      gate-uminersppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 457
+            VAULT_PRICING_PLAN_NAME: business
+      gate-zebpayppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 224
+
+    gates-internal:
+      gate-demoapacppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 101
+      gate-demoemeappr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 105
+            VAULT_WALLET_DAEMON_NAME: internal-nft2
+            VAULT_REVAULT_STREAM_MAX_LENGTH: "100000"
+      gate-demoemeaxlppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 362
+            VAULT_ATTESTATION_ID: 105
+            VAULT_PRICING_PLAN_NAME: business
+            VAULT_REVAULT_STREAM_MAX_LENGTH: "100000"
+      gate-demoopsppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 17
+            VAULT_PRICING_PLAN_NAME: legacy
+            VAULT_REVAULT_STREAM_MAX_LENGTH: "100000"
+      gate-demoproductppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 14
+            VAULT_REVAULT_STREAM_MAX_LENGTH: "100000"
+      gate-demovaultppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 462
+            VAULT_PRICING_PLAN_NAME: business
+            VAULT_REVAULT_STREAM_MAX_LENGTH: "100000"
+      gate-demousppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 112
+            VAULT_REVAULT_STREAM_MAX_LENGTH: "100000"
+      gate-ledgercorporateppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 206
+            # VAULT_PROCESS_TIMEOUT: 120
+            VAULT_PROCESS_TIMEOUT: "1800"
+      gate-ledgernftppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 339
+            VAULT_PRICING_PLAN_NAME: enterprise
+            # VAULT_PROCESS_TIMEOUT: 120
+            VAULT_PROCESS_TIMEOUT: "1800"
+      gate-qafundsppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 321
+            VAULT_PRICING_PLAN_NAME: enterprise
+            # VAULT_PROCESS_TIMEOUT: 120
+            VAULT_PROCESS_TIMEOUT: "1800"
+      gate-test3clusterppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 10
+            VAULT_ATTESTATION_ID: 1
+            VAULT_PRICING_PLAN_NAME: enterprise
+            # VAULT_PROCESS_TIMEOUT: 120
+            VAULT_PROCESS_TIMEOUT: "1800"
+      # Used for release testing
+      gate-vaultengppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 446
+            VAULT_ATTESTATION_ID: 130
+            VAULT_PRICING_PLAN_NAME: business
+
+    gates-komainu:
+      gate-komainudigitalppr:
+        inlineValues:
+          app:
+            podAnnotations:
+              cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+            resources:
+              limits:
+                cpu: 1500m
+                memory: 4Gi
+          env:
+            VAULT_COMPARTMENT_ID: 162
+            VAULT_WALLET_DAEMON_NAME: komainudigitalppr-lama
+            VAULT_PRICING_PLAN_NAME: enterprise
+            VAULT_REVAULT_STREAM_MAX_LENGTH: "100000"
+
+      gate-komainudubaippr:
+        inlineValues:
+          app:
+            podAnnotations:
+              cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+            resources:
+              limits:
+                cpu: 2
+                memory: 2Gi
+          worker:
+            resources:
+              limits:
+                cpu: 1
+                memory: 2Gi
+          env:
+            VAULT_COMPARTMENT_ID: 407
+            VAULT_MAX_NUMBER_OF_PROCESSES: 16
+            VAULT_WALLET_DAEMON_NAME: komainudigitalppr-lama
+            VAULT_PRICING_PLAN_NAME: enterprise
+
+      gate-komainupsppr:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 194
+            VAULT_WALLET_DAEMON_NAME: komainupsppr-lama
+            VAULT_PRICING_PLAN_NAME: enterprise
+
+      gate-komainuukppr:
+        inlineValues:
+          app:
+            podAnnotations:
+              cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+            resources:
+              limits:
+                cpu: 2
+                memory: "2Gi"
+          worker:
+            resources:
+              limits:
+                cpu: "1"
+          env:
+            VAULT_COMPARTMENT_ID: 428
+            VAULT_MAX_NUMBER_OF_PROCESSES: 16
+            VAULT_WALLET_DAEMON_NAME: komainudigitalppr-lama
+            VAULT_PRICING_PLAN_NAME: enterprise
+
+    gates-ppr:
+      gate-garabitique:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 91
+            MUTED_LOGGERS: "logging,AuthenticationsService,GateSessionsService,ddtrace"
+            LOG_LEVEL: "DEBUG"
+
+      gate-qappr1:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 89
+            # VAULT_PROCESS_TIMEOUT: 120
+            VAULT_PROCESS_TIMEOUT: "1800"
+            MUTED_LOGGERS: "logging,AuthenticationsService,GateSessionsService,ddtrace"
+            LOG_LEVEL: "DEBUG"
+
+      gate-tradelink:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 1005
+            MUTED_LOGGERS: "logging,AuthenticationsService,GateSessionsService,ddtrace"
+            LOG_LEVEL: "DEBUG"
+
+    hsmdrivers:
+      hsm-driver-ppr:
+        inlineValues:
+          env:
+            VAULT_HSM_GATEWAY_URL: "http://hsm-proxy-ppr"
+          resources:
+            limits:
+              cpu: "4"
+              memory: "4Gi"
+            requests:
+              cpu: "1"
+              memory: "1Gi"
+      hsm-driver-internal:
+        inlineValues:
+          env:
+            VAULT_HSM_GATEWAY_URL: "http://hsm-proxy-internal"
+      hsm-driver-apac:
+        inlineValues:
+          env:
+            VAULT_HSM_GATEWAY_URL: "http://hsm-proxy-apac"
+      hsm-driver-emea:
+        inlineValues:
+          env:
+            VAULT_HSM_GATEWAY_URL: "http://hsm-proxy-emea"
+      hsm-driver-us:
+        inlineValues:
+          env:
+            VAULT_HSM_GATEWAY_URL: "http://hsm-proxy-us"
+      hsm-driver-komainu:
+        inlineValues:
+          env:
+            VAULT_HSM_GATEWAY_URL: "http://hsm-proxy-komainu"
+
+    hsmproxys:
+      hsm-proxy-ppr: {}
+      hsm-proxy-internal: {}
+      hsm-proxy-apac: {}
+      hsm-proxy-emea: {}
+      hsm-proxy-us: {}
+      hsm-proxy-komainu: {}
+
+    hsmproxysequencers:
+      hsm-proxy-sequencer-ppr: {}
+      hsm-proxy-sequencer-internal: {}
+      hsm-proxy-sequencer-apac: {}
+      hsm-proxy-sequencer-emea: {}
+      hsm-proxy-sequencer-us: {}
+      hsm-proxy-sequencer-komainu: {}
+
+    wds:
+      wd-internal-lama:
+        targetRevision: 54fa9bfbc832ef3e0fdffbae08fef137283a2ba9
+        inlineValues:
+          image:
+            tag: 2.18.3
+          controller:
+            replicas: 1
+      wd-apac-lama:
+        targetRevision: 54fa9bfbc832ef3e0fdffbae08fef137283a2ba9
+        inlineValues:
+          image:
+            tag: 2.18.3
+      wd-emea-lama:
+        targetRevision: 54fa9bfbc832ef3e0fdffbae08fef137283a2ba9
+        inlineValues:
+          image:
+            tag: 2.18.3
+      wd-us-lama:
+        targetRevision: 54fa9bfbc832ef3e0fdffbae08fef137283a2ba9
+        inlineValues:
+          image:
+            tag: 2.18.3
+      wd-bankfrickppr-lama:
+        targetRevision: 54fa9bfbc832ef3e0fdffbae08fef137283a2ba9
+        inlineValues:
+          image:
+            tag: 2.18.3
+      wd-bosonprotocolppr-lama:
+        targetRevision: 54fa9bfbc832ef3e0fdffbae08fef137283a2ba9
+        inlineValues:
+          image:
+            tag: 2.18.3
+          env:
+            CORE_OPS_THREADS_FACTOR: 3
+            CORE_PG_CONNECTION_POOL_SIZE_PER_WALLET_POOL: 12
+        resources:
+          limits:
+            memory: "16Gi"
+          requests:
+            cpu: "2"
+      wd-cryptocomppr-lama:
+        targetRevision: 54fa9bfbc832ef3e0fdffbae08fef137283a2ba9
+        inlineValues:
+          image:
+            tag: 2.18.3
+          env:
+            CORE_OPS_THREADS_FACTOR: 3
+            CORE_PG_CONNECTION_POOL_SIZE_PER_WALLET_POOL: 12
+            FALLBACK_TIMEOUT: 4000
+            MAX_UTXO_IN_TRANSACTION: 100
+        resources:
+          limits:
+            cpu: 5
+            memory: "16Gi"
+          requests:
+            cpu: 500m
+            memory: "512Mi"
+      wd-exmoexchangeppr-lama:
+        targetRevision: 54fa9bfbc832ef3e0fdffbae08fef137283a2ba9
+        inlineValues:
+          image:
+            tag: 2.18.3
+      wd-internal-nft2:
+        targetRevision: 54fa9bfbc832ef3e0fdffbae08fef137283a2ba9
+        inlineValues:
+          image:
+            tag: 2.18.3
+      wd-komainupsppr-lama:
+        targetRevision: 54fa9bfbc832ef3e0fdffbae08fef137283a2ba9
+        inlineValues:
+          image:
+            tag: 2.18.3
+      wd-komainudigitalppr-lama:
+        targetRevision: 54fa9bfbc832ef3e0fdffbae08fef137283a2ba9
+        inlineValues:
+          image:
+            tag: 2.18.3
+      wd-legacytrustppr-lama:
+        targetRevision: 54fa9bfbc832ef3e0fdffbae08fef137283a2ba9
+        inlineValues:
+          image:
+            tag: 2.18.3
+      wd-tetratrustppr-lama:
+        targetRevision: 54fa9bfbc832ef3e0fdffbae08fef137283a2ba9
+        inlineValues:
+          image:
+            tag: 2.18.3
+      wd-upholdppr-lama:
+        targetRevision: 54fa9bfbc832ef3e0fdffbae08fef137283a2ba9
+        inlineValues:
+          image:
+            tag: 2.18.3

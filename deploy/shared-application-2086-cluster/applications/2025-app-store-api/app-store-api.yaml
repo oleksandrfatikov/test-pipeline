@@ -1,0 +1,49 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nano-appstore-prd
+  namespace: argocd
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2025"
+    organization: "consumer"
+    service: "nano-appstore"
+  annotations:
+    notifications.argoproj.io/subscribe.slack: "backend-b2c-private-appstore"
+    argocd.ledger.fr/environment: "Production"
+spec:
+  project: app-store-api
+  source:
+    repoURL: https://github.com/LedgerHQ/nano-appstore.git
+    targetRevision: master
+    path: argocd/prd
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: 2025-app-store-api
+  syncPolicy:
+    automated: {}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nano-appstore-jobs-prd
+  namespace: argocd
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2025"
+    organization: "consumer"
+    service: "nano-appstore"
+spec:
+  project: app-store-api
+  source:
+    repoURL: https://github.com/LedgerHQ/nano-appstore.git
+    targetRevision: master
+    path: argocd/workflows/prd
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2025-app-store-api
+  syncPolicy:
+    automated: {}

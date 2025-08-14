@@ -1,0 +1,34 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: wc=ghcr.io/ledgerhq/web3checks-backend
+    argocd-image-updater.argoproj.io/write-back-method: argocd
+    argocd-image-updater.argoproj.io/wc.update-strategy: latest
+    argocd-image-updater.argoproj.io/wc.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+    argocd-image-updater.argoproj.io/wc.helm.image-name: image.name
+    argocd-image-updater.argoproj.io/wc.helm.image-tag: image.tag
+    notifications.argoproj.io/subscribe.slack: "backend-b2c-private-w3c"
+    argocd.ledger.fr/environment: "Staging"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: web3checks-backend-stg
+  namespace: argocd
+  labels:
+    environment: "stg"
+    owner: "backend-core"
+    project: "2127"
+    organization: "wallet-services"
+    service: "web3checks-backend"
+spec:
+  project: web3checks-backend
+  source:
+    repoURL: https://github.com/LedgerHQ/web3checks-backend.git
+    targetRevision: master
+    path: argocd/stg
+    helm:
+      releaseName: web3checks-backend
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2127-web3checks-backend-stg

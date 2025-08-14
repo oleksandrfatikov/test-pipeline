@@ -1,0 +1,48 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: atlas-eth-holesky-kustomize
+  namespace: argocd
+spec:
+  generators:
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/atlas: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/bhs8: "true"
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/atlas: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/rbx8: "true"
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/atlas: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/fsn1: "true"
+  template:
+    metadata:
+      name: "{{name}}-atlas-eth-holesky-kustomize"
+      annotations:
+        notifications.argoproj.io/subscribe.slack: "atlas-notifications"
+        argocd.ledger.fr/environment: "Production"
+      labels:
+        service: "1047-atlas"
+        env: "production"
+        coin: "eth_holesky"
+        type: "atlas-kustomize"
+    spec:
+      project: 1047-atlas
+      source:
+        repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+        targetRevision: main
+        path: "deploy/production/atlas/kustomize/atlas-eth-holesky"
+      destination:
+        server: "{{server}}"
+        namespace: "1047-atlas"
+      syncPolicy:
+        automated: {}

@@ -1,0 +1,28 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mapping-service-prd
+  namespace: argocd
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2183"
+    organization: "consumer"
+    service: "mapping-service"
+  annotations:
+    notifications.argoproj.io/subscribe.slack: "backend-b2c-private-map"
+    argocd.ledger.fr/environment: "Production"
+spec:
+  project: mapping-service
+  source:
+    repoURL: https://github.com/LedgerHQ/mapping-service.git
+    targetRevision: master
+    path: argocd/prd
+    helm:
+      releaseName: mapping-service
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2183-mapping-service-prd
+  # syncPolicy:
+  #   automated: {}

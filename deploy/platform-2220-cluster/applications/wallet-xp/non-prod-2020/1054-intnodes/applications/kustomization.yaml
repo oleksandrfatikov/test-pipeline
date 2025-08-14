@@ -1,0 +1,17 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./1056-intnodes-near
+  - ./1058-intnodes-algo
+  - ./1060-intnodes-atom
+  - ./1062-intnodes-xtz
+  - ./1066-intnodes-eth
+  - ./1071-intnodes-ada
+  - ./1073-intnodes-dydx
+  - ./1075-intnodes-ada
+  - ./1076-intnodes-irn
+  - ./1080-intnodes-xlm
+  - ./1082-intnodes-canton
+  - ./1086-intnodes-apt
+  - ./intnodes-haproxy-kubernetes-ingress/app.yaml

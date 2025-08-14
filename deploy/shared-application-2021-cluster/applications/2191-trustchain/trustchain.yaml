@@ -1,0 +1,53 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: trustchain=ghcr.io/ledgerhq/trustchain-backend
+    argocd-image-updater.argoproj.io/write-back-method: argocd
+    argocd-image-updater.argoproj.io/trustchain.update-strategy: latest
+    argocd-image-updater.argoproj.io/trustchain.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+    notifications.argoproj.io/subscribe.slack: "backend-b2c-private-trustchain"
+    argocd.ledger.fr/environment: "Staging"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: trustchain-backend-stg
+  namespace: argocd
+  labels:
+    environment: "stg"
+    owner: "backend-core"
+    project: "2191"
+    organization: "wallet-services"
+    service: "trustchain-backend"
+spec:
+  project: trustchain-backend
+  source:
+    repoURL: https://github.com/LedgerHQ/trustchain-backend.git
+    targetRevision: main
+    path: argocd/stg
+    helm:
+      releaseName: trustchain-backend
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2191-trustchain-backend
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: trustchain-backend-jobs-stg
+  namespace: argocd
+  labels:
+    environment: "stg"
+    owner: "backend-core"
+    project: "2191"
+    organization: "wallet-services"
+    service: "trustchain-backend"
+spec:
+  project: trustchain-backend
+  source:
+    repoURL: https://github.com/LedgerHQ/trustchain-backend.git
+    targetRevision: main
+    path: argocd/workflows/stg
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2191-trustchain-backend

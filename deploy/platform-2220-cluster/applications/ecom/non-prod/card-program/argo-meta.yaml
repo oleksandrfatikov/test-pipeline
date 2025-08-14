@@ -1,0 +1,22 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: card-program
+  namespace: argocd-central
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: card-program project
+  sourceRepos:
+    - "https://github.com/LedgerHQ/card-program.git"
+    - "ghcr.io"
+    - "ghcr.io/ledgerhq/charts"
+  destinations:
+    - namespace: "card-program-pr*"
+      name: shared-application-2021-cluster
+    - namespace: card-program-stg
+      name: shared-application-2021-cluster
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

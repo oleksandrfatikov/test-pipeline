@@ -1,0 +1,19 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ms-oncall-notifier
+  namespace: argocd
+  labels:
+    owner: "team-infra-ms"
+spec:
+  project: ms-oncall-notifier
+  source:
+    repoURL: https://github.com/LedgerHQ/infra-k8s-manifests.git
+    targetRevision: master
+    path: production/ms-tools/ms-oncall-notifier
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: tools
+  syncPolicy:
+    automated: {}

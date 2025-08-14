@@ -1,0 +1,158 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: backend-core-services-stg
+  namespace: argocd-central
+spec:
+  goTemplate: true
+  ignoreApplicationDifferences:
+    - jqPathExpressions:
+        - .spec.source.helm.parameters
+  templatePatch: |
+    metadata:
+      annotations:
+      {{- if eq .app "nano-appstore" }}
+        argocd-image-updater.argoproj.io/image-list: backend-core-services=ghcr.io/ledgerhq/appstore
+      {{- else if eq .app "nano-appstore-front" }}
+        argocd-image-updater.argoproj.io/image-list: backend-core-services=ghcr.io/ledgerhq/nano-appstore-front
+      {{- else if eq .app "coinradar" }}
+        argocd-image-updater.argoproj.io/image-list: backend=jfrog.ledgerlabs.net/bcs-oci-prod-green/coinradar,frontend=jfrog.ledgerlabs.net/bcs-oci-prod-green/coinradar-frontend
+        argocd-image-updater.argoproj.io/write-back-method: argocd
+        argocd-image-updater.argoproj.io/backend.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/backend.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+        argocd-image-updater.argoproj.io/backend.helm.image-name: backend.image.name
+        argocd-image-updater.argoproj.io/backend.helm.image-tag: backend.image.tag
+        argocd-image-updater.argoproj.io/frontend.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/frontend.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+        argocd-image-updater.argoproj.io/frontend.helm.image-name: frontend.image.name
+        argocd-image-updater.argoproj.io/frontend.helm.image-tag: frontend.image.tag
+      {{- else if eq .app "dynamic-assets-data-aggregator" }}
+        argocd-image-updater.argoproj.io/image-list: expose=jfrog.ledgerlabs.net/bcs-oci-prod-green/dynamic-assets-data-aggregator-expose,writer=jfrog.ledgerlabs.net/bcs-oci-prod-green/dynamic-assets-data-aggregator-writer
+        argocd-image-updater.argoproj.io/write-back-method: argocd
+        argocd-image-updater.argoproj.io/expose.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/expose.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+        argocd-image-updater.argoproj.io/expose.helm.image-name: expose.image.name
+        argocd-image-updater.argoproj.io/expose.helm.image-tag: expose.image.tag
+        argocd-image-updater.argoproj.io/writer.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/writer.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+        argocd-image-updater.argoproj.io/writer.helm.image-name: writer.image.name
+        argocd-image-updater.argoproj.io/writer.helm.image-tag: writer.image.tag
+      {{- else if eq .app "backend-ledger-button" }}
+        argocd-image-updater.argoproj.io/image-list: ledgerb=jfrog.ledgerlabs.net/bcs-oci-prod-green/backend-ledger-button
+        argocd-image-updater.argoproj.io/ledgerb.write-back-method: argocd
+        argocd-image-updater.argoproj.io/ledgerb.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/ledgerb.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+        argocd-image-updater.argoproj.io/ledgerb.helm.image-name: app-template.image.repository
+        argocd-image-updater.argoproj.io/ledgerb.helm.image-tag: app-template.image.tag
+      {{- else }}
+        argocd-image-updater.argoproj.io/image-list: backend-core-services=ghcr.io/ledgerhq/{{.app}}
+      {{- end }}
+      {{- if and (ne .app "coinradar") (ne .app "dynamic-assets-data-aggregator") }}
+        argocd-image-updater.argoproj.io/write-back-method: argocd
+        argocd-image-updater.argoproj.io/backend-core-services.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/backend-core-services.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+        argocd-image-updater.argoproj.io/backend-core-services.helm.image-name: image.name
+        argocd-image-updater.argoproj.io/backend-core-services.helm.image-tag: image.tag  
+      {{- end }}
+      {{- if .notification }}
+        notifications.argoproj.io/subscribe.slack: {{.notification}}
+      {{ end }}
+  generators:
+    - list:
+        elements:
+          - app: countervalue-service
+            project_id: '2034'
+            revision: master
+            path: 'argocd/stg'
+            notification: backend-b2c-private-cvs
+          - app: nano-appstore
+            project_id: '2039'
+            revision: master
+            path: 'argocd/stg'
+            notification: backend-b2c-private-appstore
+          - app: nano-appstore-front
+            project_id: '2039'
+            revision: master
+            path: 'argocd/stg'
+            notification: backend-b2c-private-appstore
+          - app: nft-metadata-service
+            project_id: '2104'
+            revision: main
+            path: 'argocd/stg'
+            notification: backend-b2c-private-nms
+          - app: web3checks-backend
+            project_id: '2127'
+            revision: master
+            path: 'argocd/stg'
+            notification: backend-b2c-private-w3c
+          - app: mapping-service
+            project_id: '2167'
+            revision: master
+            path: 'argocd/stg'
+            notification: backend-b2c-private-map
+          - app: cloud-sync-backend
+            project_id: '2189'
+            revision: main
+            path: 'argocd/stg'
+            notification: backend-b2c-private-cloud-sync
+          - app: trustchain-backend
+            project_id: '2191'
+            revision: main
+            path: 'argocd/stg'
+            notification: backend-b2c-private-trustchain
+          - app: coinradar
+            project_id: '2199'
+            revision: main
+            path: 'argocd/stg'
+            notification: backend-b2c-private-coinradar
+          - app: crypto-assets-service
+            project_id: '2211'
+            revision: master
+            path: 'argocd/stg'
+            notification: backend-b2c-private-cal
+          - app: dynamic-assets-data-aggregator
+            project_id: '2339'
+            revision: main
+            path: 'argocd/stg'
+            notification: backend-b2c-private-dada
+          - app: backend-ledger-button
+            project_id: '2352'
+            revision: main
+            path: 'argocd/stg'
+            notification: backend-ledger-button
+  template:
+    metadata:
+      name: '{{.app}}-stg'
+      namespace: argocd-central
+      labels:
+        environment: stg
+        owner: backend-core
+        project: '{{.project_id}}'
+        organization: 'wallet-services'
+        service: '{{.app}}'
+    spec:
+      project: backend-core-services
+      ignoreDifferences:
+        - group: "apps"
+          kind: "Deployment"
+          jsonPointers:
+            - /spec/replicas
+      source:
+        repoURL: 'https://github.com/LedgerHQ/{{.app}}.git'
+        targetRevision: '{{.revision}}'
+        path: '{{.path}}'
+        helm:
+          releaseName: '{{.app}}'
+          valueFiles:
+            - 'values.yaml'
+      destination:
+        name: shared-application-2021-cluster
+        namespace: '{{.project_id}}-{{.app}}'
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true
+          - RespectIgnoreDifferences=true
+  syncPolicy:
+    preserveResourcesOnDeletion: true

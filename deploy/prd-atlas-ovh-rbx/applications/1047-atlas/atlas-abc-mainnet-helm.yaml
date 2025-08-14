@@ -1,0 +1,66 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: atlas-abc-mainnet-helm
+  namespace: argocd
+spec:
+  generators:
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/atlas: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/bhs8: "true"
+      values:
+        datacenter: bhs
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/atlas: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/rbx8: "true"
+      values:
+        datacenter: rbx
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/atlas: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/fsn1: "true"
+      values:
+        datacenter: fsn
+  template:
+    metadata:
+      name: "{{name}}-atlas-abc-mainnet-helm"
+      annotations:
+        notifications.argoproj.io/subscribe.slack: "atlas-notifications"
+        argocd.ledger.fr/environment: "Production"
+      labels:
+        service: "1047-atlas"
+        env: "production"
+        coin: "abc"
+        application: "atlas"
+        type: "atlas-bitcoin"
+    spec:
+      project: 1047-atlas
+      source:
+        repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+        targetRevision: main
+        path: "deploy/production/atlas/helm/atlas-abc-mainnet"
+        helm:
+          releaseName: atlas-abc-mainnet
+          values: |
+            atlas:
+              custom:
+                datacenter: "{{values.datacenter}}"
+              databases:
+                datacenter: "{{values.datacenter}}"
+              argo-hooks:
+                common:
+                  argoAppName: "{{name}}-atlas-abc-mainnet-helm"
+      destination:
+        server: "{{server}}"
+        namespace: "1047-atlas"
+      syncPolicy:
+        automated: {}

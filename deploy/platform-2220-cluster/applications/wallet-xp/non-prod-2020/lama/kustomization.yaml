@@ -1,0 +1,15 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - lama-bitcoin-transaction-crafter-stg.yaml
+  - lama-bitcoin-transaction-crafter-ppr.yaml
+  - lama-bitcoin-family-service-stg.yaml
+  - lama-bitcoin-family-service-ppr.yaml
+  - lama-cardano-stg.yaml
+  - lama-cardano-ppr.yaml
+  - lama-ethereum-ppr.yaml
+  - lama-ethereum-stg.yaml
+  - lama-scheduler.yaml
+  - lama-solana-stg.yaml
+  - lama-solana-ppr.yaml

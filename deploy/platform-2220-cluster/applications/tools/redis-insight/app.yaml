@@ -1,0 +1,58 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: redis-insight
+  namespace: argocd-central
+  labels:
+    service: "redis-insight"
+    owner: "team-infra-sre"
+    project: "redis-insight"
+    organization: "infrastructure"
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - cluster: shared-application-2021-cluster
+            env: "stg"
+            id: "2349"
+            name: 2349-redis-insight
+          - cluster: shared-application-2086-cluster
+            env: "prd"
+            id: "2348"
+            name: 2348-redis-insight
+
+  template:
+    metadata:
+      name: "redis-insight-{{ .env }}-{{ .id }}"
+      namespace: argocd-central
+      labels:
+        service: "redis-insight"
+        owner: "team-infra-sre"
+        project: "redis-insight"
+        organization: "infrastructure"
+        env: "{{ .env }}"
+    spec:
+      project: redis-insight
+      sources:
+        - repoURL: https://github.com/LedgerHQ/sre-argocd.git
+          targetRevision: main
+          ref: values
+        - repoURL: https://github.com/LedgerHQ/sre-redisinsight.git
+          path: argocd/base
+          targetRevision: main
+          helm:
+            passCredentials: true
+            valueFiles:
+              - "$values/deploy/platform-2220-cluster/applications/tools/redis-insight/values/{{ .env }}.yaml"
+      destination:
+        name: "{{ .cluster }}"
+        namespace: "{{ .name }}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

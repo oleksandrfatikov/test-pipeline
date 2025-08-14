@@ -1,0 +1,33 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loyalty-program-prd
+  namespace: argocd-central
+  annotations:
+    notifications.argoproj.io/subscribe.slack: "infra-ecommerce-cd"
+    notifications.argoproj.io/subscribe.github: ""
+    argocd.ledger.fr/environment: "Production"
+    argocd-image-updater.argoproj.io/image-list: loyalty-program=ghcr.io/ledgerhq/loyalty-program:main
+    argocd-image-updater.argoproj.io/update-strategy: digest
+    argocd-image-updater.argoproj.io/loyalty-program.helm.image-name: app-template.image.name
+    argocd-image-updater.argoproj.io/loyalty-program.helm.image-tag: app-template.image.tag
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2198"
+    organization: "consumer"
+    service: "loyalty-program"
+spec:
+  project: loyalty-program
+  source:
+    repoURL: https://github.com/LedgerHQ/loyalty-program.git
+    targetRevision: "main"
+    path: argocd/prd
+  destination:
+    name: shared-application-2086-cluster
+    namespace: 2198-loyalty-program
+  syncPolicy:
+    automated: {}

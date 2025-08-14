@@ -1,0 +1,18 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: ms-opsgenie-edge-connector
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: ms-opsgenie-edge-connector tool
+  sourceRepos:
+    - 'https://github.com/LedgerHQ/infra-k8s-manifests.git'
+  destinations:
+    - namespace: tools
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

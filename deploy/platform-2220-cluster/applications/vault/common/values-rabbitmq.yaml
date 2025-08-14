@@ -1,0 +1,93 @@
+---
+auth:
+  username: user
+  password: "mysecretpassword"
+
+  # securePassword defaults to true in chart values
+  # added to avoid conflict with enabled loadDefinition
+  securePassword: false
+  existingPasswordSecret: "common-secrets-rabbitmq"
+  existingErlangSecret: "common-secrets-rabbitmq"
+
+# If this is not enabled, RabbitMQ thinks it has way more memory than what is allowed by K8s
+memoryHighWatermark:
+  enabled: true
+  type: "relative"
+  value: 0.8
+
+clustering:
+  ## @param clustering.rebalance Rebalance master for queues in cluster when new replica is created
+  ## ref: https://www.rabbitmq.com/rabbitmq-queues.8.html#rebalance
+  ##
+  rebalance: false
+  ## @param clustering.forceBoot Force boot of an unexpectedly shut down cluster (in an unexpected order).
+  ## forceBoot executes 'rabbitmqctl force_boot' to force boot cluster shut down unexpectedly in an unknown order
+  ## ref: https://www.rabbitmq.com/rabbitmqctl.8.html#force_boot
+  forceBoot: false
+
+loadDefinition:
+  enabled: true
+  existingSecret: "common-secrets-rabbitmq"
+
+replicaCount: 3
+
+podAnnotations:
+  ad.datadoghq.com/rabbitmq.check_names: '["rabbitmq"]'
+  ad.datadoghq.com/rabbitmq.init_configs: "[{}]"
+  ad.datadoghq.com/rabbitmq.instances: |
+    [
+      {
+        "rabbitmq_api_url":"http://%%host%%:15672/api/",
+        "username":"datadog",
+        "password":"%%env_DD_RABBITMQ_PASSWORD_PRD%%"
+      }
+    ]
+  cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: group
+              operator: In
+              values:
+                - vault
+
+resources:
+  requests:
+    cpu: 1
+    memory: 4Gi
+  limits:
+    cpu: 2
+    memory: 4Gi
+
+# We use a combination of Parallel podManagementPolicy and a pdb so that we can rollout
+# safely rabbitmq and if all the rabbitmq instances are down they are able to be brought
+# back up on their own. If podManagementPolicy was the default Ordered ready the first rabbitmq
+# will not be able to start (and thus preventing the whole cluster to start) as it would wait for quorum.
+podManagementPolicy: Parallel
+pdb:
+  create: true
+  minAvailable: ""
+  maxUnavailable: 1
+
+persistence:
+  enabled: true
+  storageClass: "gp3-retain"
+  accessMode: ReadWriteOnce
+  size: 10Gi
+
+ingress:
+  ingressClassName: trusted
+  pathType: Prefix
+  tls: true
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+
+metrics:
+  enabled: true
+  plugins: "rabbitmq_prometheus"
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "{{ .Values.service.metricsPort }}"

@@ -1,0 +1,142 @@
+## Default values for Datadog Agent
+## See Datadog helm documentation to learn more:
+## https://docs.datadoghq.com/agent/kubernetes/helm/
+
+targetSystem: "linux"
+
+datadog:
+  apiKeyExistingSecret: datadog-secrets
+  appKeyExistingSecret: datadog-secrets
+  clusterName: prd-atlas-ovh-bhs
+  site: datadoghq.eu
+  tags:
+    - "env:prd"
+    - "datacenter:bhs"
+    - "organization:wallet-services"
+  nodeLabelsAsTags:
+    service-id: service-id
+    salt-env: salt-env
+  # datadog.kubelet.tlsVerify should be `false` to establish communication with the kubelet
+  kubelet:
+    tlsVerify: "false"
+  logs:
+    enabled: true
+    containerCollectAll: true
+    containerCollectUsingFiles: true
+  otlp:
+    receiver:
+      protocols:
+        grpc:
+          enabled: true
+          useHostPort: false
+  env:
+    - name: DD_CONTAINER_EXCLUDE_LOGS
+      value: "image:.*"
+    - name: DD_CONTAINER_INCLUDE_LOGS
+      value: "image:haproxytech/kubernetes-ingress"
+    - name: DD_CONTAINER_EXCLUDE_METRICS
+      value: "kube_namespace:.*"
+    - name: DD_CONTAINER_INCLUDE_METRICS
+      value: "kube_namespace:1047-.* image:ghcr.io/ledgerhq/infra-tools/ledger-explorer-exporter kube_namespace:tools kube_namespace:.*intnodes.* kube_namespace:1079-blockchains-lb"
+    - name: DD_DISABLE_CLUSTER_NAME_TAG_KEY
+      value: "true"
+    - name: DD_OTLP_CONFIG_METRICS_RESOURCE_ATTRIBUTES_AS_TAGS
+      value: "true"
+  processAgent:
+    enabled: true
+    processCollection: true
+  systemProbe:
+    enableTCPQueueLength: false
+    enableOOMKill: true
+    collectDNSStats: true
+  networkMonitoring:
+    enabled: true
+  traceroute:
+    enabled: true
+  confd:
+    disk.yaml: |
+      init_config: {}
+      instances:
+        - use_mount: false
+          device_exclude:
+            - overlay
+            - shm
+            - tmpfs
+            - udev
+    syslog.yaml: |
+      logs:
+        - type: file
+          path: /host/var/log/syslog
+          source: syslog
+          service: systemd-networkd
+          tags:
+            - type:network
+          log_processing_rules:
+            - type: include_at_match
+              name: systemd_networkd_issues
+              pattern: systemd-networkd.*
+        - type: file
+          path: /host/var/log/syslog
+          source: syslog
+          service: systemd-resolved
+          tags:
+            - type:network
+          log_processing_rules:
+            - type: include_at_match
+              name: systemd_resolved_issues
+              pattern: systemd-resolved.*
+        - type: file
+          path: /host/var/log/syslog
+          source: syslog
+          service: networkd-dispatcher
+          tags:
+            - type:network
+          log_processing_rules:
+            - type: include_at_match
+              name: networkd_dispatcher_issues
+              pattern: networkd-dispatcher.*
+    openmetrics.yaml: |
+      init_config:
+      instances:
+        - openmetrics_endpoint: http://%%env_DD_KUBERNETES_KUBELET_HOST%%:2509/metrics
+          namespace: "ledger-network-exporter"
+          metrics:
+            - .*
+          tags:
+            - service:ledger-network-exporter
+          min_collection_interval: 60
+## https://docs.datadoghq.com/fr/containers/kubernetes/distributions/?tab=helm#Rancher
+agents:
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 50%
+  tolerations:
+    - effect: NoExecute
+      key: node-role.kubernetes.io/etcd
+      operator: Exists
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+  ## Fix for mountpoints that not detects by Datadog
+  volumes:
+    - hostPath:
+        path: /boot
+      name: boot
+    - hostPath:
+        path: /data
+      name: data
+    - hostPath:
+        path: /var/log
+      name: host-logs
+  volumeMounts:
+    - name: boot
+      mountPath: /host/boot
+      readOnly: true
+    - name: data
+      mountPath: /host/data
+      readOnly: true
+    - name: host-logs
+      mountPath: /host/var/log
+      readOnly: true
+clusterAgent:
+  token: bjb9qxw3UMTrda8fvyZXZ4yky9vbpZVB

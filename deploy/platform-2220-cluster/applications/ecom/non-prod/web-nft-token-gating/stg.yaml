@@ -1,0 +1,34 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: web-nft-token-gating-stg
+  namespace: argocd-central
+  annotations:
+    notifications.argoproj.io/subscribe.github: ""
+    notifications.argoproj.io/subscribe.slack: infra-ecommerce-cd
+    argocd.ledger.fr/environment: dev
+    argocd-image-updater.argoproj.io/image-list: web-nft-token-gating=ghcr.io/ledgerhq/web-nft-token-gating:main-dev
+    argocd-image-updater.argoproj.io/update-strategy: digest
+    argocd-image-updater.argoproj.io/web-nft-token-gating.helm.image-name: app-template.image.repository
+    argocd-image-updater.argoproj.io/web-nft-token-gating.helm.image-tag: app-template.image.tag
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    environment: "stg"
+    owner: "team-infra-sre"
+    project: "2158"
+    organization: "consumer"
+    service: "web-nft-token-gating"
+spec:
+  project: web-nft-token-gating
+  source:
+    repoURL: https://github.com/LedgerHQ/web-nft-token-gating.git
+    targetRevision: main
+    path: argocd/stg
+  destination:
+    name: shared-application-2021-cluster
+    namespace: web-nft-token-gating-stg
+  syncPolicy:
+    automated:
+      prune: true

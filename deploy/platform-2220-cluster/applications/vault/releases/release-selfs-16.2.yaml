@@ -1,0 +1,33 @@
+---
+appset:
+  categoryValues:
+    upstream:
+      disableDefaultTagRevision: true
+      path: ""
+
+    gates-self-version:
+      inlineValues:
+        env:
+          VAULT_HSM_SCRIPTS_VERSION: 16.2.3
+
+    gates-self-version-stg:
+      inlineValues:
+        env:
+          VAULT_HSM_SCRIPTS_VERSION: 16.2.3-dave+028307d6
+
+    hsmdrivers:
+      repoUrl: https://github.com/LedgerHQ/ledger-vault-hsm-driver
+      path: argocd/base
+      targetRevision: 9.4.1
+      inlineValues:
+        image:
+          repository: ghcr.io/ledgerhq/ledger-vault-hsm-driver
+
+    hsmgateways:
+      repoUrl: https://github.com/LedgerHQ/hsm-gateway-rs
+      path: argocd/base
+      targetRevision: 3.5.2
+      useAppTemplate: true
+      inlineValues:
+        image:
+          repository: ghcr.io/ledgerhq/hsm-gateway

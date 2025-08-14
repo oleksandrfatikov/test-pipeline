@@ -1,0 +1,45 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: monitoring-ledger-explorer-exporter
+  namespace: argocd
+  labels:
+    service: "ledger-explorer-exporter"
+    env: "production"
+spec:
+  generators:
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/atlas: "true"
+          environment.ledger.com/production: "true"
+  template:
+    metadata:
+      name: "{{name}}-monitoring-ledger-explorer-exporter"
+    spec:
+      project: internal
+      source:
+        repoURL: https://github.com/LedgerHQ/ms-tools.git
+        targetRevision: master
+        path: monitoring/ledger-explorer-exporter/production-atlas-clusters/kustomize
+        kustomize:
+          patches:
+            - target:
+                kind: Deployment
+                name: ledger-explorer-exporter
+              patch: |-
+                - op: add
+                  path: "/spec/template/spec/containers/0/env/-"
+                  value:
+                    name: K8S_DATACENTER
+                    value: {{name}}
+      destination:
+        server: "{{server}}"
+        namespace: "monitoring"
+      syncPolicy:
+        automated:
+          prune: false
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

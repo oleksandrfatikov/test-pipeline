@@ -1,0 +1,38 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: b2c-keycloak-back-prd
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: b2-keycloak-back-prd
+  sourceRepos:
+    - "https://github.com/LedgerHQ/sre-argocd.git"
+    - "ghcr.io"
+  destinations:
+    - namespace: 2157-backend-services-keycloak-prd
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: b2c-keycloak-back-prd
+  namespace: argocd
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    service: "b2c-keycloak"
+spec:
+  project: b2c-keycloak-back-prd
+  source:
+    repoURL: https://github.com/LedgerHQ/sre-argocd.git
+    targetRevision: main
+    path: deploy/shared-application-2086-cluster/applications/2157-b2c-keycloak-back
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2157-backend-services-keycloak-prd

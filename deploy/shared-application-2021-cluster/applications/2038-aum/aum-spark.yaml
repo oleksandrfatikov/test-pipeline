@@ -1,0 +1,27 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: aum-spark
+  namespace: argocd
+  labels:
+    environment: "stg"
+    owner: "team-infra-sre"
+    project: "2038"
+    organization: "backend-blockchain"
+    service: "aum"
+spec:
+  project: aum
+  source:
+    repoURL: https://github.com/LedgerHQ/aum.git
+    targetRevision: main
+    path: argocd/stg
+    helm:
+      releaseName: aum-spark
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2038-aum
+  syncPolicy:
+    automated: {}

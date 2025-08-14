@@ -1,0 +1,90 @@
+---
+controller:
+  kind: DaemonSet
+  nodeSelector:
+    role.ledger.com/intnodes-haproxy: "true"
+  extraArgs:
+    - --healthz-bind-port=1042
+    - --stats-bind-port=8024
+    - --localpeer-port=10000
+    - --prometheus
+  config:
+    maxconn: '200000'
+  containerPort:
+    http: 8080
+    https: 8443
+    stat: 8024
+    healthz: 1042
+    prometheus: 6060
+  ingressClass: intnodes-haproxy
+  ingressClassResource:
+    enabled: false
+    name: intnodes-haproxy
+    default: false
+  defaultTLSSecret:
+    enabled: false
+  service:
+    enabled: true
+    type: ClusterIP
+    ports:
+      http: 8080
+      https: 8443
+      stat: 8024
+      healthz: 1042
+    prometheus: 6060
+  daemonset:
+    useHostNetwork: false
+    useHostPort: true
+    hostPorts:
+      http: 8080
+      https: 8443
+      stat: 8024
+      healthz: ""
+    prometheus: ""
+  logging:
+    level: warning
+    traffic:
+      address: stdout
+      format: raw
+      facility: daemon
+  livenessProbe:
+    timeoutSeconds: 2
+  startupProbe:
+    periodSeconds: 10
+    timeoutSeconds: 5
+  extraEnvs:
+    - name: ALGO_API_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: algo-token
+          key: token
+  podAnnotations:
+    ad.datadoghq.com/kubernetes-ingress-controller.checks: |
+      {
+        "haproxy": {
+          "init_config": {},
+          "instances": [
+            {
+              "openmetrics_endpoint": "http://%%host%%:%%port_stat%%/metrics",
+              "use_openmetrics": true,
+              "exclude_metrics_by_labels": {
+                "proxy": [".*internal_stat*.", ".*internal_healthz*."]
+              }
+            }
+          ]
+        }
+      }
+    ad.datadoghq.com/kubernetes-ingress-controller.logs: |
+      [
+        {
+          "source": "haproxy",
+          "service": "intnodes-haproxy-kubernetes-ingress",
+          "log_processing_rules": [
+            {
+              "type": "include_at_match",
+              "name": "include_warn_and_error",
+              "pattern": "(WARN|ERROR)"
+            }
+          ]
+        }
+      ]

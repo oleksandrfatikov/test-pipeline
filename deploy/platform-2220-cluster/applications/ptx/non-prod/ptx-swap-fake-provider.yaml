@@ -1,0 +1,46 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: swap-fake-provider-stg
+  namespace: argocd-central
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    environment: stg
+    owner: team-infra-sre
+    project: "2032"
+    organization: consumer
+    service: swap
+  annotations:
+    argocd-image-updater.argoproj.io/write-back-method: argocd
+    argocd-image-updater.argoproj.io/image-list: app=jfrog.ledgerlabs.net/virtual-oci-prod-green/ledger-swapcexpartner-simulator
+    argocd-image-updater.argoproj.io/app.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/app.allow-tags: regexp:^\d+\.\d+\.\d+$
+    argocd-image-updater.argoproj.io/app.helm.image-name: app-template.image.repository
+    argocd-image-updater.argoproj.io/app.helm.image-tag: app-template.image.tag
+    argocd.ledger.fr/environment: "Staging"
+spec:
+  project: ptx-services
+  ignoreDifferences:
+    - group: "apps"
+      kind: "Deployment"
+      jsonPointers:
+        - /spec/replicas
+  sources:
+    - repoURL: https://github.com/LedgerHQ/swap.git
+      targetRevision: master
+      path: argocd/fake-provider-stg
+      helm:
+        releaseName: swap-fake-provider
+        valueFiles:
+          - 'values.yaml'
+  destination:
+    name: shared-application-2021-cluster
+    namespace: 2032-swap
+  syncPolicy:
+    automated:
+      selfHeal: true
+    syncOptions:
+      - Validate=true
+      - ServerSideApply=true

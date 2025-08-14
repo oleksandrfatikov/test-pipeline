@@ -1,0 +1,22 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: loyalty-program
+  namespace: argocd-central
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: loyalty-program project
+  sourceRepos:
+    - "https://github.com/LedgerHQ/loyalty-program.git"
+    - "ghcr.io"
+    - "ghcr.io/ledgerhq/charts"
+  destinations:
+    - namespace: "loyalty-program-pr*"
+      name: shared-application-2021-cluster
+    - namespace: loyalty-program-stg
+      name: shared-application-2021-cluster
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

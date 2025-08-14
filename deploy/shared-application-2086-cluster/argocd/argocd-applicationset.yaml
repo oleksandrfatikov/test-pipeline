@@ -1,0 +1,47 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: argocd
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/LedgerHQ/tf-ledgerips-module.git
+        revision: HEAD
+        files:
+          - path: ledgerips.yaml
+  goTemplate: true
+  template:
+    metadata:
+      name: argocd
+    spec:
+      project: internal
+      sources:
+        - chart: argo-cd
+          repoURL: https://argoproj.github.io/argo-helm
+          targetRevision: 8.2.5
+          helm:
+            releaseName: argocd
+            valueFiles:
+              - $values/deploy/shared-application-2086-cluster/argocd/argocd-values.yaml
+            parameters:
+              - name: server.ingress.annotations.nginx\.ingress\.kubernetes\.io\/whitelist-source-range
+                value: "{{ .trusted_locations }},{{ .infra_vpn }},{{ .github_hooks }}"
+              - name: applicationSet.ingress.annotations.nginx\.ingress\.kubernetes\.io\/whitelist-source-range
+                value: "{{ .github_hooks }}"
+        - chart: argocd-image-updater
+          repoURL: https://argoproj.github.io/argo-helm
+          targetRevision: 0.12.3
+          helm:
+            releaseName: argocd-image-updater
+            valueFiles:
+              - $values/deploy/shared-application-2086-cluster/argocd/argocd-image-updater-values.yaml
+        - repoURL: https://github.com/LedgerHQ/sre-argocd.git
+          targetRevision: main
+          ref: values
+      destination:
+        name: eks-prd
+        namespace: argocd
+      syncPolicy:
+        automated: {}

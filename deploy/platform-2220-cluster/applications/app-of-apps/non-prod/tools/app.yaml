@@ -1,0 +1,22 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: app-of-apps-tools
+  namespace: argocd-central
+  labels:
+    owner: "team-infra-sre"
+    project: "tools"
+    organization: "infrastructure"
+    service: "tools"
+spec:
+  project: internal
+  source:
+    repoURL: https://github.com/LedgerHQ/sre-argocd.git
+    targetRevision: main
+    path: deploy/platform-2220-cluster/applications/tools/non-prod
+  destination:
+    name: in-cluster
+    namespace: argocd-central
+  syncPolicy:
+    automated: {}

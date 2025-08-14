@@ -1,0 +1,77 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: 1056-intnodes-near
+  namespace: argocd-central
+spec:
+  strategy:
+    type: RollingSync
+    rollingSync:
+      steps:
+        - matchExpressions:
+            - key: datacenter.ledger.com/intnodes
+              operator: In
+              values:
+                - "true"
+          maxUpdate: 30%
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            application.ledger.com/intnodes: "true"
+            environment.ledger.com/staging: "true"
+            datacenter.ledger.com/fsn1: "true"
+        values:
+          datacenter: stg-fsn
+          annotation_project_id: c-m-mqq5lrn6:p-qccf8
+          label_project_id: p-qccf8
+    - clusters:
+        selector:
+          matchLabels:
+            application.ledger.com/intnodes: "true"
+            environment.ledger.com/staging: "true"
+            datacenter.ledger.com/sbg5: "true"
+        values:
+          datacenter: stg-sbg
+          annotation_project_id: c-m-2tdhjscq:p-6r9kc
+          label_project_id: p-6r9kc
+  template:
+    metadata:
+      name: "{{name}}-1056-intnodes-near"
+      annotations:
+        argocd.ledger.fr/environment: "Staging"
+      labels:
+        service: "1056-intnodes-near"
+        env: "staging"
+        coin: "near"
+        type: "int-node"
+    spec:
+      project: 1054-intnodes
+      sources:
+        - repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+          targetRevision: main
+          path: 'deploy/staging/internal-blockchain-nodes/1056-intnodes-near'
+          helm:
+            releaseName: int-near-mainnet-node
+            values: |
+              intnodes:
+                custom:
+                  datacenter: "{{values.datacenter}}"
+        - repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+          targetRevision: main
+          path: 'deploy/staging/internal-blockchain-nodes/1056-intnodes-near'
+          directory:
+            recurse: false
+            include: '{indexer-service.yaml,indexer-ingress.yaml}'
+      destination:
+        server: "{{server}}"
+        namespace: "1056-intnodes-near"
+      syncPolicy:
+        managedNamespaceMetadata:
+          annotations:
+            field.cattle.io/projectId: "{{values.annotation_project_id}}"
+          labels:
+            field.cattle.io/projectId: "{{values.label_project_id}}"
+        syncOptions:
+          - CreateNamespace=true

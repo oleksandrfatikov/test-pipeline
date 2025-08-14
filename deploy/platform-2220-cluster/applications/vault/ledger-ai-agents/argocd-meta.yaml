@@ -1,0 +1,21 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: ledger-ai-agents
+  namespace: argocd-central
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: ledger-ai-agents - Argocd project (Appset, etc.)
+  sourceRepos:
+    - https://github.com/LedgerHQ/sre-argocd.git
+    - ghcr.io/ledgerhq/charts
+  destinations:
+    - namespace: argocd-central
+      name: in-cluster
+  namespaceResourceBlacklist:
+    - group: argoproj.io/v1alpha1
+      kind: AppProject
+    - group: argoproj.io/v1alpha1
+      kind: ApplicationSet

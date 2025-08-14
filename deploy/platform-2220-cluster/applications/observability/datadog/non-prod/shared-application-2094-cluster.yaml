@@ -1,0 +1,83 @@
+---
+datadog:
+  apiKeyExistingSecret: datadog-secrets
+  appKeyExistingSecret: datadog-secrets
+  clusterName: shared-application-2094-cluster
+  site: datadoghq.eu
+  nodeLabelsAsTags:
+    topology.kubernetes.io/zone: availability-zone
+    group: group
+    node.kubernetes.io/instance-type: instance-type
+  podLabelsAsTags:
+    app: application
+  tags:
+    - "organization:infrastructure"
+  logs:
+    enabled: true
+    containerCollectAll: true
+  apm:
+    enabled: true
+    portEnabled: true
+    socketEnabled: false
+    instrumentation:
+      skipKPITelemetry: true
+  otlp:
+    receiver:
+      protocols:
+        grpc:
+          enabled: true
+  dogstatsd:
+    useHostPort: true
+  env:
+    - name: DD_CONTAINER_EXCLUDE_LOGS
+      value: "kube_namespace:.*"
+    - name: DD_CONTAINER_EXCLUDE_METRICS
+      value: "kube_namespace:.*"
+    - name: DD_CONTAINER_INCLUDE_LOGS
+      value: "kube_namespace:.*-vault-.* kube_namespace:tools kube_namespace:2144-swap kube_namespace:minivault-demo-.* kube_namespace:2206-buy kube_namespace:2301-lama-adapter-ppr kube_namespace:2246-idverse kube_namespace:2253-exchange-tx-manager kube_namespace:rundeck"
+    - name: DD_CONTAINER_INCLUDE_METRICS
+      value: "kube_namespace:.*-vault-.* kube_namespace:tools kube_namespace:2144-swap kube_namespace:minivault-demo-.* kube_namespace:2206-buy kube_namespace:2301-lama-adapter-ppr kube_namespace:2246-idverse kube_namespace:2253-exchange-tx-manager kube_namespace:rundeck"
+    - name: DD_LOGS_CONFIG_OPEN_FILES_LIMIT
+      value: "300"
+    - name: DD_PROFILING_ENABLED
+      value: "false"
+    - name: DD_RABBITMQ_PASSWORD_PPR
+      valueFrom:
+        secretKeyRef:
+          name: datadog-secrets
+          key: rabbitmq-datadog-ppr
+    - name: DD_RABBITMQ_PASSWORD_PRD
+      valueFrom:
+        secretKeyRef:
+          name: datadog-secrets
+          key: rabbitmq-datadog-prd
+  processAgent:
+    processCollection: true
+  remoteConfiguration:
+    enabled: false
+clusterAgent:
+  rbac:
+    flareAdditionalPermissions: false
+  metricsProvider:
+    enabled: true
+  env:
+    - name: DD_VAULT_PG_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: datadog-secrets
+          key: DD_VAULT_PG_PASSWORD
+  admissionController:
+    mutateUnlabelled: true
+agents:
+  containers:
+    traceAgent:
+      env:
+        - name: DD_APM_FILTER_TAGS_REJECT
+          value: "no_trace:no_trace"
+  customAgentConfig:
+    apm_config:
+      enabled: true
+      apm_non_local_traffic: true
+    jmx_use_container_support: true
+remoteConfiguration:
+  enabled: false

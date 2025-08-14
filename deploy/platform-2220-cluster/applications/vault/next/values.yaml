@@ -1,0 +1,826 @@
+---
+# yaml-language-server: $schema=next-schema.json
+appset:
+  categoryValues:
+    upstream:
+      disableDefaultTagRevision: true
+      path: ""
+    default:
+      targetRevision: main
+      syncPolicyMode: stg
+      inlineValues:
+        valueBundles:
+          eksStg:
+            enabled: true
+        custom:
+          env: next
+          vaultProjectId: "2043"
+          lamaNamespace: 2063-vault-stg
+          wdProjectId: "2043"
+          wdDBNamespace: 2043-vault-next
+          eksClusterId: "2021"
+
+    all:
+      path: argocd/base
+
+      # TODO : not used at the moment, need a fix i guess
+    lams:
+      repoUrl: https://github.com/LedgerHQ/vault-lam
+      useAppTemplate: true
+      inlineValues:
+        image:
+          repository: ghcr.io/ledgerhq/vault-lam
+          tag: 1.19.3@sha256:5b2f65df6c4841d70efd836e35aa7f194ff09cbb147f72c2ae285b12862fd64a
+        env:
+          GUNICORN_TIMEOUT: 300
+          TIMEOUT_API_CALL: 150
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "2Gi"
+          requests:
+            cpu: "250m"
+            memory: "1Gi"
+
+    gates-base:
+      repoUrl: https://github.com/LedgerHQ/ledger-vault-api
+      path: argocd/base
+
+    gates-previous:
+      targetRevision: 8.10.15
+
+    gates-current:
+      targetRevision: 8.11.7
+
+    gates-override:
+      inlineValues:
+        custom:
+          calVersion: 2025.40.2643
+        env:
+          VAULT_ATTESTATION_ID: 1
+          VAULT_USE_VAULT_INTERNALS: true
+          VAULT_USE_HSM_TEST_SIGNATURES: true
+          VAULT_TRADELINK_TESTS_MIN_CONFIRMATIONS_REQUIRED: 1 # specific tradelink for env testing : restrict the number of confirmation
+          VAULT_WALLET_DAEMON_NAME: default-next
+          VAULT_HSM_DRIVER_NAME: default
+          VAULT_PRICING_PLAN_NAME: enterprise
+          VAULT_BITCOIN_FAMILY_SERVICE_URL: "http://bitcoin-family-service.2063-vault-stg.svc.cluster.local"
+
+    gates-mix-preset:
+      extendCategories: [gates-base, gates-previous, gates-self-version-stg, gates-override]
+
+    gates-tests:
+      extendCategories: [gates-base, gates-current, gates-self-version-stg, gates-override]
+
+    hsmdrivers:
+      inlineValues:
+        custom:
+          hsmEnv: "simu"
+        env:
+          VAULT_HSM_ENDPOINT: https://vault-qa.hsmsaas3.ledger-stg.com/next/process
+          VAULT_HSM_ENV: "DEV"
+        resources:
+          requests:
+            memory: "256Mi" # could not be backport in the driver values, it's in java, we should allow that only in stg
+        certexporter:
+          image:
+            tag: "1.0.0"
+
+    hsmproxys:
+      inlineValues:
+        custom:
+          hsmEnv: "simu"
+        env:
+          VAULT_HSM_ENDPOINT: https://vault-qa.hsmsaas3.ledger-stg.com/next
+
+    hsmproxysequencers:
+      inlineValues:
+        custom:
+          hsmEnv: "simu"
+        env:
+          VAULT_HSM_ENDPOINT: https://vault-qa.hsmsaas3.ledger-stg.com/next
+
+    wds:
+      repoUrl: https://github.com/LedgerHQ/ledger-wallet-daemon
+      path: argocd/base
+      targetRevision: 75395d6b000dd8fbc0fd95067ff12929d654350b
+      useAppTemplate: true
+      inlineValues:
+        image:
+          tag: 2.18.3
+        custom:
+          vaultProjectId: 2043
+          env: "next"
+        resources:
+          requests:
+            cpu: "500m" # could not be backport in the wd values, we should allow that only in stg
+
+  projectValues:
+    upstream:
+      common-secrets:
+        repoUrl: ghcr.io/ledgerhq/charts
+        chartName: app-template
+        targetRevision: 4.10.4
+        inlineValues:
+          controller:
+            enabled: false
+          service:
+            main:
+              enabled: false
+          valueBundles:
+            eksStg:
+              enabled: true
+          externalSecret:
+            postgresql:
+              enabled: true
+              dataFrom:
+                - extract:
+                    key: 2043/tf-postgresql
+            rabbitmq:
+              enabled: true
+              dataFrom:
+                - extract:
+                    key: 2043/tf-rabbitmq
+            keycloak:
+              enabled: true
+              dataFrom:
+                - extract:
+                    key: keycloak-next/tf-keycloak
+      vault-rabbitmq:
+        repoUrl: https://charts.bitnami.com/bitnami
+        chartName: rabbitmq
+        targetRevision: 12.15.0
+        valueFiles:
+          - $git-ledgerhq-sreargocd/deploy/platform-2220-cluster/applications/vault/common/values-rabbitmq.yaml
+        inlineValues:
+          image:
+            registry: jfrog.ledgerlabs.net
+            repository: ossproxy-oci-proxy-dockerio/bitnami/rabbitmq
+            pullSecrets:
+              - name: container-registries
+          ingress:
+            enabled: true
+            hostname: vault-rabbitmq-next.aws.stg.ldg-tech.com
+          podAnnotations:
+            ad.datadoghq.com/rabbitmq.instances: |
+              [
+                {
+                  "rabbitmq_api_url":"http://%%host%%:15672/api/",
+                  "username":"datadog",
+                  "password":"%%env_DD_RABBITMQ_PASSWORD_STG_VAULT_NEXT%%"
+                }
+              ]
+      keycloak:
+        repoUrl: registry-1.docker.io/bitnamicharts
+        chartName: keycloak
+        targetRevision: 24.6.3
+        valueFiles:
+          - $git-ledgerhq-sreargocd/deploy/platform-2220-cluster/applications/vault/common/values-keycloak.yaml
+        inlineValues:
+          extraEnvVars: []
+          image:
+            registry: jfrog.ledgerlabs.net
+            repository: ossproxy-oci-proxy-dockerio/bitnami/keycloak
+            pullSecrets:
+              - name: container-registries
+          global:
+            security:
+              allowInsecureImages: true
+          production: true
+          ingress:
+            enabled: true
+            hostname: vault-keycloak-next.aws.stg.ldg-tech.com
+            hostnameStrict: true
+            tls: true
+            ingressClassName: trusted
+            annotations:
+              cert-manager.io/cluster-issuer: letsencrypt-prod
+          adminIngress:
+            enabled: false
+          tls:
+            enabled: true
+            autoGenerated: true
+          externalDatabase:
+            host: pg-main.2043-vault-next.aws.ldg-stg.net
+          metrics:
+            enabled: true
+          podAnnotations:
+            ad.datadoghq.com/keycloak.checks: |
+              {
+                "openmetrics": {
+                  "init_config": {},
+                  "instances": [
+                    {
+                      "openmetrics_endpoint": "http://%%host%%:8080/realms/master/metrics",
+                      "namespace": "keycloak",
+                      "metrics": [
+                        "jvm_memory_bytes_used",
+                        "jvm_memory_bytes_max",
+                        "jvm_memory_bytes_committed",
+                        "keycloak_logins*",
+                        "keycloak_response*",
+                        "keycloak_client_logins*",
+                        "keycloak_failed_login_attempts*",
+                        "keycloak_request_duration*"
+                      ],
+                      "tag_by_endpoint": false,
+                      "collect_histogram_buckets": true,
+                      "histogram_buckets_as_distributions": true,
+                      "collect_counters_with_distributions": true
+                    }
+                  ]
+                }
+              }
+
+    all:
+      apdu-connector:
+        repoUrl: https://github.com/LedgerHQ/vault-apdu-connector
+        useAppTemplate: true
+        targetRevision: c70f608bfba5773a9edc51c82faafecdb2746baf
+        inlineValues:
+          image:
+            tag: 1.1.3
+          resources:
+            requests:
+              cpu: "250m"
+
+      api-keys:
+        repoUrl: https://github.com/LedgerHQ/vault-api-keys
+        useAppTemplate: true
+        targetRevision: 1.0.6
+
+      api-gateway:
+        repoUrl: https://github.com/LedgerHQ/vault-api-gateway
+        useAppTemplate: true
+        targetRevision: 1.35.4
+
+      aum-api:
+        repoUrl: https://github.com/LedgerHQ/vault-aum-api
+        useAppTemplate: true
+        targetRevision: ad486e1490aed44a46a04188d70e937b4cc86ffc
+        inlineValues:
+          image:
+            repository: ghcr.io/ledgerhq/vault-aum-api
+            tag: 5.9.3
+
+      aus:
+        repoUrl: https://github.com/LedgerHQ/vault-aus-api
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/vault-aus-api:main
+        targetRevision: 0.9.0
+
+      authentication-service:
+        repoUrl: https://github.com/LedgerHQ/vault-authentication-service
+        useAppTemplate: true
+        targetRevision: 1.1.1
+
+      coin-gateway:
+        repoUrl: https://github.com/LedgerHQ/coin-gateway
+        useAppTemplate: true
+        targetRevision: 1.34.0
+        inlineValues:
+          env:
+            # All of those values is here because we need to point out to the right lama
+            CATAPLASM_WORKSPACES: '{"nextpublicapi2": {"url": "http://wd-default-next", "schema": "libcore_default-next_nextpublicapi2"},"nextsaltqa2": {"url": "http://wd-default-next", "schema": "libcore_default-next_nextsaltqa2"}, "nextbentesting": {"url": "http://wd-default-next", "schema": "libcore_default-next_nextbentesting"}, "nextsaltqa21": {"url": "http://wd-default-next", "schema": "libcore_default-next_nextsaltqa21"}, "nextsaltqa22": {"url": "http://wd-default-next", "schema": "libcore_default-next_nextsaltqa22"}, "nextsaltqa23": {"url": "http://wd-default-next", "schema": "libcore_default-next_nextsaltqa23"}, "nextsaltqa24": {"url": "http://wd-default-next", "schema": "libcore_default-next_nextsaltqa24"}, "nextsaltqa25": {"url": "http://wd-default-next", "schema": "libcore_default-next_nextsaltqa25"}}'
+            CATAPLASM_WORKERS: 8
+            # override until lama migration are done
+            CATAPLASM_BTC_KEYCHAIN_HOST: "http://keychain.2063-vault-stg.svc.cluster.local"
+            BITCOIN_TRANSACTION_CRAFTER_URL: "http://bitcoin-transaction-crafter.2063-vault-stg.svc.cluster.local"
+            CARDANO_ACCOUNT_READER_URL: "http://cardano-account-reader.2063-vault-stg.svc.cluster.local"
+            #CARDANO_TRANSACTION_CRAFTER_URL: "http://cardano-transaction-crafter.2063-vault-stg.svc.cluster.local"
+            CATAPLASM_SYNC_SCHEDULER_URL: "http://lama-scheduler.2063-vault-stg.svc.cluster.local"
+            ETHEREUM_ACCOUNT_READER_URL: "http://ethereum-account-reader.2063-vault-stg.svc.cluster.local"
+            #ETHEREUM_TRANSACTION_CRAFTER_URL: "http://ethereum-transaction-crafter.2063-vault-stg.svc.cluster.local"
+            #POLKADOT_WALLET_API_URL: "http://polkadot-wallet-api.2063-vault-stg.svc.cluster.local"
+            SOLANA_ACCOUNT_READER_URL: "http://solana-account-reader.2063-vault-stg.svc.cluster.local"
+            SOLANA_TRANSACTION_CRAFTER_URL: "http://solana-transaction-crafter.2063-vault-stg.svc.cluster.local"
+
+      # ==================================================================
+      # device-api - Used to enable software device in stg
+      # ==================================================================
+      device-api:
+        repoUrl: https://github.com/LedgerHQ/vault-device-api
+        useAppTemplate: true
+        targetRevision: 4.2.0
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/vault-device-api:main
+        inlineValues:
+          env:
+            BLUE_APP_BINDING_VERSION: 1
+
+      device-registry:
+        repoUrl: https://github.com/LedgerHQ/vault-device-registry
+        useAppTemplate: true
+        targetRevision: 2.2.5
+
+      front:
+        repoUrl: https://github.com/LedgerHQ/ledger-vault-front
+        targetRevision: 8.11.1
+        inlineValues:
+          custom:
+            # specific per env (DO NOT COPY)
+            enableSoftware: true
+            weblueUrl: "wss://weblue2.aws.prd.ldg-tech.com/speculos-weblue"
+            speculosUrl: "https://weblue2.aws.prd.ldg-tech.com/weblue"
+
+      nfts-api:
+        repoUrl: https://github.com/LedgerHQ/vault-nfts-api
+        useAppTemplate: true
+        targetRevision: 1.4.7
+
+      notification-center:
+        repoUrl: https://github.com/LedgerHQ/vault-notification-center
+        useAppTemplate: true
+        targetRevision: 1.2.0
+
+      notifier:
+        repoUrl: https://github.com/LedgerHQ/vault-notifier
+        targetRevision: 1.5.12
+
+      organizations-api:
+        repoUrl: https://github.com/LedgerHQ/vault-organizations-api
+        useAppTemplate: true
+        targetRevision: 4.2.4
+
+      platform-manager:
+        repoUrl: https://github.com/LedgerHQ/vault-platform-manager
+        targetRevision: 4e5734b726981309baf2b806219e39246d2adb07
+        inlineValues:
+          image:
+            tag: 2.4.0
+          controller:
+            replicas: 1
+          custom:
+            env: stg
+            redisHost: redis.2043-vault-next.aws.ldg-stg.net
+          env:
+            POSTGRES_DB: vault_platform_manager_next
+            USE_EXCHANGE_MOCKS: "false"
+            # temporary value to check old results are evicted
+            CELERY_RESULT_EXPIRES: "1800"
+          app:
+            resources:
+              # platform-manager is not used in next, we can reduce the resources
+              limits:
+                cpu: "500m"
+                memory: "1Gi"
+              requests:
+                cpu: "250m"
+                memory: "512Mi"
+
+      revault-api:
+        inlineValues:
+          env:
+            # this URL will be used as default if revault-api is not able
+            # to grab the information from org-api (it happens when testing
+            # only the onboarding, without deploying a Gate)
+            HSM_DRIVER_URL: "http://hsm-driver-default"
+            # this enable /debug router that contains some useful endpoints
+            # for debugging (e.g: list all workspaces, users, ...)
+            ENABLE_DEBUG_PROCEDURES: "1"
+            # override the debug auth token pulled from secret
+            # convenient for automation
+            REVAULT_DEBUG_AUTH_TOKEN: "stg-debug-auth-token"
+            # override the root auth token pulled from secret
+            # convenient for automation
+            REVAULT_ROOT_AUTH_TOKEN: "stg-root-auth-token"
+            # override until lama migration are done
+            ETHEREUM_ACCOUNT_READER_URL: "http://ethereum-account-reader.2063-vault-stg.svc.cluster.local"
+            CARDANO_ACCOUNT_READER_URL: "http://cardano-account-reader.2063-vault-stg.svc.cluster.local"
+            SOLANA_ACCOUNT_READER_URL: "http://solana-account-reader.2063-vault-stg.svc.cluster.local"
+            #POLKADOT_WALLET_API_URL: "http://polkadot-wallet-api.2063-vault-stg.svc.cluster.local"
+            BITCOIN_ACCOUNT_READER_URL: "http://bitcoin-transaction-crafter.2063-vault-stg.svc.cluster.local"
+            LAMA_SCHEDULER_URL: "http://scheduler.2063-vault-stg.svc.cluster.local"
+
+      revault-onboarding:
+        inlineValues:
+          custom:
+            blueAppVersion: "6.2.0-dev"
+            staxAppVersion: "2.0.2-dev"
+            staxFirmwareVersion: "1.8.0"
+            showDeviceSelector: true
+
+      revault-web:
+        repoUrl: https://github.com/LedgerHQ/revault
+        path: argocd/web
+        useAppTemplate: true
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/revault-web:main
+        inlineValues:
+          custom:
+            blueAppVersion: "6.2.0-dev"
+            staxAppVersion: "1.6.2-dev"
+            showDeviceSelector: true
+          resources:
+            requests:
+              cpu: "250m"
+
+      tradelink:
+        repoUrl: https://github.com/LedgerHQ/vault-tradelink
+        targetRevision: faa1b2f535ef90b061f1399b28c79105889d74ad
+        useAppTemplate: true
+        inlineValues:
+          image:
+            tag: 1.2.2
+
+      tx-scheduler:
+        repoUrl: https://github.com/LedgerHQ/vault-tx-scheduler
+        useAppTemplate: true
+        targetRevision: 1.3.4
+        inlineValues:
+          custom:
+            secretEnv: stg
+
+      web3checks-vault:
+        repoUrl: https://github.com/LedgerHQ/web3checks-vault
+        useAppTemplate: true
+        targetRevision: 1.1.2
+
+      web3-handler-api:
+        repoUrl: https://github.com/LedgerHQ/web3-handler-api
+        useAppTemplate: true
+        targetRevision: 1.5.0
+        inlineValues:
+          custom:
+            secretEnv: stg
+
+      # ==================================================================
+      # lam-nextsaltqa2 - Used to run automated tests from vault-e2e-tests
+      #                   More infos on #vault-next-info
+      # ==================================================================
+      lam-nextsaltqa2:
+        repoUrl: https://github.com/LedgerHQ/vault-lam
+        useAppTemplate: true
+        inlineValues:
+          image:
+            repository: ghcr.io/ledgerhq/vault-lam
+            tag: 1.19.3@sha256:5b2f65df6c4841d70efd836e35aa7f194ff09cbb147f72c2ae285b12862fd64a
+          env:
+            GUNICORN_TIMEOUT: 300
+            TIMEOUT_API_CALL: 150
+            API_AUTHENTICATION_KEY: "EzWcHvdRHfqUmuhTtSNgQsdZzHccrqjowPrqHaAOGMdjGUotOnWYbwdQusUCiCpw"
+            WORKSPACE: "nextsaltqa2"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+            requests:
+              cpu: "250m"
+              memory: "1Gi"
+      # ==================================================================
+      # lam-nextbentesting - Used by bharamboure-ledger for testing / debugging purposes
+      # ==================================================================
+      lam-nextbentesting:
+        repoUrl: https://github.com/LedgerHQ/vault-lam
+        useAppTemplate: true
+        inlineValues:
+          image:
+            repository: ghcr.io/ledgerhq/vault-lam
+            tag: 1.19.3@sha256:5b2f65df6c4841d70efd836e35aa7f194ff09cbb147f72c2ae285b12862fd64a
+          env:
+            GUNICORN_TIMEOUT: 300
+            TIMEOUT_API_CALL: 150
+            API_AUTHENTICATION_KEY: "EzWcHvdRHfqUmuhTtSNgQsdZzHccrqjowPrqHaAOGMdjGUotOnWYbwdQusUCiCpw"
+            WORKSPACE: "nextbentesting"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "2Gi"
+            requests:
+              cpu: "250m"
+              memory: "1Gi"
+      lam-nextapisalt:
+        repoUrl: https://github.com/LedgerHQ/vault-lam
+        useAppTemplate: true
+        inlineValues:
+          image:
+            repository: ghcr.io/ledgerhq/vault-lam
+            tag: 1.19.3@sha256:5b2f65df6c4841d70efd836e35aa7f194ff09cbb147f72c2ae285b12862fd64a
+          env:
+            GUNICORN_TIMEOUT: 300
+            TIMEOUT_API_CALL: 150
+            API_AUTHENTICATION_KEY: "EzWcHvdRHfqUmuhTtSNgQsdZzHccrqjowPrqHaAOGMdjGUotOnWYbwdQusUCiCpw"
+            WORKSPACE: "nextapisalt"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "2Gi"
+            requests:
+              cpu: "250m"
+              memory: "1Gi"
+      # ==================================================================
+      # lam-nextsaltqa21-25 - parallel tests job in vault-e2e-tests
+      # ==================================================================
+      lam-nextsaltqa21:
+        repoUrl: https://github.com/LedgerHQ/vault-lam
+        useAppTemplate: true
+        inlineValues:
+          image:
+            repository: ghcr.io/ledgerhq/vault-lam
+            tag: 1.19.3@sha256:5b2f65df6c4841d70efd836e35aa7f194ff09cbb147f72c2ae285b12862fd64a
+          env:
+            GUNICORN_TIMEOUT: 300
+            TIMEOUT_API_CALL: 150
+            API_AUTHENTICATION_KEY: "EzWcHvdRHfqUmuhTtSNgQsdZzHccrqjowPrqHaAOGMdjGUotOnWYbwdQusUCiCpw"
+            WORKSPACE: "nextsaltqa21"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "2Gi"
+            requests:
+              cpu: "250m"
+              memory: "1Gi"
+      lam-nextsaltqa22:
+        repoUrl: https://github.com/LedgerHQ/vault-lam
+        useAppTemplate: true
+        inlineValues:
+          image:
+            repository: ghcr.io/ledgerhq/vault-lam
+            tag: 1.19.3@sha256:5b2f65df6c4841d70efd836e35aa7f194ff09cbb147f72c2ae285b12862fd64a
+          env:
+            GUNICORN_TIMEOUT: 300
+            TIMEOUT_API_CALL: 150
+            API_AUTHENTICATION_KEY: "EzWcHvdRHfqUmuhTtSNgQsdZzHccrqjowPrqHaAOGMdjGUotOnWYbwdQusUCiCpw"
+            WORKSPACE: "nextsaltqa22"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "2Gi"
+            requests:
+              cpu: "250m"
+              memory: "1Gi"
+      lam-nextsaltqa23:
+        repoUrl: https://github.com/LedgerHQ/vault-lam
+        useAppTemplate: true
+        inlineValues:
+          image:
+            repository: ghcr.io/ledgerhq/vault-lam
+            tag: 1.19.3@sha256:5b2f65df6c4841d70efd836e35aa7f194ff09cbb147f72c2ae285b12862fd64a
+          env:
+            GUNICORN_TIMEOUT: 300
+            TIMEOUT_API_CALL: 150
+            API_AUTHENTICATION_KEY: "EzWcHvdRHfqUmuhTtSNgQsdZzHccrqjowPrqHaAOGMdjGUotOnWYbwdQusUCiCpw"
+            WORKSPACE: "nextsaltqa23"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "2Gi"
+            requests:
+              cpu: "250m"
+              memory: "1Gi"
+      lam-nextsaltqa24:
+        repoUrl: https://github.com/LedgerHQ/vault-lam
+        useAppTemplate: true
+        inlineValues:
+          image:
+            repository: ghcr.io/ledgerhq/vault-lam
+            tag: 1.19.3@sha256:5b2f65df6c4841d70efd836e35aa7f194ff09cbb147f72c2ae285b12862fd64a
+          env:
+            GUNICORN_TIMEOUT: 300
+            TIMEOUT_API_CALL: 150
+            API_AUTHENTICATION_KEY: "EzWcHvdRHfqUmuhTtSNgQsdZzHccrqjowPrqHaAOGMdjGUotOnWYbwdQusUCiCpw"
+            WORKSPACE: "nextsaltqa24"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "2Gi"
+            requests:
+              cpu: "250m"
+              memory: "1Gi"
+      lam-nextsaltqa25:
+        repoUrl: https://github.com/LedgerHQ/vault-lam
+        useAppTemplate: true
+        inlineValues:
+          image:
+            repository: ghcr.io/ledgerhq/vault-lam
+            tag: 1.19.3@sha256:5b2f65df6c4841d70efd836e35aa7f194ff09cbb147f72c2ae285b12862fd64a
+          env:
+            GUNICORN_TIMEOUT: 300
+            TIMEOUT_API_CALL: 150
+            API_AUTHENTICATION_KEY: "EzWcHvdRHfqUmuhTtSNgQsdZzHccrqjowPrqHaAOGMdjGUotOnWYbwdQusUCiCpw"
+            WORKSPACE: "nextsaltqa25"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "2Gi"
+            requests:
+              cpu: "250m"
+              memory: "1Gi"
+      # =====================================================================
+      # lam-nextpublicapi2 - Used to run automated tests from vault-e2e-tests
+      # =====================================================================
+      lam-nextpublicapi2:
+        repoUrl: https://github.com/LedgerHQ/vault-lam
+        useAppTemplate: true
+        inlineValues:
+          image:
+            repository: ghcr.io/ledgerhq/vault-lam
+            tag: 1.19.3@sha256:5b2f65df6c4841d70efd836e35aa7f194ff09cbb147f72c2ae285b12862fd64a
+          env:
+            GUNICORN_TIMEOUT: 300
+            TIMEOUT_API_CALL: 150
+            API_AUTHENTICATION_KEY: "EzWcHvdRHfqUmuhTtSNgQsdZzHccrqjowPrqHaAOGMdjGUotOnWYbwdQusUCiCpw"
+            WORKSPACE: "nextpublicapi2"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "2Gi"
+            requests:
+              cpu: "250m"
+              memory: "1Gi"
+      # =====================================================================
+      # lam-nextmanual - Used for manual tests
+      # =====================================================================
+      lam-nextmanual:
+        repoUrl: https://github.com/LedgerHQ/vault-lam
+        useAppTemplate: true
+        inlineValues:
+          image:
+            repository: ghcr.io/ledgerhq/vault-lam
+            tag: 1.19.3@sha256:5b2f65df6c4841d70efd836e35aa7f194ff09cbb147f72c2ae285b12862fd64a
+          env:
+            GUNICORN_TIMEOUT: 300
+            TIMEOUT_API_CALL: 150
+            API_AUTHENTICATION_KEY: "EzWcHvdRHfqUmuhTtSNgQsdZzHccrqjowPrqHaAOGMdjGUotOnWYbwdQusUCiCpw"
+            WORKSPACE: "nextmanual"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "2Gi"
+            requests:
+              cpu: "250m"
+              memory: "1Gi"
+
+      # =====================================================================
+      # lam-nextuiauto1 - Used to run autotests for release 5.3
+      # =====================================================================
+      lam-nextuiauto1:
+        repoUrl: https://github.com/LedgerHQ/vault-lam
+        useAppTemplate: true
+        inlineValues:
+          image:
+            repository: ghcr.io/ledgerhq/vault-lam
+            tag: 1.19.3@sha256:5b2f65df6c4841d70efd836e35aa7f194ff09cbb147f72c2ae285b12862fd64a
+          env:
+            GUNICORN_TIMEOUT: 300
+            TIMEOUT_API_CALL: 150
+            API_AUTHENTICATION_KEY: "EzWcHvdRHfqUmuhTtSNgQsdZzHccrqjowPrqHaAOGMdjGUotOnWYbwdQusUCiCpw"
+            WORKSPACE: "nextuiauto1"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "2Gi"
+            requests:
+              cpu: "250m"
+              memory: "1Gi"
+
+      # =====================================================================
+      # lam-nextmixedpreset - Used to run automated tests from vault-e2e-tests
+      # =====================================================================
+      lam-nextmixedpreset4:
+        repoUrl: https://github.com/LedgerHQ/vault-lam
+        useAppTemplate: true
+        inlineValues:
+          image:
+            repository: ghcr.io/ledgerhq/vault-lam
+            tag: 1.19.3@sha256:5b2f65df6c4841d70efd836e35aa7f194ff09cbb147f72c2ae285b12862fd64a
+          env:
+            GUNICORN_TIMEOUT: 300
+            TIMEOUT_API_CALL: 150
+            API_AUTHENTICATION_KEY: "EzWcHvdRHfqUmuhTtSNgQsdZzHccrqjowPrqHaAOGMdjGUotOnWYbwdQusUCiCpw"
+            WORKSPACE: "nextmixedpreset4"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "2Gi"
+            requests:
+              cpu: "250m"
+              memory: "1Gi"
+
+    gates-tests:
+      # ========================================================================
+      # nextpublicapi2 - Used to run automated tests from vault-public-api-tests
+      # ========================================================================
+      gate-nextpublicapi2:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 182068
+            VAULT_GUNICORN_MAX_REQUESTS: 2000
+            VAULT_GUNICORN_WORKERS: 8
+            DEBUG_LOGGERS: RippleClient,TezosClient,StellarClient,TronClient
+          app:
+            resources:
+              limits:
+                cpu: "4"
+                memory: "4Gi"
+
+      # ==============================================================
+      # nextsaltqa2 - Used to run automated tests from vault-e2e-tests
+      # ==============================================================
+      gate-nextsaltqa2:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 182069
+      # ==============================================================
+      # nextmanual - Used to run manual tests
+      # ==============================================================
+      gate-nextmanual:
+        # used to run manual tests
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 103
+      # ==============================================================
+      # nextuiauto1 - Used to run autotests for release 5.3
+      # ==============================================================
+      gate-nextuiauto1:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 105
+      # ========================================================================
+      # nextbentesting - Used by bharamboure-ledger for testing / debugging purposes
+      # ========================================================================
+      gate-nextbentesting:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 666
+      gate-nextapisalt:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 200002
+      gate-nextautocisalt:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 678391
+      # ==============================================================
+      # nextsaltqa21-25 - parallel tests job in vault-e2e-tests
+      # ==============================================================
+      gate-nextsaltqa21:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 189101
+      gate-nextsaltqa22:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 189102
+      gate-nextsaltqa23:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 189103
+      gate-nextsaltqa24:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 189104
+      gate-nextsaltqa25:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 189105
+      # -------------------------------
+      # internal test for revault squad
+      # -------------------------------
+      gate-rv250120x01:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 200000
+      # -------------------------------
+      # internal test for mobile app
+      # -------------------------------
+      gate-mobileapp:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 200001
+    gates-mix-preset:
+      # ==============================================================
+      # mixed preset  - Used to validate the mixed preset
+      #               - Must stay in (release - 1
+      # ==============================================================
+      gate-nextmixedpreset4:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 182073
+
+    hsmdrivers:
+      hsm-driver-default:
+        inlineValues:
+          custom:
+            postgresDB: "hsmdriver_hsm-driver-default" # do not add it for new hsm-driver, default chart values should apply
+            region: "hsm-driver-default" # do not add it for new hsm-driver, default chart values should apply
+          env:
+            VAULT_HSM_GATEWAY_URL: "http://hsm-proxy"
+          driver:
+            initContainers:
+              init-db-postgres:
+                env:
+                  POSTGRES_FORCE_ALTER_PASSWORD: true
+
+    hsmproxys:
+      hsm-proxy:
+        inlineValues:
+          custom:
+            postgresDB: "hsmdriver_hsm-driver-default" # do not add it for new hsm-driver, default chart values should apply
+            region: "hsm-driver-default" # do not add it for new hsm-driver, default chart values should apply
+
+    hsmproxysequencers:
+      hsm-proxy-sequencer:
+        inlineValues:
+          custom:
+            postgresDB: "hsmdriver_hsm-driver-default"
+            region: "hsm-driver-default"
+
+    wds:

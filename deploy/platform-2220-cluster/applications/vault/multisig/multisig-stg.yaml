@@ -1,0 +1,42 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: multisig-stg
+  annotations:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels: &labels
+    environment: stg
+    owner: team-infra-sre
+    project: "2340"
+    organization: enterprise
+    service: multisig
+spec:
+  project: multisig-argocd
+  sources:
+    - repoURL: https://github.com/LedgerHQ/sre-argocd.git
+      targetRevision: "main"
+      ref: values
+    - repoURL: ghcr.io/ledgerhq/charts
+      chart: argocd-appset-env
+      targetRevision: "0.10.5"
+      helm:
+        passCredentials: true
+        valueFiles:
+          - "$values/deploy/platform-2220-cluster/applications/vault/multisig/stg/stg.yaml"
+        valuesObject:
+          labels: *labels
+          destination:
+            name: shared-application-2021-cluster
+            namespace: 2340-multisig-stg
+  destination:
+    name: in-cluster
+    namespace: argocd-central
+  syncPolicy:
+    automated:
+      selfHeal: true
+    syncOptions:
+      - Validate=true
+      - CreateNamespace=true
+      - ServerSideApply=true

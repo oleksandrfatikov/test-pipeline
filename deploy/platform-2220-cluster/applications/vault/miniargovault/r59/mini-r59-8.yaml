@@ -1,0 +1,9 @@
+---
+appset:
+  categoryValues:
+    upstream:
+      annotateNamespace:
+        annotations:
+          owner: "mk"
+          cleanup-timestamp: "2025-08-31T12:06:53.145Z"
+          values-file: "r59/mini-r59-8.yaml"

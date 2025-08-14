@@ -1,0 +1,11 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./1047-atlas
+  - ./1055-intnodes
+  - ./1079-blockchains-lb
+  - ./app-of-apps.yaml
+  - ./monitoring
+  - ./tools
+  - ./ecommerce-poc-next-app-cache

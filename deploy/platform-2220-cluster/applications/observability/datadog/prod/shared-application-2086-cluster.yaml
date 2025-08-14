@@ -1,0 +1,73 @@
+---
+datadog:
+  apiKeyExistingSecret: datadog-secrets
+  appKeyExistingSecret: datadog-secrets
+  clusterName: shared-application-2086-cluster
+  site: datadoghq.eu
+  nodeLabelsAsTags:
+    topology.kubernetes.io/zone: availability-zone
+    group: group
+    node.kubernetes.io/instance-type: instance-type
+  podLabelsAsTags:
+    app: application
+  tags:
+    - "organization:infrastructure"
+  logs:
+    enabled: true
+    containerCollectAll: true
+  apm:
+    enabled: true
+    instrumentation:
+      skipKPITelemetry: true
+  otlp:
+    receiver:
+      protocols:
+        grpc:
+          enabled: true
+  env:
+    - name: DD_CONTAINER_EXCLUDE_LOGS
+      value: "kube_namespace:.*"
+    - name: DD_CONTAINER_EXCLUDE_METRICS
+      value: "kube_namespace:.*"
+    - name: DD_CONTAINER_INCLUDE_LOGS
+      value: >-
+        kube_namespace:argocd kube_namespace:2183-mapping-service kube_namespace:.*-vault-.* kube_namespace:2188-earn-service-backend kube_namespace:2023-countervalue kube_namespace:2025-app-store-api kube_namespace:2041-scriptrunner kube_namespace:2050-swap kube_namespace:2040-aum kube_namespace:2082-knowledge-bot-prd kube_namespace:2084-slack-bot-prd kube_namespace:tools kube_namespace:2105-nft-metadata kube_namespace:2133-web3checks-backend-prd kube_namespace:2134-bim-prd kube_namespace:2137-protect-prd kube_namespace:2142-trust-services-keycloak-prd kube_namespace:.*misc-nano-app.* kube_namespace:2131-nft-indexer-evm-prd kube_namespace:2154-stargate-prd kube_namespace:2182-nft-indexer-prd kube_namespace:2200-coinradar kube_namespace:2205-buy kube_namespace:2194-chainwatch kube_namespace:2212-crypto-assets-service kube_namespace:2190-cloud-sync-backend kube_namespace:2192-trustchain-backend kube_namespace:2138-ledger-quest-webapp kube_namespace:2198-loyalty-program kube_namespace:2158-web-nft-token-gating kube_namespace:2160-shopify-data-customer-erasure kube_namespace:2007-ledger-wp-website kube_namespace:2235-ecommerce-shop-email kube_namespace:2238-card-program kube_namespace:2214-buy-sell-ui image:ptx-functional-exporter image:ptx-earn-dashboard-exporter kube_namespace:2245-idverse kube_namespace:2214-buy-sell-ui-business-snapshot kube_namespace:rundeck kube_namespace:2254-exchange-tx-manager
+    - name: DD_CONTAINER_INCLUDE_METRICS
+      value: >-
+        kube_namespace:argocd kube_namespace:2183-mapping-service kube_namespace:.*-vault-.* kube_namespace:2188-earn-service-backend kube_namespace:2023-countervalue kube_namespace:2025-app-store-api kube_namespace:2041-scriptrunner kube_namespace:2050-swap kube_namespace:2040-aum kube_namespace:2082-knowledge-bot-prd kube_namespace:2084-slack-bot-prd kube_namespace:tools kube_namespace:2105-nft-metadata kube_namespace:2133-web3checks-backend-prd kube_namespace:2134-bim-prd kube_namespace:2137-protect-prd kube_namespace:2142-trust-services-keycloak-prd kube_namespace:.*misc-nano-app.* kube_namespace:2131-nft-indexer-evm-prd kube_namespace:2154-stargate-prd kube_namespace:2182-nft-indexer-prd kube_namespace:2200-coinradar kube_namespace:2205-buy kube_namespace:2194-chainwatch kube_namespace:2212-crypto-assets-service kube_namespace:2190-cloud-sync-backend kube_namespace:2192-trustchain-backend kube_namespace:2138-ledger-quest-webapp kube_namespace:2198-loyalty-program kube_namespace:2158-web-nft-token-gating kube_namespace:2160-shopify-data-customer-erasure kube_namespace:2007-ledger-wp-website kube_namespace:2235-ecommerce-shop-email kube_namespace:2238-card-program kube_namespace:2214-buy-sell-ui kube_namespace:observability kube_namespace:2245-idverse kube_namespace:2214-buy-sell-ui-business-snapshot kube_namespace:rundeck kube_namespace:2254-exchange-tx-manager
+    - name: DD_LOGS_CONFIG_OPEN_FILES_LIMIT
+      value: "300"
+    - name: DD_PROFILING_ENABLED
+      value: "false"
+  processAgent:
+    processCollection: true
+  remoteConfiguration:
+    enabled: false
+clusterAgent:
+  rbac:
+    flareAdditionalPermissions: false
+  metricsProvider:
+    enabled: true
+  admissionController:
+    mutateUnlabelled: true
+  env:
+    - name: DD_VAULT_PG_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: datadog-secrets
+          key: DD_VAULT_PG_PASSWORD
+  confd:
+    openmetrics.yaml: "cluster_check: true\ninit_config:\ninstances:\n  - openmetrics_endpoint: 'https://prometheus.infra.ledgerlabs.net/federate?match[]=%7B__name__%3D~%22pg_custom_.%2A%22%7D'\n    metrics:\n      - pg_custom_long_queries_seconds_total:\n          name: pg_custom_long_queries_seconds\n          type: gauge\n      - pg_custom_long_queries_calls_total:\n          name: pg_custom_long_queries_calls\n          type: gauge\n      - pg_custom_long_queries_rows_total:\n          name: pg_custom_long_queries_rows\n          type: gauge\n      - pg_custom_long_queries_normalized_number:\n          name: pg_custom_long_queries_normalized_number\n          type: gauge\n    min_collection_interval: 120\n    tag_by_endpoint: false\n"
+agents:
+  containers:
+    traceAgent:
+      env:
+        - name: DD_APM_FILTER_TAGS_REJECT
+          value: "no_trace:no_trace"
+  customAgentConfig:
+    apm_config:
+      enabled: true
+      apm_non_local_traffic: true
+    jmx_use_container_support: true
+remoteConfiguration:
+  enabled: false

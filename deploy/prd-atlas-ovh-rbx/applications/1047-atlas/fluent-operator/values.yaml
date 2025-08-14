@@ -1,0 +1,48 @@
+containerRuntime: containerd
+Kubernetes: true
+
+operator:
+  resources:
+    limits:
+      cpu: 1
+      memory: 60Mi
+    requests:
+      cpu: 100m
+      memory: 20Mi
+
+fluentbit:
+  crdsEnable: true
+  multilineEnable: true  # Add this line to enable MultilineParser CRD
+  enable: true
+  image:
+    repository: kubesphere/fluent-bit
+    # tag: v2.1.9-debug
+  secrets:
+    - fluentbit-aum-aws-credentials
+  envVars:
+    - name: AWS_SHARED_CREDENTIALS_FILE
+      value: /fluent-bit/secrets/fluentbit-aum-aws-credentials/credentials_file
+  filter:
+    multiline.enable: true  # Enable multiline filter
+  input:
+    tail:
+      enable: false
+      refreshIntervalSeconds: 10
+      memBufLimit: 200MB
+      path: "/var/log/containers/*.log"
+      skipLongLines: true
+      readFromHead: false
+      # Use storageType as "filesystem" if you want to use filesystem as the buffering mechanism for tail input.
+      storageType: filesystem
+      pauseOnChunksOverlimit: "off"
+    systemd:
+      enable: false
+  nodeSelector:
+    role.ledger.com/haproxy: "true"
+  resources:
+    limits:
+      cpu: 2
+      memory: 10Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi

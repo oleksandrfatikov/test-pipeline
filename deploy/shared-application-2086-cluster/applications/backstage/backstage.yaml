@@ -1,0 +1,31 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: buy=ghcr.io/ledgerhq/buy
+    argocd-image-updater.argoproj.io/write-back-method: argocd
+    argocd-image-updater.argoproj.io/buy.update-strategy: latest
+    argocd-image-updater.argoproj.io/buy.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: buy-prd
+  namespace: argocd
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2205"
+    organization: "consumer"
+    service: "buy"
+spec:
+  project: buy
+  source:
+    repoURL: https://github.com/LedgerHQ/buy.git
+    targetRevision: main
+    path: argocd/prd
+    helm:
+      releaseName: buy
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2205-buy
+

@@ -1,0 +1,36 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: 1048-atlas
+  namespace: argocd-central
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: 1048-atlas
+  sourceRepos:
+    - '*'
+  destinations:
+    - namespace: '*'
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  # ----------------
+  # Project RBAC section
+  # ----------------
+  roles:
+    - name: atlas-manage
+      description: Role for rancher-atlas-member group to manage resources in 1048-atlas project
+      # rancher-atlas-member group contains the users who have access to the rancher cluster and to 1048-atlas assets
+      groups:
+        - infra-app-rancher-atlas-member
+      policies:
+        - p, proj:1048-atlas:atlas-manage, applications, update, 1048-atlas/*, allow
+        - p, proj:1048-atlas:atlas-manage, applications, delete/*/Pod/*/*, 1048-atlas/*, allow
+        - p, proj:1048-atlas:atlas-manage, applications, delete/*/PersistentVolume/*/*, 1048-atlas/*, allow
+        - p, proj:1048-atlas:atlas-manage, applications, delete/*/PersistentVolumeClaim/*/*, 1048-atlas/*, allow
+        - p, proj:1048-atlas:atlas-manage, applications, delete/*/Secret/*/*, 1048-atlas/*, allow
+        - p, proj:1048-atlas:atlas-manage, applications, delete/*/Deployment/*/*, 1048-atlas/*, allow
+        - p, proj:1048-atlas:atlas-manage, applications, delete/*/StatefulSet/*/*, 1048-atlas/*, allow
+        - p, proj:1048-atlas:atlas-manage, exec, create, 1048-atlas/*, allow

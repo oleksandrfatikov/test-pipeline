@@ -1,0 +1,52 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: lama-ethereum-prod
+  namespace: argocd-central
+spec:
+  generators:
+    - list:
+        elements:
+          - app: ethereum-account-reader
+            environment: prd
+            clusterName: shared-application-2026-cluster
+            project_id: "2108"
+            namespace: 2108-vault-prd
+          - app: ethereum-account-synchronizer
+            environment: prd
+            clusterName: shared-application-2026-cluster
+            project_id: "2108"
+            namespace: 2108-vault-prd
+          - app: ethereum-transaction-crafter
+            environment: prd
+            clusterName: shared-application-2026-cluster
+            project_id: "2108"
+            namespace: 2108-vault-prd
+  template:
+    metadata:
+      name: 'lama-{{app}}-{{environment}}'
+      namespace: argocd-central
+      labels:
+        environment: '{{environment}}'
+        owner: team-infra-sre
+        project: '{{project_id}}'
+        organization: 'wallet-services'
+        service: '{{app}}'
+        service_family: "lama"
+        service_group: "lama-ethereum"
+    spec:
+      project: 1047-atlas
+      source:
+        repoURL: https://github.com/LedgerHQ/lama-ethereum.git
+        targetRevision: main
+        path: 'argocd/{{app}}/{{environment}}'
+        helm:
+          releaseName: '{{app}}'
+      destination:
+        name: '{{clusterName}}'
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true

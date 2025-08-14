@@ -1,0 +1,51 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: mapping=ghcr.io/ledgerhq/mapping-service
+    argocd-image-updater.argoproj.io/write-back-method: argocd
+    argocd-image-updater.argoproj.io/mapping.update-strategy: latest
+    argocd-image-updater.argoproj.io/mapping.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+    notifications.argoproj.io/subscribe.slack: "backend-b2c-private-map"
+    argocd.ledger.fr/environment: "Staging"
+  name: mapping-service-stg
+  namespace: argocd
+  labels:
+    environment: "stg"
+    owner: "backend-core"
+    project: "2167"
+    organization: "wallet-services"
+    service: "mapping-service"
+spec:
+  project: mapping-service
+  source:
+    repoURL: https://github.com/LedgerHQ/mapping-service.git
+    targetRevision: master
+    path: argocd/stg
+    helm:
+      releaseName: mapping-service
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2167-mapping-service-stg
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mapping-service-jobs-stg
+  namespace: argocd
+  labels:
+    environment: "stg"
+    owner: "backend-core"
+    project: "2167"
+    organization: "wallet-services"
+    service: "mapping-service"
+spec:
+  project: mapping-service
+  source:
+    repoURL: https://github.com/LedgerHQ/mapping-service.git
+    targetRevision: master
+    path: argocd/workflows/stg
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2167-mapping-service-stg

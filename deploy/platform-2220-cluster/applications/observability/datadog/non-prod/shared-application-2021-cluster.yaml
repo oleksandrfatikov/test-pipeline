@@ -1,0 +1,130 @@
+---
+datadog:
+  apiKeyExistingSecret: datadog-secrets
+  appKeyExistingSecret: datadog-secrets
+  clusterName: shared-application-2021-cluster
+  site: datadoghq.eu
+  nodeLabelsAsTags:
+    topology.kubernetes.io/zone: availability-zone
+    group: group
+    node.kubernetes.io/instance-type: instance-type
+  podLabelsAsTags:
+    app: application
+  logs:
+    enabled: true
+    containerCollectAll: true
+  apm:
+    enabled: true
+    portEnabled: true
+    socketEnabled: false
+    instrumentation:
+      skipKPITelemetry: true
+  dogstatsd:
+    useHostPort: true
+  otlp:
+    receiver:
+      protocols:
+        grpc:
+          enabled: true
+        http:
+          enabled: true
+  env:
+    - name: DD_CONTAINER_EXCLUDE_LOGS
+      value: "kube_namespace:.*"
+    - name: DD_CONTAINER_EXCLUDE_METRICS
+      value: "kube_namespace:.*"
+    - name: DD_CONTAINER_INCLUDE_LOGS
+      value: >-
+        kube_namespace:.*-(lama|vault)-.* kube_namespace:2032-swap kube_namespace:2034-countervalue kube_namespace:2038-aum kube_namespace:2039-app-store-api kube_namespace:2081-knowledge-bot-stg kube_namespace:2083-slack-bot-stg kube_namespace:2107-ethereum-transaction-crafter-stg kube_namespace:2104-nft-metadata-stg kube_namespace:2122-bim kube_namespace:2127-web3checks-backend kube_namespace:tools kube_namespace:actions-runners kube_namespace:2127-web3checks-backend-stg kube_namespace:2141-trust-services-keycloak-stg kube_namespace:vault-remote-stg kube_namespace:2145-backend-services-keycloak kube_namespace:2167-mapping-service kube_namespace:2129-nft-indexer-evm-stg kube_namespace:2184-earn-service-backend kube_namespace:2181-nft-indexer-stg kube_namespace:2189-cloud-sync-backend kube_namespace:2191-trustchain-backend kube_namespace:2199-coinradar kube_namespace:2204-buy kube_namespace:2193-chainwatch kube_namespace:hc-vault kube_namespace:2211-crypto-assets-service kube_namespace:ledger-quest-webapp-stg kube_namespace:ledger-quest-webapp-pr.* kube_namespace:web-nft-token-gating-stg kube_namespace:web-nft-token-gating-pr.* kube_namespace:shopify-data-customer-erasure-stg kube_namespace:shopify-data-customer-erasure-pr.* kube_namespace:loyalty-program-stg kube_namespace:loyalty-program-pr.* kube_namespace:ecommerce-shop-email-stg kube_namespace:ecommerce-shop-email-pr.* kube_namespace:card-program-stg kube_namespace:card-program-pr.* kube_namespace:2213-buy-sell-ui kube_namespace:2215-buy-sell-ui-pr.* kube_namespace:argocd kube_namespace:1048-atlas kube_namespace:2236-earn-live-app kube_namespace:2247-idverse kube_namespace:2300-lama-adapter-stg kube_namespace:2252-exchange-tx-manager kube_namespace:rundeck kube_namespace:2340-multisig-stg kube_namespace:2339-dynamic-assets-data-aggregator kube_namespace:2351-canton-gateway
+    - name: DD_CONTAINER_INCLUDE_METRICS
+      value: >-
+        kube_namespace:.*-(lama|vault)-.* kube_namespace:observability kube_namespace:2032-swap kube_namespace:2034-countervalue kube_namespace:2037-scriptrunner kube_namespace:2038-aum kube_namespace:2039-app-store-api kube_namespace:2081-knowledge-bot-stg kube_namespace:2083-slack-bot-stg kube_namespace:2107-ethereum-transaction-crafter-stg kube_namespace:2104-nft-metadata-stg kube_namespace:2122-bim kube_namespace:2127-web3checks-backend kube_namespace:tools kube_namespace:actions-runners kube_namespace:2127-web3checks-backend-stg kube_namespace:2141-trust-services-keycloak-stg kube_namespace:vault-remote-stg kube_namespace:2145-backend-services-keycloak kube_namespace:2167-mapping-service kube_namespace:2129-nft-indexer-evm-stg kube_namespace:2184-earn-service-backend kube_namespace:2181-nft-indexer-stg kube_namespace:2189-cloud-sync-backend kube_namespace:2191-trustchain-backend kube_namespace:2199-coinradar kube_namespace:2204-buy kube_namespace:2193-chainwatch kube_namespace:hc-vault kube_namespace:2211-crypto-assets-service kube_namespace:ledger-quest-webapp-stg kube_namespace:ledger-quest-webapp-pr.* kube_namespace:web-nft-token-gating-stg kube_namespace:web-nft-token-gating-pr.* kube_namespace:shopify-data-customer-erasure-stg kube_namespace:shopify-data-customer-erasure-pr.* kube_namespace:loyalty-program-stg kube_namespace:loyalty-program-pr.* kube_namespace:ecommerce-shop-email-stg kube_namespace:ecommerce-shop-email-pr.* kube_namespace:card-program-stg kube_namespace:card-program-pr.* kube_namespace:2213-buy-sell-ui kube_namespace:2215-buy-sell-ui-pr.* kube_namespace:argocd kube_namespace:1048-atlas kube_namespace:2236-earn-live-app kube_namespace:2247-idverse kube_namespace:2300-lama-adapter-stg kube_namespace:2252-exchange-tx-manager kube_namespace:rundeck kube_namespace:2340-multisig-stg kube_namespace:2339-dynamic-assets-data-aggregator kube_namespace:2351-canton-gateway
+    - name: DD_PROFILING_ENABLED
+      value: "false"
+    - name: DD_LOGS_CONFIG_OPEN_FILES_LIMIT
+      value: "300"
+    - name: DD_RABBITMQ_PASSWORD_INT
+      valueFrom:
+        secretKeyRef:
+          name: datadog-secrets
+          key: DD_RABBITMQ_PASSWORD_INT
+    - name: DD_RABBITMQ_PASSWORD_STG
+      valueFrom:
+        secretKeyRef:
+          name: datadog-secrets
+          key: DD_RABBITMQ_PASSWORD_STG
+    - name: DD_RABBITMQ_PASSWORD_STG_VAULT_NEXT
+      valueFrom:
+        secretKeyRef:
+          name: datadog-secrets
+          key: DD_RABBITMQ_PASSWORD_STG_VAULT_NEXT
+    - name: DD_RABBITMQ_PASSWORD_STG_VAULT_MAIN
+      valueFrom:
+        secretKeyRef:
+          name: datadog-secrets
+          key: DD_RABBITMQ_PASSWORD_STG_VAULT_MAIN
+    - name: DD_RABBITMQ_PASSWORD_STG_VAULT_QA
+      valueFrom:
+        secretKeyRef:
+          name: datadog-secrets
+          key: DD_RABBITMQ_PASSWORD_STG_VAULT_QA
+  processAgent:
+    processCollection: true
+  remoteConfiguration:
+    enabled: false
+clusterAgent:
+  rbac:
+    flareAdditionalPermissions: false
+  metricsProvider:
+    enabled: true
+  admissionController:
+    mutateUnlabelled: true
+  env:
+    - name: DD_VAULT_PG_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: datadog-secrets
+          key: DD_VAULT_PG_PASSWORD
+  confd:
+    openmetrics.yaml: "cluster_check: true\ninit_config:\ninstances:\n  - openmetrics_endpoint: 'https://prometheus.infra.ldg-stg.net/federate?match[]=%7B__name__%3D~%22pg_custom_.%2A%22%7D'\n    metrics:\n      - pg_custom_10ms_queries_seconds_total:\n          name: pg_custom_10ms_queries_seconds\n          type: gauge\n      - pg_custom_10ms_queries_calls_total:\n          name: pg_custom_10ms_queries_calls\n          type: gauge\n      - pg_custom_10ms_queries_rows_total:\n          name: pg_custom_10ms_queries_rows\n          type: gauge\n      - pg_custom_10ms_queries_normalized_number:\n          name: pg_custom_10ms_queries_normalized_number\n          type: gauge\n    min_collection_interval: 120\n    tag_by_endpoint: false\n"
+    postgres.yaml: |
+      cluster_check: true
+      instances:
+      {{- range list "pg-main.2063-vault-stg.aws.ldg-stg.net" "pg-wallet-daemon.2063-vault-stg.aws.ldg-stg.net" }}
+        - host: {{ . }}
+          port: 5432
+          username: dd_readonly
+          password: "%%env_DD_VAULT_PG_PASSWORD%%"
+          ssl: require
+          dbstrict: true
+          collect_count_metrics: false
+          collect_database_size_metrics: false
+          min_collection_interval: 300
+          tags:
+            - {{ printf "environment:%s" (split "." .)._1 }}
+          custom_queries:
+            - metric_prefix: postgresql.vault
+              query: SELECT application_name, usename, COUNT(*) FROM pg_stat_activity WHERE datname IS NOT NULL AND pid != pg_backend_pid() GROUP BY application_name, usename;
+              columns:
+                - name: application_name
+                  type: tag
+                - name: pg_user
+                  type: tag
+                - name: count_by_applications
+                  type: gauge
+      {{- end }}
+agents:
+  containers:
+    traceAgent:
+      env:
+        - name: DD_APM_FILTER_TAGS_REJECT
+          value: "no_trace:no_trace"
+  customAgentConfig:
+    apm_config:
+      enabled: true
+      apm_non_local_traffic: true
+      features:
+        - enable_otlp_compute_top_level_by_span_kind
+    jmx_use_container_support: true
+remoteConfiguration:
+  enabled: false

@@ -1,0 +1,19 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: 1078-blockchains-lb
+  namespace: argocd-central
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: 1078-blockchains-lb
+  sourceRepos:
+    - 'https://github.com/LedgerHQ/backend-blockchain-services.git'
+    - 'ghcr.io'
+  destinations:
+    - namespace: '1078-blockchains-lb'
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

@@ -1,0 +1,30 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: nano-appstore=ghcr.io/ledgerhq/appstore
+    argocd-image-updater.argoproj.io/write-back-method: argocd
+    argocd-image-updater.argoproj.io/nano-appstore.update-strategy: latest
+    argocd-image-updater.argoproj.io/nano-appstore.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+    notifications.argoproj.io/subscribe.slack: "backend-b2c-private-appstore"
+    argocd.ledger.fr/environment: "Staging"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: nano-appstore-stg
+  namespace: argocd
+  labels:
+    environment: "stg"
+    owner: "backend-core"
+    project: "2039"
+    organization: "wallet-services"
+    service: "nano-appstore"
+spec:
+  project: app-store-api
+  source:
+    repoURL: https://github.com/LedgerHQ/nano-appstore.git
+    targetRevision: master
+    path: argocd/stg
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: 2039-app-store-api

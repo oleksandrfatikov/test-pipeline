@@ -1,0 +1,5 @@
+---
+app-template:
+  valueBundles:
+    eksSbx:
+      enabled: true

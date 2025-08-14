@@ -1,0 +1,9 @@
+---
+appset:
+  categoryValues:
+    upstream:
+      annotateNamespace:
+        annotations:
+          owner: "achaouat"
+          cleanup-timestamp: "2025-08-05T15:10:12.877Z"
+          values-file: "r59/oceanseleven.yaml"

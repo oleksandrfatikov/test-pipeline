@@ -1,0 +1,112 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: datadog
+  namespace: argocd-central
+spec:
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  generators:
+    # Sandbox
+    - clusters:
+        selector:
+          matchLabels:
+            project: "2042"
+        values:
+          env_secret: sandbox-secrets.yaml
+    # Staging
+    - clusters:
+        selector:
+          matchExpressions:
+            - key: project
+              operator: In
+              values: ["2021", "2018", "1065"]
+        values:
+          env_secret: staging-secrets.yaml
+    # Preproduction
+    - clusters:
+        selector:
+          matchLabels:
+            project: "2094"
+        values:
+          env_secret: preproduction-secrets.yaml
+
+  goTemplate: true
+  template:
+    metadata:
+      name: "datadog-{{.name}}"
+      labels:
+        owner: "team-infra-sre"
+        project: "observability"
+        organization: "infrastructure"
+        service: "datadog"
+    spec:
+      project: observability
+      syncPolicy:
+        managedNamespaceMetadata:
+          labels:
+            project: '{{index .metadata.labels "project"}}'
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - Validate=true
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+          - RespectIgnoreDifferences=true
+        retry:
+          limit: 10
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
+      revisionHistoryLimit: 10
+      sources:
+        - repoURL: https://helm.datadoghq.com
+          chart: datadog
+          targetRevision: 3.123.0
+          helm:
+            releaseName: datadog
+            valueFiles:
+              - '$values/deploy/platform-2220-cluster/applications/observability/datadog/non-prod/{{.name}}.yaml'
+              - '$values/deploy/platform-2220-cluster/applications/observability/datadog/non-prod/common-values.yaml'
+        - repoURL: https://github.com/LedgerHQ/sre-argocd.git
+          targetRevision: main
+          ref: values
+        - repoURL: https://github.com/LedgerHQ/sre-argocd.git
+          targetRevision: main
+          path: 'deploy/platform-2220-cluster/applications/observability/datadog/non-prod'
+          directory:
+            recurse: false
+            include: '{{.values.env_secret}}'
+      destination:
+        name: '{{.name}}'
+        namespace: monitoring
+      ignoreDifferences:
+        - group: ""
+          kind: Secret
+          name: datadog-cluster-agent
+          namespace: monitoring
+          jsonPointers:
+            - /data/token
+        - group: apps
+          kind: DaemonSet
+          name: datadog
+          namespace: monitoring
+          jsonPointers:
+            - /spec/template/metadata/annotations/checksum~1clusteragent_token
+        - group: apps
+          kind: Deployment
+          name: datadog-cluster-agent
+          namespace: monitoring
+          jsonPointers:
+            - /spec/template/metadata/annotations/checksum~1clusteragent_token
+        - group: ""
+          kind: ConfigMap
+          name: datadog-kpi-telemetry-configmap
+          namespace: monitoring
+          jsonPointers:
+            - /data/install_id
+            - /data/install_time

@@ -1,0 +1,27 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: &app 2337-rabbitmq
+  namespace: argocd-central
+  labels:
+    environment: prd
+    owner: team-infra-sre
+    project: '2337'
+    service: 'rabbitmq'
+spec:
+  project: *app
+  source:
+    repoURL: https://github.com/LedgerHQ/sre-rabbitmq.git
+    targetRevision: main
+    path: argocd/prd
+    helm:
+      releaseName: rabbitmq
+  destination:
+    name: shared-application-2086-cluster
+    namespace: *app
+  syncPolicy:
+    automated:
+      prune: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,53 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: nodes
+  namespace: argocd-central
+spec:
+  generators:
+    - matrix:
+        generators:
+          - git:
+              repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+              revision: main
+              directories:
+                - path: deploy/staging/nodes/*
+          - list:
+              elements:
+                - clusterName: stg-atlas-ovh-sbg
+                  datacenter: sbg
+                - clusterName: stg-atlas-htz-fsn
+                  datacenter: fsn
+  template:
+    metadata:
+      name: '{{clusterName}}-{{path.basename}}'
+      namespace: argocd-central
+      labels:
+        environment: stg
+        owner: team-infra-sre
+        project: '1048'
+        organization: 'wallet-services'
+        service: '{{path.basename}}'
+        type: 'blockchain-node'
+    spec:
+      project: &app 1048-atlas
+      source:
+        repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+        targetRevision: main
+        path: '{{path}}'
+        helm:
+          releaseName: '{{path.basename}}'
+          values: |
+            custom:
+              datacenter: "{{datacenter}}"
+            blockchain-nodes:
+              custom:
+                datacenter: "{{datacenter}}"
+      destination:
+        name: '{{clusterName}}'
+        namespace: *app
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true

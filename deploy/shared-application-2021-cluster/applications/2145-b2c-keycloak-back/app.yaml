@@ -1,0 +1,40 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: b2c-keycloak-back-stg
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: b2-keycloak-back-stg
+  sourceRepos:
+    - "https://github.com/LedgerHQ/sre-argocd.git"
+    - "ghcr.io"
+  destinations:
+    - namespace: 2145-backend-services-keycloak-stg
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: b2c-keycloak-back-stg
+  namespace: argocd
+  labels:
+    environment: "stg"
+    owner: "team-infra-sre"
+    service: "b2c-keycloak"
+spec:
+  project: b2c-keycloak-back-stg
+  source:
+    repoURL: https://github.com/LedgerHQ/sre-argocd.git
+    targetRevision: main
+    path: deploy/shared-application-2021-cluster/applications/2145-b2c-keycloak-back
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2145-backend-services-keycloak-stg
+  syncPolicy:
+    automated: {}

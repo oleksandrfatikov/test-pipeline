@@ -1,0 +1,21 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: 1054-intnodes
+  namespace: argocd-central
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: 1054-intnodes
+  sourceRepos:
+    - 'https://github.com/LedgerHQ/backend-blockchain-services.git'
+    - 'https://github.com/LedgerHQ/sre-argocd.git'
+    - "ghcr.io"
+    - "ghcr.io/ledgerhq/charts"
+  destinations:
+    - namespace: '*intnodes*'
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

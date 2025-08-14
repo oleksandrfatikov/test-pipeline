@@ -1,0 +1,55 @@
+---
+appset:
+  categoryValues:
+    upstream:
+      disableDefaultTagRevision: true
+      path: ""
+
+    gates-self-version:
+      inlineValues:
+        env:
+          VAULT_HSM_SCRIPTS_VERSION: 17.1.2
+
+    gates-self-version-stg:
+      inlineValues:
+        env:
+          VAULT_HSM_SCRIPTS_VERSION: 17.1.2-dave+fb11a07b
+
+    hsmdrivers:
+      repoUrl: https://github.com/LedgerHQ/ledger-vault-hsm-driver
+      path: argocd/base
+      targetRevision: 9.11.2
+      inlineValues:
+        image:
+          repository: jfrog.ledgerlabs.net/vault-oci-prod-green/ledger-vault-hsm-driver
+        env:
+          VAULT_HSM_DRIVER_FORWARD_ONBOARDING: "true"
+          VAULT_HSM_DRIVER_FORWARD_USERS: "true"
+          VAULT_HSM_DRIVER_FORWARD_GROUPS: "true"
+          VAULT_HSM_DRIVER_FORWARD_WHITELISTS: "true"
+
+    hsmgateways:
+      repoUrl: https://github.com/LedgerHQ/hsm-proxy
+      path: argocd/hsm-proxy
+      targetRevision: 5.2.2
+      useAppTemplate: true
+      inlineValues:
+        image:
+          repository: jfrog.ledgerlabs.net/vault-oci-prod-green/hsm-gateway
+        env:
+          RUST_LOG: "info,hsm_proxy=debug"
+          DD_ENABLED: "true"
+          DD_RUNTIME_METRICS_ENABLED: "true"
+
+    hsmproxysequencers:
+      repoUrl: https://github.com/LedgerHQ/hsm-proxy
+      path: argocd/hsm-proxy-sequencer
+      targetRevision: 5.2.2
+      useAppTemplate: true
+      inlineValues:
+        image:
+          repository: jfrog.ledgerlabs.net/vault-oci-prod-green/hsm-proxy-sequencer
+        env:
+          RUST_LOG: "info,hsm_proxy=debug"
+          DD_ENABLED: "true"
+          DD_RUNTIME_METRICS_ENABLED: "true"

@@ -1,0 +1,31 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: intnodes-haproxy-kubernetes-ingress
+  namespace: argocd
+spec:
+  generators:
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/intnodes: "true"
+          environment.ledger.com/production: "true"
+  template:
+    metadata:
+      name: "{{name}}-intnodes-haproxy-kubernetes-ingress"
+      labels:
+        service: "intnodes-ingress"
+        env: "production"
+    spec:
+      project: 1055-intnodes
+      source:
+        repoURL: https://github.com/LedgerHQ/sre-argocd.git
+        targetRevision: main
+        path: "deploy/prd-atlas-ovh-rbx/applications/1055-intnodes/intnodes-haproxy-kubernetes-ingress"
+      destination:
+        server: "{{server}}"
+        namespace: "1055-intnodes"
+      syncPolicy:
+        syncOptions:
+        - CreateNamespace=true

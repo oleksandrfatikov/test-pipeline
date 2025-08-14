@@ -1,0 +1,22 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: ledger-wp-website
+  namespace: argocd-central
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: ledger-wp-website project
+  sourceRepos:
+    - "https://github.com/LedgerHQ/ledger-wordpress-website.git"
+    - "ghcr.io"
+    - "ghcr.io/ledgerhq/charts"
+  destinations:
+    - namespace: "ledger-wp-website-pr*"
+      name: sandbox-2042-cluster
+    - namespace: "ledger-wp-website-sbx"
+      name: sandbox-2042-cluster
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

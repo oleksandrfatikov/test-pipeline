@@ -1,0 +1,31 @@
+---
+image:
+  pullPolicy: IfNotPresent
+
+resources:
+  limits:
+    memory: 512Mi
+  requests:
+    cpu: "0.2"
+    memory: 512Mi
+
+config:
+  registries:
+    - name: Github Container Registry
+      prefix: ghcr.io
+      api_url: https://ghcr.io
+      ping: no
+      credentials: pullsecret:argocd-central/container-registries
+      default: true
+    - name: Jfrog Artifactory
+      prefix: jfrog.ledgerlabs.net
+      api_url: https://jfrog.ledgerlabs.net
+      ping: no
+      credentials: pullsecret:argocd-central/container-registries
+      default: false
+  gitCommitUser: ldg-github-ci
+
+# Speedup interval from 2min to 1min for DX on preview PR
+extraArgs:
+  - --interval
+  - 1m

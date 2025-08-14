@@ -1,0 +1,75 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: 1074-intnodes-dydx
+  namespace: argocd
+spec:
+  generators:
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/intnodes: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/rbx8: "true"
+      values:
+        maintenance: "false"
+        datacenter: rbx
+        label_project_id: p-srsq2
+        annotation_project_id: c-m-zj7fr4mx:p-srsq2
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/intnodes: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/bhs8: "true"
+      values:
+        maintenance: "false"
+        datacenter: bhs
+        label_project_id: p-jbrtc
+        annotation_project_id: c-m-45dzwsbb:p-jbrtc
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/intnodes: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/fsn1: "true"
+      values:
+        maintenance: "false"
+        datacenter: fsn
+        label_project_id: p-6tnqf
+        annotation_project_id: c-m-qgdsd885:p-6tnqf
+  template:
+    metadata:
+      name: "{{name}}-1074-intnodes-dydx"
+      annotations:
+        argocd.ledger.fr/environment: "Production"
+      labels:
+        service: "1074-intnodes-dydx"
+        env: "production"
+        coin: "dydx"
+        type: "int-node"
+    spec:
+      project: 1055-intnodes
+      sources:
+        - repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+          targetRevision: main
+          path: "deploy/production/internal-blockchain-nodes/1074-intnodes-dydx"
+          helm:
+            releaseName: int-dydx-mainnet-node
+            values: |
+              intnodes:
+                maintenance: "{{values.maintenance}}"
+                custom:
+                  datacenter: "{{values.datacenter}}"
+      destination:
+        server: "{{server}}"
+        namespace: "1074-intnodes-dydx"
+      syncPolicy:
+        managedNamespaceMetadata:
+          annotations:
+            field.cattle.io/projectId: "{{values.annotation_project_id}}"
+          labels:
+            field.cattle.io/projectId: "{{values.label_project_id}}"
+        syncOptions:
+          - CreateNamespace=true

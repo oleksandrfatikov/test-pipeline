@@ -1,0 +1,34 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: nft=ghcr.io/ledgerhq/nft-metadata-service
+    argocd-image-updater.argoproj.io/write-back-method: argocd
+    argocd-image-updater.argoproj.io/nft.update-strategy: latest
+    argocd-image-updater.argoproj.io/nft.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+    argocd-image-updater.argoproj.io/nft.helm.image-name: image.name
+    argocd-image-updater.argoproj.io/nft.helm.image-tag: image.tag
+    notifications.argoproj.io/subscribe.slack: "backend-b2c-private-nms"
+    argocd.ledger.fr/environment: "Staging"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: nft-metadata-service-stg
+  namespace: argocd
+  labels:
+    environment: "stg"
+    owner: "backend-core"
+    project: "2104"
+    organization: "wallet-services"
+    service: "nft-metadata-service"
+spec:
+  project: nft-metadata-service
+  source:
+    repoURL: https://github.com/LedgerHQ/nft-metadata-service.git
+    targetRevision: main
+    path: argocd/stg
+    helm:
+      releaseName: nft-metadata-service
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2104-nft-metadata-stg

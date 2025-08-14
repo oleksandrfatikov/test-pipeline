@@ -1,0 +1,35 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: card-program-prd
+  namespace: argocd-central
+  annotations:
+    notifications.argoproj.io/subscribe.slack: "infra-ecommerce-cd"
+    notifications.argoproj.io/subscribe.github: ""
+    argocd.ledger.fr/environment: "Production"
+    argocd-image-updater.argoproj.io/image-list: card-program=ghcr.io/ledgerhq/card-program:main
+    argocd-image-updater.argoproj.io/update-strategy: digest
+    argocd-image-updater.argoproj.io/card-program.helm.image-name: app-template.image.name
+    argocd-image-updater.argoproj.io/card-program.helm.image-tag: app-template.image.tag
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    environment: "stg"
+    owner: "team-infra-sre"
+    project: "2238"
+    organization: "consumer"
+    service: card-program
+spec:
+  project: card-program
+  source:
+    repoURL: https://github.com/LedgerHQ/card-program.git
+    targetRevision: "main"
+    path: argocd/prd
+    helm:
+      releaseName: card-program
+  destination:
+    name: shared-application-2086-cluster
+    namespace: 2238-card-program
+  syncPolicy:
+    automated: {}

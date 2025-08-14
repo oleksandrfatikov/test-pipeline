@@ -1,0 +1,324 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-bhs8-atlas-1047-worker-01-external
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: ns5022005.ip-148-113-161.net
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-bhs8-atlas-1047-worker-02-external
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: ns5022005.ip-148-113-161.net
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-bhs8-atlas-1047-worker-03-external
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: ns5022021.ip-148-113-161.net
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-rbx8-atlas-1047-worker-01-external
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: ns3230976.ip-57-128-94.eu
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-rbx8-atlas-1047-worker-02-external
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: ns3230967.ip-57-128-94.eu
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-rbx8-atlas-1047-worker-03-external
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: ns3230975.ip-57-128-94.eu
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-fsn1-atlas-1047-worker-01-external
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: static.28.131.12.49.clients.your-server.de
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-fsn1-atlas-1047-worker-02-external
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: static.214.130.12.49.clients.your-server.de
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-fsn1-atlas-1047-worker-03-external
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: static.169.130.12.49.clients.your-server.de
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-fsn1-atlas-1047-worker-08-external
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: static.84.70.119.168.clients.your-server.de
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-bhs8-atlas-1047-worker-08-external
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: ns5022523.ip-148-113-161.net
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-rbx8-atlas-1047-worker-08-external
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: ns31546459.ip-141-94-197.eu
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-bhs8-atlas-1047-ingress-01-external
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: ns5032882.ip-148-113-208.net
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-bhs8-atlas-1047-ingress-02-external
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: ns5032883.ip-148-113-208.net
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-rbx8-atlas-1047-ingress-01-external
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: ns3246126.ip-91-134-34.eu
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-rbx8-atlas-1047-ingress-02-external
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: ns31754044.ip-91-134-59.eu
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-fsn1-atlas-1047-ingress-01-external
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: static.17.221.130.94.clients.your-server.de
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-fsn1-atlas-1047-ingress-02-external
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: static.221.239.130.94.clients.your-server.de

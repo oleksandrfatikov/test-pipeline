@@ -1,0 +1,54 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: haproxy-restrict-ports-trusted-location
+  namespace: 1048-atlas
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: haproxy-kubernetes-ingress
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        # Allow all pods in the same namespace
+        - podSelector: {}
+        # Allow datadog
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+        # Trusted locations
+        - ipBlock:
+            cidr: 37.58.221.152/32
+        - ipBlock:
+            cidr: 77.158.138.66/32
+        - ipBlock:
+            cidr: 37.58.221.154/32
+        - ipBlock:
+            cidr: 77.158.138.67/32
+        - ipBlock:
+            cidr: 85.233.221.192/28
+        - ipBlock:
+            cidr: 195.68.107.68/32
+        # Infra VPN
+        - ipBlock:
+            cidr: 52.50.31.80/32
+        - ipBlock:
+            cidr: 34.240.150.212/32
+      ports:
+        - protocol: TCP
+          port: 1024
+        - protocol: TCP
+          port: 1042
+        - protocol: TCP
+          port: 6060
+    # Allow TCP traffic on ports 80 and 443 from anywhere.
+    - from:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443

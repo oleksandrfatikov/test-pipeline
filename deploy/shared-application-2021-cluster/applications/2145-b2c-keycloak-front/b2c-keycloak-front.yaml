@@ -1,0 +1,27 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: b2c-keycloak-front-stg
+  namespace: argocd
+  labels:
+    environment: "stg"
+    owner: "team-infra-sre"
+    project: "2145"
+    organization: "consumer"
+    service: "b2c-keycloak"
+spec:
+  project: b2c-keycloak-front-stg
+  source:
+    repoURL: https://github.com/LedgerHQ/b2c-keycloak.git
+    targetRevision: main
+    path: argocd/stg
+    helm:
+      releaseName: b2c-keycloak
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: 2145-backend-services-keycloak-stg
+  syncPolicy:
+    automated: {}

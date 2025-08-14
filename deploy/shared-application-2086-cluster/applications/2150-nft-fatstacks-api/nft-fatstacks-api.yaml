@@ -1,0 +1,25 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nft-fatstacks-api-prd
+  namespace: argocd
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2150"
+    organization: "consumer"
+    service: "nft-fatstacks-api"
+spec:
+  project: nft-fatstacks-api
+  source:
+    repoURL: https://github.com/LedgerHQ/fts-api.git
+    targetRevision: main
+    path: argocd/prd
+    helm:
+      releaseName: nft-fatstacks-api
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: 2150-nft-fatstacks-api-prd
+  syncPolicy:
+    automated: {}

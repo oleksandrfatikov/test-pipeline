@@ -1,0 +1,57 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: backend-core-services-job-stg
+  namespace: argocd-central
+spec:
+  goTemplate: true
+  ignoreApplicationDifferences:
+    - jqPathExpressions:
+        - .spec.source.helm.parameters
+  generators:
+    - list:
+        elements:
+          - app: mapping-service
+            project_id: '2167'
+            revision: master
+            path: 'argocd/workflows/stg'
+          - app: cloud-sync-backend
+            project_id: '2189'
+            revision: main
+            path: 'argocd/workflows/stg'
+          - app: trustchain-backend
+            project_id: '2191'
+            revision: main
+            path: 'argocd/workflows/stg'
+  template:
+    metadata:
+      name: '{{.app}}-job-stg'
+      namespace: argocd-central
+      labels:
+        environment: stg
+        owner: backend-core
+        project: '{{.project_id}}'
+        organization: 'wallet-services'
+        service: '{{.app}}'
+    spec:
+      project: backend-core-services
+      ignoreDifferences:
+        - group: "apps"
+          kind: "Deployment"
+          jsonPointers:
+            - /spec/replicas
+      source:
+        repoURL: 'https://github.com/LedgerHQ/{{.app}}.git'
+        targetRevision: '{{.revision}}'
+        path: '{{.path}}'
+      destination:
+        name: shared-application-2021-cluster
+        namespace: '{{.project_id}}-{{.app}}'
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true
+          - RespectIgnoreDifferences=true
+  syncPolicy:
+    preserveResourcesOnDeletion: true

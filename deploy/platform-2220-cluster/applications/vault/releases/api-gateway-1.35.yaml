@@ -1,0 +1,9 @@
+---
+appset:
+  projectValues:
+    all:
+      api-gateway:
+        repoUrl: https://github.com/LedgerHQ/vault-api-gateway
+        useAppTemplate: true
+        targetRevision: 1.35.2
+

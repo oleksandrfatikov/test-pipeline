@@ -1,0 +1,27 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: knowledge-bot
+  namespace: argocd
+  labels:
+    environment: "stg"
+    owner: "team-infra-sre"
+    project: "2081"
+    organization: "consumer"
+    service: "knowledge-bot"
+spec:
+  project: knowledge-bot
+  source:
+    repoURL: https://github.com/LedgerHQ/knowledge_bot.git
+    targetRevision: main
+    path: argocd/stg
+    helm:
+      releaseName: knowledge-bot
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2081-knowledge-bot-stg
+  syncPolicy:
+    automated: {}

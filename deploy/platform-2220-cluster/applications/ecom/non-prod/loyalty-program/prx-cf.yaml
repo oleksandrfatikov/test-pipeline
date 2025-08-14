@@ -1,0 +1,58 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: loyalty-program-prx-cf
+  namespace: argocd-central
+spec:
+  # Ignore argocd image updater change
+  ignoreApplicationDifferences:
+    - jsonPointers:
+        - /spec/source/helm/parameters
+  generators:
+    - pullRequest:
+        github:
+          owner: LedgerHQ
+          repo: loyalty-program
+          appSecretName: ledgerhq-repository
+          labels:
+            - argocd/preview-cf
+  template:
+    metadata:
+      name: "loyalty-program-pr-cf-{{ number }}"
+      namespace: argocd
+      annotations:
+        notifications.argoproj.io/subscribe.github: ""
+        argocd.ledger.fr/environment: "Preview"
+        argocd-image-updater.argoproj.io/image-list: loyalty-program=ghcr.io/ledgerhq/loyalty-program:pr-{{ number }}
+        argocd-image-updater.argoproj.io/update-strategy: digest
+        argocd-image-updater.argoproj.io/loyalty-program.helm.image-name: app-template.image.repository
+        argocd-image-updater.argoproj.io/loyalty-program.helm.image-tag: app-template.image.tag
+      labels:
+        environment: "prx"
+        owner: "team-infra-sre"
+        project: "2196"
+        organization: "consumer"
+        service: "loyalty-program"
+    spec:
+      project: loyalty-program
+      source:
+        repoURL: https://github.com/LedgerHQ/loyalty-program.git
+        targetRevision: "{{ branch }}"
+        path: argocd/prx
+        helm:
+          valuesObject:
+            app-template:
+              image:
+                tag: "pr-{{ number }}"
+              custom:
+                host: loyalty-program-pr{{ number }}.dev-stg.aws.ledger-test.com
+              ingress:
+                main:
+                  ingressClassName: cloudflare
+      destination:
+        name: shared-application-2021-cluster
+        namespace: "loyalty-program-pr-cf-{{ number }}"
+      syncPolicy:
+        automated:
+          prune: true

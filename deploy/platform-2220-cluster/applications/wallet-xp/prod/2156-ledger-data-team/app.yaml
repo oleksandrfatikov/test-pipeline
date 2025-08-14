@@ -1,0 +1,35 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: &app 2156-bento-prod
+  namespace: argocd-central
+  labels:
+    environment: prd
+    owner: data-team
+    service-id: '2156'
+    service: 'bento'
+spec:
+  project: *app
+  sources:
+    - chart: bento
+      repoURL: https://warpstreamlabs.github.io/bento-helm-chart
+      targetRevision: 0.1.0
+      helm:
+        releaseName: bento
+        valueFiles:
+          - "$values/deploy/platform-2220-cluster/applications/wallet-xp/prod/2156-ledger-data-team/values.yaml"
+    - repoURL: https://github.com/LedgerHQ/sre-argocd.git
+      targetRevision: main
+      path: "deploy/platform-2220-cluster/applications/wallet-xp/prod/2156-ledger-data-team/manifests/"
+    - repoURL: https://github.com/LedgerHQ/sre-argocd.git
+      targetRevision: main
+      ref: values
+  destination:
+    name: shared-application-2086-cluster
+    namespace: 2156-ledger-data-team
+  syncPolicy:
+    automated:
+      prune: true
+    syncOptions:
+      - CreateNamespace=true

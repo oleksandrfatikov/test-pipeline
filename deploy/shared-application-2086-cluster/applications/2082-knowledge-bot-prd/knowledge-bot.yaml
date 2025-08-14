@@ -1,0 +1,25 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: knowledge-bot
+  namespace: argocd
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2082"
+    organization: "consumer"
+    service: "knowledge-bot"
+spec:
+  project: knowledge-bot
+  source:
+    repoURL: https://github.com/LedgerHQ/knowledge_bot.git
+    targetRevision: main
+    path: argocd/prd
+    helm:
+      releaseName: knowledge-bot
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2082-knowledge-bot-prd
+  syncPolicy:
+    automated: {}

@@ -1,0 +1,56 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: web-nft-token-gating-prx
+  namespace: argocd-central
+spec:
+  # Ignore argocd image updater change
+  ignoreApplicationDifferences:
+    - jsonPointers:
+        - /spec/source/helm/parameters
+  generators:
+    - pullRequest:
+        requeueAfterSeconds: 1800
+        github:
+          owner: LedgerHQ
+          repo: web-nft-token-gating
+          appSecretName: ledgerhq-repository
+          labels:
+            - argocd/preview
+  template:
+    metadata:
+      name: "web-nft-token-gating-pr{{ number }}"
+      namespace: argocd
+      annotations:
+        notifications.argoproj.io/subscribe.github: ""
+        argocd.ledger.fr/environment: "dev"
+        argocd-image-updater.argoproj.io/image-list: web-nft-token-gating=ghcr.io/ledgerhq/web-nft-token-gating:pr-{{ number }}
+        argocd-image-updater.argoproj.io/update-strategy: digest
+        argocd-image-updater.argoproj.io/web-nft-token-gating.helm.image-name: app-template.image.repository
+        argocd-image-updater.argoproj.io/web-nft-token-gating.helm.image-tag: app-template.image.tag
+      labels:
+        environment: "prx"
+        owner: "team-infra-sre"
+        project: "2158"
+        organization: "consumer"
+        service: "web-nft-token-gating"
+    spec:
+      project: web-nft-token-gating
+      source:
+        repoURL: https://github.com/LedgerHQ/web-nft-token-gating.git
+        targetRevision: "{{ branch }}"
+        path: argocd/prx
+        helm:
+          valuesObject:
+            app-template:
+              image:
+                tag: "pr-{{ number }}"
+              custom:
+                host: web-nft-token-gating-pr{{ number }}.aws.stg.ldg-tech.com
+      destination:
+        name: shared-application-2021-cluster
+        namespace: "web-nft-token-gating-pr{{ number }}"
+      syncPolicy:
+        automated:
+          prune: true

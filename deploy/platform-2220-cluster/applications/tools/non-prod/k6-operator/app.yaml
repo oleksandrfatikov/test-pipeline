@@ -1,0 +1,26 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: &app k6-operator
+  namespace: argocd-central
+  labels:
+    owner: "team-infra-sre"
+    project: "tools"
+    organization: "infrastructure"
+    service: "k6-operator"
+spec:
+  project: tools
+  source:
+    repoURL: https://github.com/LedgerHQ/poc-loadtest.git
+    targetRevision: main
+    path: argocd/stg
+    helm:
+      releaseName: *app
+  destination:
+    name: shared-application-2021-cluster
+    namespace: *app
+  syncPolicy:
+    automated: {}
+    syncOptions:
+      - CreateNamespace=true

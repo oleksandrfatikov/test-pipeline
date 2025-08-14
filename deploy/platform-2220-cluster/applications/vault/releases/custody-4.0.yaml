@@ -1,0 +1,60 @@
+---
+appset:
+  categoryValues:
+    upstream:
+      disableDefaultTagRevision: true
+      path: ""
+
+    gates-self-version:
+      inlineValues:
+        custom:
+          calVersion: 2025.40.2643
+        env:
+          VAULT_HSM_SCRIPTS_VERSION: 17.2.4
+
+    gates-self-version-stg:
+      inlineValues:
+        env:
+          VAULT_HSM_SCRIPTS_VERSION: 17.2.4-dave+c978dbf3
+
+    hsmdrivers:
+      repoUrl: https://github.com/LedgerHQ/ledger-vault-hsm-driver
+      path: argocd/base
+      targetRevision: 9.11.2
+      inlineValues:
+        image:
+          repository: jfrog.ledgerlabs.net/vault-oci-prod-green/ledger-vault-hsm-driver
+        env:
+          VAULT_HSM_DRIVER_FORWARD_ONBOARDING: "true"
+          VAULT_HSM_DRIVER_FORWARD_USERS: "true"
+          VAULT_HSM_DRIVER_FORWARD_GROUPS: "true"
+          VAULT_HSM_DRIVER_FORWARD_WHITELISTS: "true"
+          VAULT_HSM_DRIVER_ENABLE_MULTICURRENCY_POLICIES: "true"
+
+    hsmproxys:
+      repoUrl: https://github.com/LedgerHQ/hsm-proxy
+      path: argocd/hsm-proxy
+      targetRevision: 6.0.2
+      useAppTemplate: true
+      inlineValues:
+        custom:
+          s3Env: "prd"
+        env:
+          VAULT_HSM_ENDPOINT: https://vault-cluster-prd.hsm.pa6.ldg-prd.net
+          RUST_LOG: "info"
+        image:
+          repository: jfrog.ledgerlabs.net/vault-oci-prod-green/hsm-proxy
+
+    hsmproxysequencers:
+      repoUrl: https://github.com/LedgerHQ/hsm-proxy
+      path: argocd/hsm-proxy-sequencer
+      targetRevision: 6.0.2
+      useAppTemplate: true
+      inlineValues:
+        image:
+          repository: jfrog.ledgerlabs.net/vault-oci-prod-green/hsm-proxy-sequencer
+        custom:
+          s3Env: "prd"
+        env:
+          VAULT_HSM_ENDPOINT: https://vault-cluster-prd.hsm.pa6.ldg-prd.net
+          RUST_LOG: "info"

@@ -1,0 +1,16 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-image-updater-config
+  namespace: argocd
+data:
+  log.level: debug
+  registries.conf: |
+    registries:
+    - name: Github Container Registry
+      prefix: ghcr.io
+      api_url: https://ghcr.io
+      ping: no
+      credentials: secret:argocd/ghcr-io-credentials#data
+      default: true

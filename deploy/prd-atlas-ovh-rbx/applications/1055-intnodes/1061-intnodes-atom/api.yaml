@@ -1,0 +1,60 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: 1061-intnodes-atom
+  namespace: argocd
+spec:
+  generators:
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/intnodes: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/bhs8: "true"
+      values:
+        datacenter: bhs
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/intnodes: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/rbx8: "true"
+      values:
+        datacenter: rbx
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/intnodes: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/fsn1: "true"
+      values:
+        datacenter: fsn
+  template:
+    metadata:
+      name: "{{name}}-1061-intnodes-atom"
+      annotations:
+        argocd.ledger.fr/environment: "Production"
+      labels:
+        service: "1061-intnodes-atom"
+        env: "production"
+        coin: "atom"
+        type: "int-node"
+    spec:
+      project: 1055-intnodes
+      sources:
+        - repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+          targetRevision: main
+          path: "deploy/production/internal-blockchain-nodes/1061-intnodes-atom"
+          helm:
+            releaseName: int-atom-mainnet-api
+            values: |
+              intnodes:
+                custom:
+                  datacenter: "{{values.datacenter}}"
+      destination:
+        server: "{{server}}"
+        namespace: "1061-intnodes-atom"
+      syncPolicy:
+        syncOptions:
+        - CreateNamespace=true

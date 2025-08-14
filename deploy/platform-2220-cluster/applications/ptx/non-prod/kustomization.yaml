@@ -1,0 +1,10 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - argocd-meta.yaml
+  - services-stg.yaml
+  - ptx-swap-fake-provider.yaml
+  - ptx-buy-sell-ui-prx.yaml
+  - ptx-swap-live-app-prx.yaml
+  - services-ppr.yaml

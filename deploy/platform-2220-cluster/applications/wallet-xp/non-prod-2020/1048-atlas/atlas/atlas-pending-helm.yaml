@@ -1,0 +1,103 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: atlas-pending-helm
+  namespace: argocd-central
+spec:
+  # Ignore argocd image updater change
+  ignoreApplicationDifferences:
+    - jsonPointers:
+        - /spec/source/helm/parameters
+  generators:
+    - matrix:
+        generators:
+          - list:
+              elements:
+                - app: atlas-btc-mainnet
+                  image: atlas-bitcoin-v2
+                - app: atlas-dgb-mainnet
+                  image: atlas-bitcoin-v2
+                - app: atlas-ltc-mainnet
+                  image: atlas-bitcoin-v2
+                - app: atlas-qtum-mainnet
+                  image: atlas-bitcoin-v2
+                - app: atlas-dash-mainnet
+                  image: atlas-bitcoin-v2
+                - app: atlas-doge-mainnet
+                  image: atlas-bitcoin-v2
+                - app: atlas-btg-mainnet
+                  image: atlas-bitcoin-v2
+                - app: atlas-btc-testnet
+                  image: atlas-bitcoin-v2
+                - app: atlas-btc-testnet4
+                  image: atlas-bitcoin-v2
+                - app: atlas-bch-mainnet
+                  image: atlas-bitcoin-v2
+                - app: atlas-zen-mainnet
+                  image: atlas-bitcoin-v2
+                - app: atlas-zec-mainnet
+                  image: atlas-bitcoin-v2
+                - app: atlas-kmd-mainnet
+                  image: atlas-bitcoin-v2
+                - app: atlas-dcr-mainnet
+                  image: atlas-bitcoin-v2
+          - list:
+              elements:
+                - clusterName: stg-atlas-ovh-sbg
+                  datacenter: sbg
+                - clusterName: stg-atlas-htz-fsn
+                  datacenter: fsn
+  template:
+    metadata:
+      name: '{{clusterName}}-{{app}}-helm'
+      namespace: argocd-central
+      annotations:
+        argocd-image-updater.argoproj.io/image-list: atlas=jfrog.ledgerlabs.net/bbs-oci-prod-green/{{image}},pending=jfrog.ledgerlabs.net/bbs-oci-prod-green/{{image}}-pending
+        # argocd-image-updater.argoproj.io/write-back-method: git
+        argocd-image-updater.argoproj.io/atlas.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/atlas.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+        argocd-image-updater.argoproj.io/atlas.helm.image-name: atlas.image.name
+        argocd-image-updater.argoproj.io/atlas.helm.image-tag: atlas.image.tag
+        argocd-image-updater.argoproj.io/pending.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/pending.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+        argocd-image-updater.argoproj.io/pending.helm.image-name: atlas.pending.image.name
+        argocd-image-updater.argoproj.io/pending.helm.image-tag: atlas.pending.image.tag
+      labels:
+        environment: stg
+        owner: team-infra-sre
+        project: '1048'
+        organization: 'wallet-services'
+        application: 'atlas'
+        service: '{{app}}'
+        type: '{{image}}'
+    spec:
+      project: &app 1048-atlas
+      source:
+        repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+        targetRevision: main
+        path: 'deploy/staging/atlas/helm/{{app}}'
+        helm:
+          releaseName: '{{app}}'
+          valuesObject:
+            atlas:
+              api:
+                ingress:
+                  main:
+                    ingressClassName: haproxy
+              argo-hooks:
+                common:
+                  argoAppName: '{{clusterName}}-{{app}}-helm'
+              imagePullSecrets:
+                - name: container-registries
+              custom:
+                datacenter: "{{datacenter}}"
+              databases:
+                datacenter: "{{datacenter}}"
+      destination:
+        name: '{{clusterName}}'
+        namespace: *app
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true

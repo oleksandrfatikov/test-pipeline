@@ -1,0 +1,155 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: selfsigned
+  name: haproxy-kubernetes-ingress-healthz
+  namespace: 1048-atlas
+spec:
+  ingressClassName: haproxy
+  rules:
+    - http:
+        paths:
+          - backend:
+              service:
+                name: haproxy-kubernetes-ingress
+                port:
+                  number: 1042
+            path: /healthz
+            pathType: Prefix
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: selfsigned
+    haproxy.org/whitelist: "52.50.31.80/32, 34.240.150.212/32, 195.68.107.68/32"
+  name: haproxy-kubernetes-ingress-stat
+  namespace: 1048-atlas
+spec:
+  ingressClassName: haproxy
+  rules:
+    - host: &host1 static.180.97.235.167.clients.your-server.de
+      http:
+        paths:
+          - backend:
+              service:
+                name: stg-fsn1-atlas-1048-worker-01-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host2 static.24.131.55.162.clients.your-server.de
+      http:
+        paths:
+          - backend:
+              service:
+                name: stg-fsn1-atlas-1048-worker-02-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host3 static.177.66.88.23.clients.your-server.de
+      http:
+        paths:
+          - backend:
+              service:
+                name: stg-fsn1-atlas-1048-worker-03-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host4 ns31560637.ip-162-19-84.eu
+      http:
+        paths:
+          - backend:
+              service:
+                name: stg-sbg5-atlas-1048-worker-01-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host5 ns3226031.ip-57-128-47.eu
+      http:
+        paths:
+          - backend:
+              service:
+                name: stg-sbg5-atlas-1048-worker-02-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host6 ns31560620.ip-162-19-84.eu
+      http:
+        paths:
+          - backend:
+              service:
+                name: stg-sbg5-atlas-1048-worker-03-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host7 static.197.239.130.94.clients.your-server.de
+      http:
+        paths:
+          - backend:
+              service:
+                name: stg-fsn1-atlas-1048-ingress-01-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host8 static.196.239.130.94.clients.your-server.de
+      http:
+        paths:
+          - backend:
+              service:
+                name: stg-fsn1-atlas-1048-ingress-02-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host9 ns31768444.ip-91-134-40.eu
+      http:
+        paths:
+          - backend:
+              service:
+                name: stg-sbg5-atlas-1048-ingress-01-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+  tls:
+    - hosts:
+        - *host1
+        - *host2
+        - *host3
+        - *host4
+        - *host5
+        - *host6
+        - *host7
+        - *host8
+        - *host9
+      secretName: haproxy-kubernetes-ingress-cert
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: selfsigned
+    haproxy.org/whitelist: "52.50.31.80/32, 34.240.150.212/32, 195.68.107.68/32"
+  name: haproxy-kubernetes-ingress-metrics
+  namespace: 1048-atlas
+spec:
+  ingressClassName: haproxy
+  rules:
+    - http:
+        paths:
+          - backend:
+              service:
+                name: haproxy-kubernetes-ingress
+                port:
+                  number: 1024
+            path: /metrics
+            pathType: Prefix

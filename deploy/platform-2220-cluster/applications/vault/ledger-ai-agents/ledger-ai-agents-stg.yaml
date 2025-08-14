@@ -1,0 +1,56 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ledger-ai-agents-stg
+  annotations:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels: &labels
+    environment: stg
+    owner: team-infra-sre
+    project: "2341"
+    organization: enterprise
+    service: ledger-ai-agents
+spec:
+  project: ledger-ai-agents
+  sources:
+    - repoURL: https://github.com/LedgerHQ/sre-argocd.git
+      targetRevision: "main"
+      ref: values
+    - repoURL: ghcr.io/ledgerhq/charts
+      chart: argocd-appset-env
+      targetRevision: "0.10.5"
+      helm:
+        passCredentials: true
+        valueFiles:
+          - "$values/deploy/platform-2220-cluster/applications/vault/ledger-ai-agents/stg/stg.yaml"
+        valuesObject:
+          labels: *labels
+          destination:
+            name: shared-application-2021-cluster
+            namespace: 2341-ledger-ai-agents-stg
+          appproject:
+            roles:
+              - name: admin-vault-stg
+                description: Add admin permission to stg envs
+                policies:
+                  - p, proj:ledger-ai-agents-stg:admin-vault-stg, exec, create, ledger-ai-agents-stg/*, allow
+                  - p, proj:ledger-ai-agents-stg:admin-vault-stg, applications, update, ledger-ai-agents-stg/*, allow
+                  - p, proj:ledger-ai-agents-stg:admin-vault-stg, applications, delete, ledger-ai-agents-stg/*, allow
+                  - p, proj:ledger-ai-agents-stg:admin-vault-stg, applications, override, ledger-ai-agents-stg/*, allow
+                  - p, proj:ledger-ai-agents-stg:admin-vault-stg, applications, action/*, ledger-ai-agents-stg/*, allow
+                  - p, proj:ledger-ai-agents-stg:admin-vault-stg, exec, create, ledger-ai-agents-stg/*, allow
+                groups:
+                  - infra-app-green-rundeck-vault-user-stg
+                  - infra-group-green-artifactory-developer
+  destination:
+    name: in-cluster
+    namespace: argocd-central
+  syncPolicy:
+    automated:
+      selfHeal: true
+    syncOptions:
+      - Validate=true
+      - CreateNamespace=true
+      - ServerSideApply=true

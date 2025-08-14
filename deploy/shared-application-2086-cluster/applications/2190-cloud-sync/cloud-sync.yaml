@@ -1,0 +1,28 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cloud-sync-backend-prd
+  namespace: argocd
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2190"
+    organization: "consumer"
+    service: "cloud-sync-backend"
+  annotations:
+    notifications.argoproj.io/subscribe.slack: "backend-b2c-private-cloudsync"
+    argocd.ledger.fr/environment: "Production"
+spec:
+  project: cloud-sync-backend
+  source:
+    repoURL: https://github.com/LedgerHQ/cloud-sync-backend.git
+    targetRevision: main
+    path: argocd/prd
+    helm:
+      releaseName: cloud-sync-backend
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2190-cloud-sync-backend
+  syncPolicy:
+    automated: {}

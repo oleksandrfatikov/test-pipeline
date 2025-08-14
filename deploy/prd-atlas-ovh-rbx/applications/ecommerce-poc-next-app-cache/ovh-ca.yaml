@@ -1,0 +1,30 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: poc-next-app-cache
+  annotations:
+    argocd.ledger.fr/environment: "Staging"
+    argocd-image-updater.argoproj.io/image-list: poc-next-app-cache=ghcr.io/ledgerhq/poc-next-app-cache:main
+    argocd-image-updater.argoproj.io/update-strategy: digest
+    argocd-image-updater.argoproj.io/poc-next-app-cache.helm.image-name: app-template.image.repository
+    argocd-image-updater.argoproj.io/poc-next-app-cache.helm.image-tag: app-template.image.tag
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    environment: "stg"
+    owner: "team-infra-sre"
+    organization: "consumer"
+    service: poc-next-app-cache
+spec:
+  project: poc-next-app-cache
+  source:
+    repoURL: https://github.com/LedgerHQ/ecommerce-poc-next-app-cache.git
+    targetRevision: "main"
+    path: argocd/ovh-ca
+  destination:
+    name: prd-atlas-ovh-bhs
+    namespace: poc-next-app-cache
+  syncPolicy:
+    automated:
+      prune: true

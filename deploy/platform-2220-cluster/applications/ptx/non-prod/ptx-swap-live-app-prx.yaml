@@ -1,0 +1,66 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: swap-live-app-prx
+spec:
+  # Ignore argocd image updater change
+  ignoreApplicationDifferences:
+    - jsonPointers:
+        - /spec/source/helm/parameters
+  generators:
+    - pullRequest:
+        requeueAfterSeconds: 1800
+        github:
+          owner: LedgerHQ
+          repo: swap-live-app
+          appSecretName: ledgerhq-repository
+          labels:
+            - argocd/preview
+  template:
+    metadata:
+      name: "swap-live-app-pr{{ number }}"
+      namespace: argocd-central
+      annotations:
+        argocd.ledger.fr/environment: "Preview - ArgoCD"
+        notifications.argoproj.io/subscribe.github: ""
+        argocd-image-updater.argoproj.io/image-list: ptx=jfrog.ledgerlabs.net/ptx-oci-prod-green/swap-live-app:pr-{{ number }}
+        argocd-image-updater.argoproj.io/update-strategy: digest
+        argocd-image-updater.argoproj.io/ptx.helm.image-name: app-template.image.repository
+        argocd-image-updater.argoproj.io/ptx.helm.image-tag: app-template.image.tag
+      labels:
+        environment: "prx"
+        owner: "team-infra-sre"
+        project: "2270"
+        organization: "consumer"
+        service: "swap-live-app"
+    spec:
+      project: ptx-services
+      source:
+        repoURL: https://github.com/LedgerHQ/swap-live-app.git
+        targetRevision: "{{ branch }}"
+        path: argocd/prx
+        helm:
+          valuesObject:
+            app-template:
+              image:
+                tag: "pr-{{ number }}"
+              ingress:
+                main:
+                  hosts:
+                    - host: swap-live-app-pr{{ number }}.aws.stg.ldg-tech.com
+                      paths:
+                        - path: /
+                          pathType: Prefix
+                  tls:
+                    - secretName: swap-live-app-tls
+                      hosts:
+                        - swap-live-app-pr{{ number }}.aws.stg.ldg-tech.com
+      destination:
+        name: shared-application-2021-cluster
+        namespace: "2270-swap-live-app-pr{{ number }}" # changeme
+      syncPolicy:
+        automated:
+          prune: true
+  syncPolicy:
+    preserveResourcesOnDeletion: true

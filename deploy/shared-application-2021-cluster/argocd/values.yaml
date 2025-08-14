@@ -1,0 +1,652 @@
+---
+global:
+  domain: argocd.aws.stg.ldg-tech.com
+  logging:
+    level: warn
+
+crds:
+  install: true
+  keep: true
+
+repoServer:
+  env:
+    - name: XDG_CONFIG_HOME
+      value: /.config
+    - name: SOPS_AGE_KEY_FILE
+      value: /.config/sops/age/keys.txt
+  volumes:
+    - name: custom-tools
+      emptyDir: {}
+    - name: sops-age
+      secret:
+        secretName: sops-age
+  volumeMounts:
+    - mountPath: /usr/local/bin/kustomize
+      name: custom-tools
+      subPath: kustomize
+    - mountPath: /.config/kustomize/plugin/viaduct.ai/v1/ksops/ksops
+      name: custom-tools
+      subPath: ksops
+    - mountPath: /.config/sops/age/keys.txt
+      name: sops-age
+      subPath: keys.txt
+  initContainers:
+    - name: install-ksops
+      image: viaductoss/ksops:v4.3.3@sha256:6b5ec4b6144307f78bcddffd8f09020482836eee34cf77bf4ce8614b0452a73c
+      command: ["/bin/sh", "-c"]
+      args:
+        - echo "Installing KSOPS..."; mv ksops /custom-tools/; mv kustomize /custom-tools/; echo "Done.";
+      volumeMounts:
+        - mountPath: /custom-tools
+          name: custom-tools
+  podAnnotations:
+    ad.datadoghq.com/repo-server.checks: |
+      {
+        "argocd": {
+          "init_config": {},
+          "instances": [
+            {
+              "repo_server_endpoint": "http://%%host%%:8084/metrics"
+            }
+          ]
+        }
+      }
+
+controller:
+  podAnnotations:
+    ad.datadoghq.com/application-controller.checks: |
+      {
+        "argocd": {
+          "init_config": {},
+          "instances": [
+            {
+              "app_controller_endpoint": "http://%%host%%:8082/metrics",
+              "rename_labels": {
+                "name": "app_controller"
+              }
+            }
+          ]
+        }
+      }
+
+server:
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+      nginx.ingress.kubernetes.io/whitelist-source-range: 52.50.31.80/32,34.240.150.212/32,195.68.107.68/32,192.30.252.0/22,185.199.108.0/22,140.82.112.0/20,195.68.107.68/32,143.55.64.0/20,2a0a:a440::/29,2606:50c0::/32,85.233.221.197/32
+    labels: {}
+    ingressClassName: "nginx"
+    hostname: argocd.aws.stg.ldg-tech.com
+    path: /
+    pathType: Prefix
+    tls: true
+  podAnnotations:
+    ad.datadoghq.com/server.checks: |
+      {
+        "argocd": {
+          "init_config": {},
+          "instances": [
+            {
+              "api_server_endpoint": "http://%%host%%:8083/metrics"
+            }
+          ]
+        }
+      }
+
+dex:
+  volumeMounts:
+    - mountPath: /tmp/oidc
+      name: google-json
+      readOnly: true
+  volumes:
+    - name: google-json
+      secret:
+        defaultMode: 420
+        secretName: argocd-google-groups-json
+
+configs:
+  cm:
+    accounts.backstage: apiKey, login
+    url: https://argocd.aws.stg.ldg-tech.com
+    exec.enabled: "true"
+    kustomize.buildOptions: --enable-alpha-plugins --enable-helm
+    dex.config: |
+      connectors:
+      - config:
+          redirectURI: https://argocd.aws.stg.ldg-tech.com/api/dex/callback
+          clientID: $argocd-helm-values:dex.googlegroups.clientID
+          clientSecret: $argocd-helm-values:dex.googlegroups.clientSecret
+          #serviceAccountFilePath: /tmp/oidc/googleAuth.json
+          #adminEmail: sre-team@ledger.fr
+        type: google
+        id: google
+        name: Google
+  rbac:
+    create: true
+    policy.default: role:org-readonly
+    policy.csv: |
+      p, role:org-readonly, clusters, get, */*, allow
+      p, role:org-readonly, projects, get, */*, allow
+      p, role:org-readonly, applications, get, */*, allow
+      p, role:org-readonly, applications, sync, */*, allow
+      p, role:org-readonly, applicationsets, get, */*, allow
+      p, role:org-readonly, applicationsets, sync, */*, allow
+      p, role:org-readonly, repositories, get, */*, allow
+      p, role:org-readonly, accounts, get, */*, allow
+      p, role:org-readonly, exec, get, */*, allow
+      p, role:org-readonly, exec, create, */*, allow
+      p, role:org-readonly, logs, get, */*, allow
+      p, backstage, applications, get, */*, allow
+      p, backstage, applicationsets, get, */*, allow
+  secret:
+    githubSecret: $argocd-helm-values:webhook.github.secret
+    # Random secret to make sure there is a secret
+    gitlabSecret: $argocd-helm-values:random
+    bitbucketServerSecret: $argocd-helm-values:random
+    bitbucketUUID: notused
+    gogsSecret: $argocd-helm-values:random
+    azureDevops:
+      username: notused
+      password: $argocd-helm-values:random
+
+notifications:
+  argocdUrl: https://argocd.aws.stg.ldg-tech.com
+  secret:
+    create: false
+  notifiers:
+    service.slack: |
+      token: $slack-token
+    service.github: |
+      appID: 405335
+      installationId: 42702306
+      privateKey: $github-privateKey
+  templates:
+    template.app-created: |
+      message: Application {{.app.metadata.name}} has been created.
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        status:
+          state: pending
+          label: "continuous-delivery/{{.app.metadata.name}}"
+          targetURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+        deployment:
+          state: pending
+          environment: >-
+            {{- if and (.app.metadata.annotations) (index .app.metadata.annotations "argocd.ledger.fr/environment") -}}
+              {{- index .app.metadata.annotations "argocd.ledger.fr/environment" -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.environment) -}}
+              {{- .app.metadata.labels.environment -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.env) -}}
+              {{- .app.metadata.labels.env -}}
+            {{- else -}}
+               default
+            {{- end -}}
+          environmentURL: "{{with .app.status.summary.externalURLs}}{{index . 0}}{{end}}"
+          logURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+          requiredContexts: []
+      slack:
+        attachments: |
+          [{
+            "title": "{{ .app.metadata.name}}",
+            "title_link":"{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+            "color": "#18be52",
+            "fields": [
+            {
+              "title": "Sync Status",
+              "value": "{{.app.status.sync.status}}",
+              "short": true
+            },
+            {
+              "title": "Repository",
+              "value": "{{.app.spec.source.repoURL}}",
+              "short": true
+            },
+            {
+              "title": "Revision",
+              "value": "{{.app.status.sync.revision}}",
+              "short": true
+            }
+            {{range $index, $c := .app.status.conditions}}
+            {{if not $index}},{{end}}
+            {{if $index}},{{end}}
+            {
+              "title": "{{$c.type}}",
+              "value": "{{$c.message}}",
+              "short": true
+            }
+            {{end}}
+            ]
+          }]
+    template.app-deleted: |
+      message: Application {{.app.metadata.name}} has been deleted.
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        deployment:
+          state: inactive
+          environment: >-
+            {{- if and (.app.metadata.annotations) (index .app.metadata.annotations "argocd.ledger.fr/environment") -}}
+              {{- index .app.metadata.annotations "argocd.ledger.fr/environment" -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.environment) -}}
+              {{- .app.metadata.labels.environment -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.env) -}}
+              {{- .app.metadata.labels.env -}}
+            {{- else -}}
+               default
+            {{- end -}}
+          environmentURL: "{{with .app.status.summary.externalURLs}}{{index . 0}}{{end}}"
+          logURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+          requiredContexts: []
+      slack:
+        attachments: |
+          [{
+            "title": "{{ .app.metadata.name}}",
+            "title_link":"{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+            "color": "#18be52",
+            "fields": [
+            {
+              "title": "Sync Status",
+              "value": "{{.app.status.sync.status}}",
+              "short": true
+            },
+            {
+              "title": "Repository",
+              "value": "{{.app.spec.source.repoURL}}",
+              "short": true
+            },
+            {
+              "title": "Revision",
+              "value": "{{.app.status.sync.revision}}",
+              "short": true
+            }
+            {{range $index, $c := .app.status.conditions}}
+            {{if not $index}},{{end}}
+            {{if $index}},{{end}}
+            {
+              "title": "{{$c.type}}",
+              "value": "{{$c.message}}",
+              "short": true
+            }
+            {{end}}
+            ]
+          }]
+    template.app-deployed-always: |
+      message: |
+        {{if eq .serviceType "slack"}}:white_check_mark:{{end}} Application {{.app.metadata.name}} is now running new version of deployments manifests.
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        status:
+          state: success
+          label: "continuous-delivery/{{.app.metadata.name}}"
+          targetURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+        deployment:
+          state: success
+          environment: >-
+            {{- if and (.app.metadata.annotations) (index .app.metadata.annotations "argocd.ledger.fr/environment") -}}
+              {{- index .app.metadata.annotations "argocd.ledger.fr/environment" -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.environment) -}}
+              {{- .app.metadata.labels.environment -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.env) -}}
+              {{- .app.metadata.labels.env -}}
+            {{- else -}}
+               default
+            {{- end -}}
+          environmentURL: "{{with .app.status.summary.externalURLs}}{{index . 0}}{{end}}"
+          logURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+          requiredContexts: []
+    template.app-health-degraded: |
+      message: |
+        {{if eq .serviceType "slack"}}:exclamation:{{end}} Application {{.app.metadata.name}} has degraded.
+        Application details: {{.context.argocdUrl}}/applications/{{.app.metadata.name}}.
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        status:
+          state: error
+          label: "continuous-delivery/{{.app.metadata.name}}"
+          targetURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+        deployment:
+          state: error
+          environment: >-
+            {{- if and (.app.metadata.annotations) (index .app.metadata.annotations "argocd.ledger.fr/environment") -}}
+              {{- index .app.metadata.annotations "argocd.ledger.fr/environment" -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.environment) -}}
+              {{- .app.metadata.labels.environment -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.env) -}}
+              {{- .app.metadata.labels.env -}}
+            {{- else -}}
+               default
+            {{- end -}}
+          environmentURL: "{{with .app.status.summary.externalURLs}}{{index . 0}}{{end}}"
+          logURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+          requiredContexts: []
+      slack:
+        attachments: |-
+          [{
+            "title": "{{ .app.metadata.name}}",
+            "title_link": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+            "color": "#f4c030",
+            "fields": [
+            {
+              "title": "Sync Status",
+              "value": "{{.app.status.sync.status}}",
+              "short": true
+            },
+            {
+              "title": "Repository",
+              "value": "{{.app.spec.source.repoURL}}",
+              "short": true
+            }
+            {{range $index, $c := .app.status.conditions}}
+            {{if not $index}},{{end}}
+            {{if $index}},{{end}}
+            {
+              "title": "{{$c.type}}",
+              "value": "{{$c.message}}",
+              "short": true
+            }
+            {{end}}
+            ]
+          }]
+    template.app-health-healthy: |
+      message: |
+        Application {{.app.metadata.name}} is healthy
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        status:
+          state: success
+          label: "continuous-delivery/{{.app.metadata.name}}"
+          targetURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+        deployment:
+          state: success
+          environment: >-
+            {{- if and (.app.metadata.annotations) (index .app.metadata.annotations "argocd.ledger.fr/environment") -}}
+              {{- index .app.metadata.annotations "argocd.ledger.fr/environment" -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.environment) -}}
+              {{- .app.metadata.labels.environment -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.env) -}}
+              {{- .app.metadata.labels.env -}}
+            {{- else -}}
+               default
+            {{- end -}}
+          environmentURL: "{{with .app.status.summary.externalURLs}}{{index . 0}}{{end}}"
+          logURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+          requiredContexts: []
+    template.app-sync-failed: |
+      message: |
+        {{if eq .serviceType "slack"}}:exclamation:{{end}}  The sync operation of application {{.app.metadata.name}} has failed at {{.app.status.operationState.finishedAt}} with the following error: {{.app.status.operationState.message}}
+        Sync operation details are available at: {{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true .
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        status:
+          state: failure
+          label: "continuous-delivery/{{.app.metadata.name}}"
+          targetURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+        deployment:
+          state: failure
+          environment: >-
+            {{- if and (.app.metadata.annotations) (index .app.metadata.annotations "argocd.ledger.fr/environment") -}}
+              {{- index .app.metadata.annotations "argocd.ledger.fr/environment" -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.environment) -}}
+              {{- .app.metadata.labels.environment -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.env) -}}
+              {{- .app.metadata.labels.env -}}
+            {{- else -}}
+               default
+            {{- end -}}
+          environmentURL: "{{with .app.status.summary.externalURLs}}{{index . 0}}{{end}}"
+          logURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+          requiredContexts: []
+      slack:
+        attachments: |-
+          [{
+            "title": "{{ .app.metadata.name}}",
+            "title_link":"{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+            "color": "#E96D76",
+            "fields": [
+            {
+              "title": "Sync Status",
+              "value": "{{.app.status.sync.status}}",
+              "short": true
+            },
+            {
+              "title": "Repository",
+              "value": "{{.app.spec.source.repoURL}}",
+              "short": true
+            }
+            {{range $index, $c := .app.status.conditions}}
+            {{if not $index}},{{end}}
+            {{if $index}},{{end}}
+            {
+              "title": "{{$c.type}}",
+              "value": "{{$c.message}}",
+              "short": true
+            }
+            {{end}}
+            ]
+          }]
+    template.app-sync-running: |
+      message: |
+        The sync operation of application {{.app.metadata.name}} has started at {{.app.status.operationState.startedAt}}.
+        Sync operation details are available at: {{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true .
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        status:
+          state: in_progress
+          label: "continuous-delivery/{{.app.metadata.name}}"
+          targetURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+        deployment:
+          state: in_progress
+          environment: >-
+            {{- if and (.app.metadata.annotations) (index .app.metadata.annotations "argocd.ledger.fr/environment") -}}
+              {{- index .app.metadata.annotations "argocd.ledger.fr/environment" -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.environment) -}}
+              {{- .app.metadata.labels.environment -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.env) -}}
+              {{- .app.metadata.labels.env -}}
+            {{- else -}}
+               default
+            {{- end -}}
+          environmentURL: "{{with .app.status.summary.externalURLs}}{{index . 0}}{{end}}"
+          logURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+          requiredContexts: []
+      slack:
+        attachments: |-
+          [{
+            "title": "{{ .app.metadata.name}}",
+            "title_link":"{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+            "color": "#0DADEA",
+            "fields": [
+            {
+              "title": "Sync Status",
+              "value": "{{.app.status.sync.status}}",
+              "short": true
+            },
+            {
+              "title": "Repository",
+              "value": "{{.app.spec.source.repoURL}}",
+              "short": true
+            }
+            {{range $index, $c := .app.status.conditions}}
+            {{if not $index}},{{end}}
+            {{if $index}},{{end}}
+            {
+              "title": "{{$c.type}}",
+              "value": "{{$c.message}}",
+              "short": true
+            }
+            {{end}}
+            ]
+          }]
+    template.app-sync-status-unknown: |
+      message: |
+        {{if eq .serviceType "slack"}}:exclamation:{{end}} Application {{.app.metadata.name}} sync is 'Unknown'.
+        Application details: {{.context.argocdUrl}}/applications/{{.app.metadata.name}}.
+        {{if ne .serviceType "slack"}}
+        {{range $c := .app.status.conditions}}
+            * {{$c.message}}
+        {{end}}
+        {{end}}
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        status:
+          state: pending
+          label: "continuous-delivery/{{.app.metadata.name}}"
+          targetURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+        deployment:
+          state: pending
+          environment: >-
+            {{- if and (.app.metadata.annotations) (index .app.metadata.annotations "argocd.ledger.fr/environment") -}}
+              {{- index .app.metadata.annotations "argocd.ledger.fr/environment" -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.environment) -}}
+              {{- .app.metadata.labels.environment -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.env) -}}
+              {{- .app.metadata.labels.env -}}
+            {{- else -}}
+               default
+            {{- end -}}
+          environmentURL: "{{with .app.status.summary.externalURLs}}{{index . 0}}{{end}}"
+          logURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+          requiredContexts: []
+      slack:
+        attachments: |-
+          [{
+            "title": "{{ .app.metadata.name}}",
+            "title_link":"{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+            "color": "#E96D76",
+            "fields": [
+            {
+              "title": "Sync Status",
+              "value": "{{.app.status.sync.status}}",
+              "short": true
+            },
+            {
+              "title": "Repository",
+              "value": "{{.app.spec.source.repoURL}}",
+              "short": true
+            }
+            {{range $index, $c := .app.status.conditions}}
+            {{if not $index}},{{end}}
+            {{if $index}},{{end}}
+            {
+              "title": "{{$c.type}}",
+              "value": "{{$c.message}}",
+              "short": true
+            }
+            {{end}}
+            ]
+          }]
+    template.app-sync-succeeded: |
+      message: |
+        {{if eq .serviceType "slack"}}:white_check_mark:{{end}} Application {{.app.metadata.name}} has been successfully synced at {{.app.status.operationState.finishedAt}}.
+        Sync operation details are available at: {{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true .
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        status:
+          state: success
+          label: "continuous-delivery/{{.app.metadata.name}}"
+          targetURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+      slack:
+        attachments: |-
+          [{
+            "title": "{{ .app.metadata.name}}",
+            "title_link":"{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+            "color": "#18be52",
+            "fields": [
+            {
+              "title": "Sync Status",
+              "value": "{{.app.status.sync.status}}",
+              "short": true
+            },
+            {
+              "title": "Repository",
+              "value": "{{.app.spec.source.repoURL}}",
+              "short": true
+            }
+            {{range $index, $c := .app.status.conditions}}
+            {{if not $index}},{{end}}
+            {{if $index}},{{end}}
+            {
+              "title": "{{$c.type}}",
+              "value": "{{$c.message}}",
+              "short": true
+            }
+            {{end}}
+            ]
+          }]
+
+  triggers:
+    trigger.on-created: |
+      - description: Application is created.
+        oncePer: app.metadata.name
+        send:
+        - app-created
+        when: "true"
+    trigger.on-deleted: |
+      - description: Application is deleted.
+        oncePer: app.metadata.name
+        send:
+        - app-deleted
+        when: app.metadata.deletionTimestamp != nil
+    trigger.on-health-degraded: |
+      - description: Application has degraded
+        send:
+        - app-health-degraded
+        when: app.status.health.status == 'Degraded'
+    trigger.on-health-healthy: |
+      - description: Application is healthy
+        send:
+        - app-health-healthy
+        when: app.status.health.status == 'Healthy'
+    trigger.on-sync-failed: |
+      - description: Application syncing has failed
+        send:
+        - app-sync-failed
+        when: app.status.operationState != nil and app.status.operationState.phase in ['Error',
+          'Failed']
+    trigger.on-sync-running: |
+      - description: Application is being synced
+        send:
+        - app-sync-running
+        when: app.status.operationState != nil and app.status.operationState.phase in ['Running']
+    trigger.on-sync-status-unknown: |
+      - description: Application status is 'Unknown'
+        send:
+        - app-sync-status-unknown
+        when: app.status.sync.status == 'Unknown'
+    trigger.on-sync-succeeded: |
+      - description: Application syncing has succeeded
+        send:
+        - app-sync-succeeded
+        when: app.status.operationState != nil and app.status.operationState.phase in ['Succeeded']
+
+    defaultTriggers: |
+      - on-created
+      - on-deleted
+      - on-deployed-always
+      - on-health-degraded
+      - on-sync-failed
+      - on-sync-status-unknown
+      - on-sync-succeeded
+
+    defaultTriggers.github: |
+      - on-created
+      - on-deleted
+      - on-deployed-always
+      - on-health-degraded
+      - on-health-healthy
+      - on-sync-failed
+      - on-sync-running
+      - on-sync-status-unknown
+      - on-sync-succeeded
+
+  subscriptions: []

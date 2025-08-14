@@ -1,0 +1,14 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ./1047-atlas/applications
+  - ./1047-atlas/argo-meta.yaml
+  - ./2041-hsm-scriptrunner
+  - ./2051-hsm-scriptrunner-ppr
+  - ./2183-mapping-service
+  - ./2337-rabbitmq
+  - ./2110-prober-service-prd
+  - ./2302-lama-adapter-prd
+  - ./2156-ledger-data-team

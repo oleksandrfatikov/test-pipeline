@@ -1,0 +1,42 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: multisig-sbx
+  annotations:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels: &labels
+    environment: sbx
+    owner: team-infra-sre
+    organization: enterprise
+    service: multisig
+spec:
+  project: multisig-argocd
+  sources:
+    - repoURL: https://github.com/LedgerHQ/sre-argocd.git
+      targetRevision: "main"
+      ref: values
+    - repoURL: ghcr.io/ledgerhq/charts
+      chart: argocd-appset-env
+      targetRevision: "0.10.5"
+      helm:
+        passCredentials: true
+        valueFiles:
+          - "$values/deploy/platform-2220-cluster/applications/vault/multisig/sbx/sbx.yaml"
+        valuesObject:
+          labels: *labels
+          destination:
+            name: sandbox-2042-cluster
+            namespace: multisig-sbx
+  destination:
+    name: in-cluster
+    namespace: argocd-central
+  syncPolicy:
+    automated:
+      selfHeal: true
+    syncOptions:
+      - Validate=true
+      - CreateNamespace=true
+      - ServerSideApply=true
+

@@ -1,0 +1,40 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault-remote-stg
+  annotations:
+    argocd.ledger.fr/environment: "Staging"
+    argocd-image-updater.argoproj.io/image-list: vault-remote=ghcr.io/ledgerhq/vault-remote:latest
+    argocd-image-updater.argoproj.io/update-strategy: digest
+    argocd-image-updater.argoproj.io/vault-remote.helm.image-name: app-template.image.name
+    argocd-image-updater.argoproj.io/vault-remote.helm.image-tag: app-template.image.tag
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels: &labels
+    environment: stg
+    owner: team-infra-sre
+    organization: enterprise
+    service: vault-remote
+spec:
+  project: vault-remote-argocd
+  sources:
+    - repoURL: https://github.com/LedgerHQ/sre-argocd.git
+      targetRevision: "main"
+      ref: values
+    - repoURL: https://github.com/LedgerHQ/vault-remote.git
+      path: "argocd/base"
+      targetRevision: "main"
+      helm:
+        passCredentials: true
+        valueFiles:
+          - "$values/deploy/platform-2220-cluster/applications/vault/vault-remote/stg/stg.yaml"
+  destination:
+    name: shared-application-2021-cluster
+    namespace: vault-remote-stg-argocd
+  syncPolicy:
+    automated:
+      selfHeal: true
+    syncOptions:
+      - Validate=true
+      - CreateNamespace=true

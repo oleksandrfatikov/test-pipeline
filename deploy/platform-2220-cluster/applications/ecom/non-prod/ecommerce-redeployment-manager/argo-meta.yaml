@@ -1,0 +1,20 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: ecommerce-redeployment-manager
+  namespace: argocd-central
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: ecommerce-redeployment-manager project
+  sourceRepos:
+    - "https://github.com/LedgerHQ/ecommerce-redeployment-manager.git"
+    - "ghcr.io"
+    - "ghcr.io/ledgerhq/charts"
+  destinations:
+    - namespace: 2346-ecommerce-redeployment-manager
+      name: shared-application-2021-cluster
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

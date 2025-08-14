@@ -1,0 +1,1925 @@
+---
+appset:
+  categoryValues:
+    default:
+      path: argocd/base
+      syncPolicyMode: prd
+      inlineValues:
+        valueBundles:
+          eksPrd:
+            enabled: true
+        datadog:
+          env: prd
+        custom:
+          awsEnv: prd
+          env: prd
+          vaultProjectId: "2108"
+          lamaNamespace: 2108-vault-prd
+          wdProjectId: "2108"
+          wdDBNamespace: 2108-vault-prd
+          hsmEnv: "cluster-prod"
+          ledgerVaultDomain: vault.ledger.com
+
+    all:
+      path: argocd/base
+
+    upstream:
+      disableDefaultTagRevision: true
+      path: ""
+
+    gates-override:
+      repoUrl: https://github.com/LedgerHQ/ledger-vault-api
+      inlineValues:
+        custom:
+          calVersion: 2025.40.2645
+        env:
+          VAULT_BALANCE_TTL: 10
+          VAULT_MAX_NUMBER_OF_PROCESSES: 16
+          VAULT_MIN_NUMBER_OF_PROCESSES: 4
+          VAULT_PROCESS_TIMEOUT: "1800"
+          VAULT_TIMEOUT_API_CALL: 150
+          VAULT_UTXO_PICKING_STRATEGY: OPTIMIZE_SIZE
+          VAULT_PRICING_PLAN_NAME: starter
+          VAULT_WALLET_DAEMON_HISTORY_WORKERS: 16
+          VAULT_ENABLE_HSM_RULE_SET_V2: "true"
+
+        hsmSanityCheck:
+          enabled: false
+        serviceAccount:
+          annotations:
+            eks.amazonaws.com/role-arn: arn:aws:iam::{{ .Values.custom.awsAccountId }}:role/gate-app-role
+        worker:
+          probes:
+            liveness:
+              spec:
+                failureThreshold: 6
+                periodSeconds: 60
+            readiness:
+              spec:
+                periodSeconds: 60
+            startup:
+              spec:
+                periodSeconds: 60
+
+    gates-us:
+      extendCategories: [gates-base, gates-self-version, gates-current, gates-override]
+      inlineValues:
+        env:
+          VAULT_HSM_DRIVER_NAME: us
+          VAULT_WALLET_DAEMON_NAME: us-lama
+    gates-emea:
+      extendCategories: [gates-base, gates-self-version, gates-current, gates-override]
+      inlineValues:
+        env:
+          VAULT_HSM_DRIVER_NAME: emea
+          VAULT_WALLET_DAEMON_NAME: emea-lama
+    gates-apac:
+      extendCategories: [gates-base, gates-self-version, gates-current, gates-override]
+      inlineValues:
+        env:
+          VAULT_HSM_DRIVER_NAME: apac
+          VAULT_WALLET_DAEMON_NAME: apac-lama
+    gates-internal:
+      extendCategories: [gates-base, gates-self-version, gates-current, gates-override]
+      inlineValues:
+        env:
+          VAULT_HSM_DRIVER_NAME: internal
+          VAULT_WALLET_DAEMON_NAME: internal-lama
+    gates-komainu:
+      extendCategories: [gates-base, gates-self-version, gates-current, gates-override]
+      inlineValues:
+        app:
+          resources:
+            requests:
+              cpu: "1"
+        custom:
+          host: "vault.komainu.com"
+        env:
+          VAULT_HSM_DRIVER_NAME: komainu
+          VAULT_WALLET_DAEMON_NAME: komainudigital-lama
+          VAULT_PRICING_PLAN_NAME: enterprise
+          VAULT_TIMEOUT_API_CALL: 600
+
+    hsmdrivers:
+      inlineValues:
+        env:
+          VAULT_HSM_ENDPOINT: https://vault-cluster-prd.hsm.pa6.ldg-prd.net/process
+          VAULT_HSM_GATEWAY_URL: "http://hsm-proxy-default"
+          VAULT_HSM_ENV: PROD
+          VAULT_HSM_TIMEOUT: 2000
+          VAULT_HSM_BACKOFF_DELAY: 2000
+          VAULT_HSM_DRIVER_ENABLE_BITCOIN_REFACTOR: "true"
+        resources:
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+        probes:
+          liveness:
+            spec:
+              failureThreshold: 6
+
+    wds:
+      inlineValues:
+        env:
+          CORE_LOG_LEVEL: "WARN"
+          DAEMON_LOG_LEVEL: "WARN"
+          CORE_OPS_THREADS_FACTOR: 4
+          CORE_PG_CONNECTION_POOL_SIZE_PER_WALLET_POOL: 4
+          FALLBACK_TIMEOUT: 7000
+          DD_INTEGRATIONS_ENABLED: "true"
+          DD_RUNTIME_METRICS_ENABLED: "true"
+          DD_JMXFETCH_ENABLED: "true"
+          DD_PROFILING_ENABLED: "false"
+        requests:
+          memory: "8Gi"
+          cpu: "2"
+        limits:
+          memory: "16Gi"
+          cpu: "4"
+        probes:
+          liveness:
+            spec:
+              failureThreshold: 6
+
+  projectValues:
+    upstream:
+      common-secrets:
+        inlineValues:
+          valueBundles:
+            eksPrd:
+              enabled: true
+          externalSecret:
+            postgresql:
+              enabled: true
+              dataFrom:
+                - extract:
+                    key: 2108/tf-postgresql
+            rabbitmq:
+              enabled: true
+              dataFrom:
+                - extract:
+                    key: 2108/tf-rabbitmq
+            keycloak:
+              enabled: true
+              dataFrom:
+                - extract:
+                    key: keycloak-prd/tf-keycloak
+      vault-rabbitmq:
+        inlineValues:
+          clustering:
+            forceBoot: true
+          image:
+            registry: jfrog.ledgerlabs.net
+            repository: ossproxy-oci-proxy-dockerio/bitnami/rabbitmq
+            pullSecrets:
+              - name: container-registries
+          ingress:
+            enabled: true
+            hostname: vault-rabbitmq-prd.aws.prd.ldg-tech.com
+      keycloak:
+        targetRevision: 24.6.3
+        inlineValues:
+          image:
+            registry: jfrog.ledgerlabs.net
+            repository: ossproxy-oci-proxy-dockerio/bitnami/keycloak
+            pullSecrets:
+              - name: container-registries
+          global:
+            security:
+              allowInsecureImages: true
+          production: true
+          ingress:
+            enabled: true
+            hostname: vault-keycloak-prd.aws.prd.ldg-tech.com
+            hostnameStrict: true
+            tls: true
+            ingressClassName: trusted
+            annotations:
+              cert-manager.io/cluster-issuer: letsencrypt-prod
+          adminIngress:
+            enabled: false
+          tls:
+            enabled: true
+            autoGenerated: true
+          externalDatabase:
+            host: pg-main.2108-vault-prd.aws.ldg-prd.net
+          metrics:
+            enabled: true
+          podAnnotations:
+            ad.datadoghq.com/keycloak.checks: |
+              {
+                "openmetrics": {
+                  "init_config": {},
+                  "instances": [
+                    {
+                      "openmetrics_endpoint": "http://%%host%%:8080/realms/master/metrics",
+                      "namespace": "keycloak",
+                      "metrics": [
+                        "jvm_memory_bytes_used",
+                        "jvm_memory_bytes_max",
+                        "jvm_memory_bytes_committed",
+                        "keycloak_logins*",
+                        "keycloak_response*",
+                        "keycloak_client_logins*",
+                        "keycloak_failed_login_attempts*",
+                        "keycloak_request_duration*"
+                      ],
+                      "tag_by_endpoint": false,
+                      "collect_histogram_buckets": true,
+                      "histogram_buckets_as_distributions": true,
+                      "collect_counters_with_distributions": true
+                    }
+                  ]
+                }
+              }
+
+    all:
+      # for the love of MS/SRE sanity, please keep the apps in alphabetical order
+      api-gateway:
+        inlineValues:
+          env:
+            PROCESS_TIMEOUT: "600"
+            TIMEOUT_API_CALL: "180"
+            MIN_NUMBER_OF_PROCESSES: 4
+            MAX_NUMBER_OF_PROCESSES: 16
+            RATELIMIT_ENABLED: "true"
+            RATELIMIT_DEFAULT: "10 per minute"
+            RATELIMIT_DEFAULT_TX_CREATION: "50 per hour"
+            RATELIMIT_FOR_LOGIN: "100 per minute"
+            GUNICORN_WORKERS: 2
+            GUNICORN_TIMEOUT: 600
+          resources:
+            limits:
+              cpu: "8"
+              memory: "12Gi"
+            requests:
+              cpu: "2"
+              memory: "4Gi"
+          probes:
+            liveness:
+              spec:
+                failureThreshold: 6
+            readiness:
+              spec:
+                timeoutSeconds: 1
+      api-keys:
+        inlineValues:
+          probes:
+            startup:
+              spec:
+                initialDelaySeconds: 20
+                timeoutSeconds: 2
+                periodSeconds: 10
+          resources:
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+            requests:
+              cpu: "500m"
+              memory: "2Gi"
+      aum-api:
+        inlineValues:
+          env:
+            VAULT_AUM_API_MAX_NUMBER_OF_PROCESSES: 16
+            VAULT_AUM_API_MIN_NUMBER_OF_PROCESSES: 2
+            VAULT_AUM_API_WORKSPACE_TIMEOUT: 1800
+            VAULT_AUM_API_CLI_WORKSPACE_CONCURRENCY: 3
+          resources:
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+            requests:
+              cpu: "250m"
+              memory: "128Mi"
+      aus:
+        repoUrl: https://github.com/LedgerHQ/vault-aus-api
+        targetRevision: 0.9.0
+      tradelink:
+        repoUrl: https://github.com/LedgerHQ/vault-tradelink
+        targetRevision: faa1b2f535ef90b061f1399b28c79105889d74ad
+        useAppTemplate: true
+      coin-gateway:
+        inlineValues:
+          controller:
+            replicas: 10
+          env:
+            CATAPLASM_WORKSPACES: '{"alphanodecapital": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_alphanodecapital"}, "bdacsdepository1": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_bdacsdepository1"}, "cg": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_cg"},  "cguat": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_cguat"}, "coinswitch": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_coinswitch"}, "cryptocom": {"url": "http://wd-cryptocom-lama", "schema": "libcore_cryptocom-lama_cryptocom"}, "dau": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_dau"}, "ducatofinance": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_ducatofinance"}, "et": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_et"}, "fnct": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_fnct"}, "hayvn": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_hayvn"}, "kryptodian": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_kryptodian"}, "legacytrust": {"url": "http://wd-legacytrust-lama", "schema": "libcore_legacytrust-lama_legacytrust"}, "sharering": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_sharering"}, "starstorm": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_starstorm"}, "suncrypto": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_suncrypto"}, "uminers": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_uminers"}, "zebpay": {"url": "http://wd-apac-lama", "schema": "libcore_apac-lama_zebpay"}, "demoapac": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_demoapac"}, "demoemea": {"url": "http://wd-internal-nft2", "schema": "libcore_internal-nft2_demoemea"}, "demoemeaxl": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_demoemeaxl"}, "demoops": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_demoops"}, "demoproduct": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_demoproduct"}, "demovault": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_demovault"}, "demous": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_demous"}, "ledgercorporate": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_ledgercorporate"}, "ledgernft": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_ledgernft"}, "qafunds": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_qafunds"}, "test3cluster": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_test3cluster"}, "vaulteng": {"url": "http://wd-internal-lama", "schema": "libcore_internal-lama_vaulteng"}, "121g": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_121g"}, "binanceus": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_binanceus"}, "blockalpha": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_blockalpha"}, "blocktower": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_blocktower"}, "blockware": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_blockware"}, "bmax": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_bmax"}, "brick": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_brick"}, "coinvestors": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_coinvestors"}, "cowrie": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_cowrie"}, "dac": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_dac"}, "delchain": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_delchain"}, "eon": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_eon"}, "equitytrustcold": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_equitytrustcold"}, "equitytrusthot": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_equitytrusthot"}, "etana": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_etana"}, "foodchain": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_foodchain"}, "goldentree": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_goldentree"}, "hpf": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_hpf"}, "hyperamp": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_hyperamp"}, "jge": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_jge"}, "littlefish": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_littlefish"}, "minefficiency": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_minefficiency"}, "ndax": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_ndax"}, "netvrk": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_netvrk"}, "oneof": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_oneof"}, "orishacapital": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_orishacapital"}, "ralphlauren": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_ralphlauren"}, "rockwallet": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_rockwallet"}, "rss": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_rss"}, "sugarblock": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_sugarblock"}, "tari": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_tari"}, "tetratest": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_tetratest"}, "tetratrustcompany": {"url": "http://wd-tetratrust-lama", "schema": "libcore_tetratrust-lama_tetratrustcompany"}, "time": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_time"}, "toklas": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_toklas"}, "uccrypto": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_uccrypto"}, "uda": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_uda"}, "upholduat": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_upholduat"}, "voyager": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_voyager"}, "whitetower": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_whitetower"}, "wicklowcapital": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_wicklowcapital"}, "workdao": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_workdao"}, "yugalabs": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_yugalabs"}, "zion": {"url": "http://wd-us-lama", "schema": "libcore_us-lama_zion"}, "alkimi": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_alkimi"}, "arianee": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_arianee"}, "b2b": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_b2b"}, "b2c2": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_b2c2"}, "baanx": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_baanx"}, "bankfrickuat": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_bankfrickuat"}, "banksytrust": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_banksytrust"}, "bit2me": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_bit2me"}, "bitstampuat": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_bitstampuat"}, "bitvavo": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_bitvavo"}, "bosonprotocol": {"url": "http://wd-bosonprotocol-lama", "schema": "libcore_bosonprotocol-lama_bosonprotocol"}, "bts999": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_bts999"}, "caiz": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_caiz"}, "changecrypto": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_changecrypto"}, "coinhouse": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_coinhouse"}, "coinhousecs": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_coinhousecs"}, "coinmotion": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_coinmotion"}, "coinspaid": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_coinspaid"}, "coinstreet": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_coinstreet"}, "cointresor": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_cointresor"}, "colossus": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_colossus"}, "collaterize": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_collaterize"}, "creand": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_creand"}, "crypto4winners": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_crypto4winners"}, "deblock": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_deblock"}, "dior": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_dior"}, "ecoinomy": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_ecoinomy"}, "ethtrust": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_ethtrust"}, "etoro": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_etoro"}, "f11group": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_f11group"}, "prada": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_prada"}, "procapitaltest": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_procapitaltest"}, "sibachain": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_sibachain"}, "solanafoundation": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_solanafoundation"}, "sorare": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_sorare"}, "starknetfoundation": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_starknetfoundation"}, "tangany": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_tangany"}, "tanganytest": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_tanganytest"}, "thesandbox": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_thesandbox"}, "tungstencustody": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_tungstencustody"}, "bankfrick": {"url": "http://wd-bankfrick-lama", "schema": "libcore_bankfrick-lama_bankfrick"}, "exmovault": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_exmovault"}, "flowdesk": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_flowdesk"}, "fortunacustody": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_fortunacustody"}, "fumbi": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_fumbi"}, "guerlain": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_guerlain"}, "hiveon": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_hiveon"}, "hodl": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_hodl"}, "hodlgibfund": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_hodlgibfund"}, "hyperweb": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_hyperweb"}, "jobchain": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_jobchain"}, "keringpoc": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_keringpoc"}, "komainuuat": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_komainuuat"}, "lacollection": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_lacollection"}, "lexim": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_lexim"}, "lofficiel": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_lofficiel"}, "lush": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_lush"}, "lvmh": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_lvmh"}, "lvmhdemo": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_lvmhdemo"}, "lvmhtest": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_lvmhtest"}, "mazars": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_mazars"}, "metaltradingcompany": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_metaltradingcompany"}, "mettrade": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_mettrade"}, "nexo": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_nexo"}, "nucocloud": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_nucocloud"}, "okazio": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_okazio"}, "opera": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_opera"}, "p2p": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_p2p"}, "pmu": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_pmu"}, "pollux": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_pollux"}, "procapital": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_procapital"}, "quartys": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_quartys"}, "sguiwulddgddryue": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_sguiwulddgddryue"}, "starkware": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_starkware"}, "uap": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_uap"}, "unblockcapital": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_unblockcapital"}, "uphold": {"url": "http://wd-uphold-lama", "schema": "libcore_uphold-lama_uphold"}, "upholdreserve": {"url": "http://wd-uphold-lama", "schema": "libcore_uphold-lama_upholdreserve"}, "upholduat2": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_upholduat2"}, "venga": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_venga"}, "vero": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_vero"}, "wella": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_wella"}, "youhodler": {"url": "http://wd-emea-lama", "schema": "libcore_emea-lama_youhodler"}, "komainudigital": {"url": "http://wd-komainudigital-lama", "schema": "libcore_komainudigital-lama_komainudigital"}, "komainudubai": {"url": "http://wd-komainudigital-lama", "schema": "libcore_komainudigital-lama_komainudubai"}, "komainups": {"url": "http://wd-komainups-lama", "schema": "libcore_komainups-lama_komainups"}, "komainuuk": {"url": "http://wd-komainudigital-lama", "schema": "libcore_komainudigital-lama_komainuuk"}}'
+          resources:
+            limits:
+              cpu: "4"
+              memory: "4Gi"
+            requests:
+              cpu: "2"
+              memory: "2Gi"
+          ### temporary for testing purposes, should be removed later
+          persistence:
+            tcpdump:
+              enabled: true
+              type: emptyDir
+          sidecars:
+            tcpdump:
+              enabled: true
+              image: "jfrog.ledgerlabs.net/ossproxy-oci-proxy-dockerio/corfr/tcpdump"
+              securityContext:
+                capabilities:
+                  add: ["NET_ADMIN", "NET_RAW"]
+              volumeMounts:
+                - name: tcpdump
+                  mountPath: /tcpdump
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  mkdir -p /tcpdump;
+                  tcpdump -i any -nn -s 0 \
+                    -w /tcpdump/trace-$(hostname)-$(date +%Y%m%d%H%M).pcap \
+                    -C 50 -Z root &
+
+                  while true; do
+                    find /tcpdump -type f -name "*.pcap*" ! -name "*.gz" -mmin +5 -exec gzip {} \;
+                    sleep 300
+                  done
+      device-registry:
+        inlineValues:
+          resources:
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+            requests:
+              cpu: "250m"
+              memory: "128Mi"
+      front:
+        inlineValues:
+          controller:
+            replicas: 3
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+            requests:
+              cpu: "250m"
+              memory: "128Mi"
+          ingress:
+            vault.b2broker.com:
+              host: vault.b2broker.com
+            custody.bit2me.com:
+              host: custody.bit2me.com
+            vault.cryptogarage.co.jp:
+              host: vault.cryptogarage.co.jp
+            vault.daucustody.com:
+              host: vault.daucustody.com
+            institutional.jobchain.com:
+              host: institutional.jobchain.com
+            vault.komainu.com:
+              host: vault.komainu.com
+            vault.tetratrust.com:
+              host: vault.tetratrust.com
+      insurance-reports:
+        repoUrl: https://github.com/LedgerHQ/vault-insurance-reports
+        targetRevision: b13a039f335d0b71e2fd433943ce7b7066ae96b7
+        useAppTemplate: true
+        inlineValues:
+          externalSecret:
+            private-key:
+              enabled: true
+              dataFrom:
+                - extract:
+                    key: "2108/tf-insurance-report"
+          image:
+            tag: v0.2.4
+      nfts-api:
+        inlineValues:
+      notification-center:
+        inlineValues:
+          env:
+            DD_JMXFETCH_ENABLED: false
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+            requests:
+              cpu: "250m"
+              memory: "128Mi"
+      notifier:
+        inlineValues:
+          env:
+            DD_LOGS_INJECTION: "true"
+            DD_RUNTIME_METRICS_ENABLED: "true"
+            DD_PROFILING_ENABLED: "false"
+          app:
+            resources:
+              limits:
+                cpu: "2"
+                memory: "4Gi"
+              requests:
+                cpu: "1"
+                memory: "1Gi"
+            ingress:
+              vault.b2broker.com:
+                host: vault.b2broker.com
+              custody.bit2me.com:
+                host: custody.bit2me.com
+              vault.cryptogarage.co.jp:
+                host: vault.cryptogarage.co.jp
+              vault.daucustody.com:
+                host: vault.daucustody.com
+              institutional.jobchain.com:
+                host: institutional.jobchain.com
+              vault.komainu.com:
+                host: vault.komainu.com
+              vault.tetratrust.com:
+                host: vault.tetratrust.com
+          consumer:
+            resources:
+              limits:
+                cpu: "2"
+                memory: "4Gi"
+              requests:
+                cpu: "1"
+                memory: "1Gi"
+          webhook:
+            resources:
+              limits:
+                cpu: "2"
+                memory: "4Gi"
+              requests:
+                cpu: "1"
+                memory: "1Gi"
+          websocket:
+            resources:
+              limits:
+                cpu: "2"
+                memory: "4Gi"
+              requests:
+                cpu: "1"
+                memory: "1Gi"
+      organizations-api:
+        inlineValues:
+          resources:
+            requests:
+              memory: "64Mi"
+            limits:
+              cpu: 1
+          probes:
+            liveness:
+              spec:
+                failureThreshold: 6
+      platform-manager:
+        inlineValues:
+          app:
+            resources:
+              limits:
+                cpu: "1"
+                memory: "4Gi"
+              requests:
+                cpu: "1"
+                memory: "2Gi"
+          worker:
+            resources:
+              limits:
+                cpu: "2"
+                memory: "3Gi"
+              requests:
+                cpu: "1"
+                memory: "1536Mi"
+          flower:
+            resources:
+              limits:
+                cpu: "700m"
+                memory: "1Gi"
+              requests:
+                cpu: "500m"
+                memory: "500Mi"
+
+      revault-api:
+        inlineValues:
+          # remove after added into chart
+          app:
+            initContainers:
+              init-db-postgres:
+                env:
+                  POSTGRES_ADDITIONAL_RO_ROLES: "read_only data_team_readonly"
+          env:
+            # see VG-22185
+            #
+            # this enable /debug router that contains some useful endpoints
+            # for debugging (e.g: list all workspaces, users, ...)
+            ENABLE_DEBUG_PROCEDURES: "1"
+
+      revault-onboarding:
+        inlineValues:
+          custom:
+            blueAppVersion: "6.2.0"
+            staxAppVersion: "2.0.2"
+            staxFirmwareVersion: "1.8.0"
+
+      tx-scheduler:
+        inlineValues:
+          env:
+            BROADCASTER_LOOP_SECONDS: "3"
+      web3-handler-api:
+        inlineValues:
+          controller:
+            replicas: 2
+          env:
+            DD_JMXFETCH_ENABLED: "true"
+            DD_RUNTIME_METRICS_ENABLED: "true"
+      web3checks-vault:
+        inlineValues:
+          resources:
+            limits:
+              cpu: "4"
+              memory: "4Gi"
+            requests:
+              cpu: "4"
+              memory: "4Gi"
+          env:
+            WEB3CHECKS_VAULT_BACKEND_URL: "https://web3checks-backend.api.ledger.com"
+
+    gates-us:
+      gate-121g:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 357
+      gate-binanceus:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 392
+      gate-blockalpha:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 432
+      gate-blocktower:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 422
+            VAULT_PRICING_PLAN_NAME: business
+      gate-blockware:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 351
+      gate-bmax:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 455
+            VAULT_PRICING_PLAN_NAME: light
+      gate-brick:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 365
+            VAULT_PRICING_PLAN_NAME: business
+      gate-coinvestors:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 411
+      gate-cowrie:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 453
+      gate-dac:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 208
+      gate-delchain:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 223
+            VAULT_PRICING_PLAN_NAME: business
+      gate-eon:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 438
+      gate-equitytrustcold:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 409
+            VAULT_PRICING_PLAN_NAME: enterprise
+            VAULT_MAX_NUMBER_OF_PROCESSES: 24
+          app:
+            resources:
+              limits:
+                cpu: 2
+                memory: "3Gi"
+          worker:
+            resources:
+              limits:
+                cpu: 4
+                memory: "2Gi"
+      gate-equitytrusthot:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 408
+            VAULT_PRICING_PLAN_NAME: enterprise
+          app:
+            resources:
+              limits:
+                cpu: 2
+                memory: "3Gi"
+      gate-etana:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 395
+            VAULT_PRICING_PLAN_NAME: enterprise
+      gate-foodchain:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 375
+      gate-goldentree:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 366
+      gate-hpf:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 305
+            VAULT_ATTESTATION_ID: 228
+            VAULT_PRICING_PLAN_NAME: business
+      gate-hyperamp:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 306
+            VAULT_ATTESTATION_ID: 228
+            VAULT_PRICING_PLAN_NAME: business
+      gate-jge:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 431
+      gate-littlefish:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 433
+      gate-minefficiency:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 326
+      gate-ndax:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 132
+            VAULT_PRICING_PLAN_NAME: legacy
+      gate-netvrk:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 397
+            VAULT_PRICING_PLAN_NAME: enterprise
+      gate-oneof:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 373
+      gate-orishacapital:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 318
+      gate-ralphlauren:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 364
+            VAULT_PRICING_PLAN_NAME: business
+      gate-rockwallet:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 401
+      gate-rss:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 310
+      gate-sugarblock:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 324
+      gate-tari:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 346
+      gate-tetratest:
+        inlineValues:
+          app:
+            resources:
+              limits:
+                cpu: "4"
+                memory: 4Gi
+          env:
+            VAULT_COMPARTMENT_ID: 437
+            VAULT_REVAULT_STREAM_MAX_LENGTH: "100000"
+      gate-tetratrustcompany:
+        inlineValues:
+          custom:
+            host: "vault.tetratrust.com"
+            pricingPlans:
+              custom_tetratrust:
+                planLabel: "custom tetratrust"
+                planMaxAccounts: 5000
+                planMaxEntities: 20
+                planMaxGroups: 500
+                planMaxUsers: 500
+                planMaxWhitelists: 500
+                planTxRate: 1000
+                planApprovalRate: 2000
+                planReadRate: 2000
+                planAddressRate: 500
+          env:
+            VAULT_COMPARTMENT_ID: 301
+            VAULT_WALLET_DAEMON_NAME: tetratrust-lama
+            VAULT_PRICING_PLAN_NAME: custom_tetratrust
+            VAULT_MAX_NUMBER_OF_PROCESSES: 32
+            VAULT_REVAULT_STREAM_MAX_LENGTH: "100000"
+          app:
+            podAnnotations:
+              cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+            resources:
+              requests:
+                cpu: "2"
+                memory: 4Gi
+              limits:
+                cpu: "4"
+                memory: 8Gi
+          worker:
+            resources:
+              limits:
+                cpu: 4
+                memory: "2Gi"
+
+      gate-time:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 388
+      gate-toklas:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 353
+      gate-uccrypto:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 406
+      gate-uda:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 435
+      gate-upholduat:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 159
+            VAULT_PRICING_PLAN_NAME: enterprise
+      gate-voyager:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 355
+            VAULT_PRICING_PLAN_NAME: enterprise
+      gate-whitetower:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 334
+            VAULT_ATTESTATION_ID: 139
+            VAULT_PRICING_PLAN_NAME: legacy
+      gate-wicklowcapital:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 309
+      gate-workdao:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 367
+      gate-yugalabs:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 423
+      gate-zion:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 439
+
+    gates-emea:
+      gate-alkimi:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 315
+      gate-arianee:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 385
+      gate-b2b:
+        inlineValues:
+          custom:
+            host: "vault.b2broker.com"
+          env:
+            VAULT_COMPARTMENT_ID: 360
+            VAULT_PRICING_PLAN_NAME: business
+          app:
+            resources:
+              limits:
+                cpu: 4
+                memory: 4Gi
+      gate-b2c2:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 379
+      gate-baanx:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 303
+      gate-bankfrickuat:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 341
+            VAULT_ATTESTATION_ID: 196
+      gate-banksytrust:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 405
+      gate-bit2me:
+        inlineValues:
+          custom:
+            host: "custody.bit2me.com"
+          env:
+            VAULT_COMPARTMENT_ID: 349
+            VAULT_PRICING_PLAN_NAME: business
+      gate-bitstampuat:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 327
+            VAULT_ATTESTATION_ID: 147
+            VAULT_PRICING_PLAN_NAME: business
+      gate-bitvavo:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 381
+      gate-bosonprotocol:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 213
+            VAULT_WALLET_DAEMON_NAME: bosonprotocol-lama
+            VAULT_PRICING_PLAN_NAME: business
+      gate-bts999:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 153
+            VAULT_PRICING_PLAN_NAME: business
+      gate-caiz:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 333
+      gate-changecrypto:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 369
+          app:
+            resources:
+              limits:
+                cpu: "2"
+                memory: "4Gi"
+      gate-coinhouse:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 102
+            VAULT_PRICING_PLAN_NAME: enterprise
+      gate-coinhouse2:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 443
+            VAULT_PRICING_PLAN_NAME: enterprise
+      gate-coinhousecs:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 138
+            VAULT_PRICING_PLAN_NAME: enterprise
+      gate-coinmotion:
+        inlineValues:
+          custom:
+            pricingPlans:
+              custom_coinmotion:
+                planLabel: "custom coinmotion"
+                planMaxAccounts: 2500
+                planMaxEntities: 0
+                planMaxGroups: 300
+                planMaxUsers: 500
+                planMaxWhitelists: 300
+                planTxRate: 500
+                planApprovalRate: 2000
+                planReadRate: 1000
+                planAddressRate: 500
+          env:
+            VAULT_COMPARTMENT_ID: 322
+            VAULT_ATTESTATION_ID: 177
+            VAULT_PRICING_PLAN_NAME: custom_coinmotion
+      gate-coinspaid:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 344
+            VAULT_PRICING_PLAN_NAME: enterprise_v4
+            VAULT_TIMEOUT_ACCOUNT_BATCH_RECONCILE: 20
+          app:
+            resources:
+              requests:
+                memory: "1Gi"
+              limits:
+                cpu: 2
+                memory: "4Gi"
+          worker:
+            resources:
+              limits:
+                cpu: 8
+                memory: "4Gi"
+      gate-coinstreet:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 172
+      gate-cointresor:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 300
+      gate-colossus:
+        inlineValues:
+          custom:
+            pricingPlans:
+              custom_colossus:
+                planLabel: "custom colossus"
+                planMaxAccounts: 200
+                planMaxEntities: 0
+                planMaxGroups: 10
+                planMaxUsers: 20
+                planMaxWhitelists: 20
+                planTxRate: 50
+                planApprovalRate: 200
+                planReadRate: 1000
+                planAddressRate: 50
+          env:
+            VAULT_COMPARTMENT_ID: 427
+            VAULT_PRICING_PLAN_NAME: custom_colossus
+      gate-collaterize:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 458
+      gate-creand:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 449
+      gate-crypto4winners:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 187
+            VAULT_PRICING_PLAN_NAME: enterprise
+      gate-deblock:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 402
+            VAULT_PRICING_PLAN_NAME: enterprise
+      gate-dior:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 394
+      gate-ecoinomy:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 361
+            VAULT_PRICING_PLAN_NAME: business
+      gate-ethtrust:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 338
+      gate-etoro:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 383
+      gate-exaion:
+        inlineValues:
+          custom:
+            pricingPlans:
+              custom_exaion:
+                planLabel: "custom exaion"
+                planMaxAccounts: 100
+                planMaxEntities: 5
+                planMaxGroups: 20
+                planMaxUsers: 20
+                planMaxWhitelists: 300
+                planTxRate: 50
+                planApprovalRate: 200
+                planReadRate: 1000
+                planAddressRate: 50
+          env:
+            VAULT_COMPARTMENT_ID: 442
+            VAULT_PRICING_PLAN_NAME: custom_exaion
+      gate-exclusivemarketsltd:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 441
+            VAULT_PRICING_PLAN_NAME: light
+      gate-exmovault:
+        inlineValues:
+          custom:
+            pricingPlans:
+              custom_exmovault:
+                planLabel: "custom exmovault"
+                planMaxAccounts: 2000
+                planMaxEntities: 0
+                planMaxGroups: 300
+                planMaxUsers: 250
+                planMaxWhitelists: 300
+                planTxRate: 500
+                planApprovalRate: 400
+                planReadRate: 200
+                planAddressRate: 100
+          env:
+            VAULT_COMPARTMENT_ID: 451
+      gate-f11group:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 316
+            VAULT_PRICING_PLAN_NAME: business
+      gate-prada:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 416
+      gate-procapitaltest:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 418
+      gate-sibachain:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 410
+            VAULT_PRICING_PLAN_NAME: business
+            VAULT_WORKER_CELERY_MIN_PROCESS: 2
+          app:
+            resources:
+              limits:
+                cpu: "4"
+                memory: "4Gi"
+          worker:
+            resources:
+              limits:
+                cpu: "4"
+                memory: "6Gi"
+      gate-solanafoundation:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 424
+            VAULT_PRICING_PLAN_NAME: business
+      gate-sorare:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 399
+      gate-starknetfoundation:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 415
+            VAULT_ATTESTATION_ID: 396
+      gate-tangany:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 461
+      gate-tanganytest:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 459
+      gate-thesandbox:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 404
+      gate-tungstencustody:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 448
+            VAULT_PRICING_PLAN_NAME: starter
+      gate-bankfrick:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 123
+            VAULT_WALLET_DAEMON_NAME: bankfrick-lama
+            VAULT_PRICING_PLAN_NAME: enterprise
+          app:
+            podAnnotations:
+              cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+            resources:
+              requests:
+                cpu: "1"
+              limits:
+                cpu: "2"
+                memory: 4Gi
+      gate-flowdesk:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 347
+            VAULT_WALLET_DAEMON_HISTORY_WORKERS: 8
+            VAULT_PRICING_PLAN_NAME: enterprise
+            VAULT_PROCESS_TIMEOUT: 1800
+            VAULT_WORKER_CELERY_MAX_PROCESS: 12
+          app:
+            resources:
+              limits:
+                cpu: 4
+                memory: 4Gi
+          worker:
+            resources:
+              limits:
+                cpu: 12
+                memory: 8Gi
+      gate-fortunacustody:
+        inlineValues:
+          custom:
+            pricingPlans:
+              custom_fortunacustody:
+                planLabel: "custom fortunacustody"
+                planMaxAccounts: 200
+                planMaxEntities: 0
+                planMaxGroups: 10
+                planMaxUsers: 20
+                planMaxWhitelists: 50
+                planTxRate: 50
+                planApprovalRate: 200
+                planReadRate: 100
+                planAddressRate: 50
+          env:
+            VAULT_COMPARTMENT_ID: 311
+            VAULT_PRICING_PLAN_NAME: custom_fortunacustody
+      gate-fumbi:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 185
+            VAULT_PRICING_PLAN_NAME: legacy
+      gate-guerlain:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 342
+      gate-hiveon:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 370
+      gate-hodl:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 204
+      gate-hodlgibfund:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 398
+      gate-hyperweb:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 313
+      gate-jobchain:
+        inlineValues:
+          custom:
+            host: "institutional.jobchain.com"
+          env:
+            VAULT_COMPARTMENT_ID: 420
+      gate-keringpoc:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 382
+      gate-komainuuat:
+        inlineValues:
+          custom:
+            host: "vault.komainu.com"
+            pricingPlans:
+              custom_komainuuat:
+                planLabel: "custom komainuuat"
+                planMaxAccounts: 10000
+                planMaxEntities: 0
+                planMaxGroups: 1250
+                planMaxUsers: 2500
+                planMaxWhitelists: 500
+                planTxRate: 500
+                planApprovalRate: 2000
+                planReadRate: 2000
+                planAddressRate: 500
+          env:
+            VAULT_PRICING_PLAN_NAME: custom_komainuuat
+            VAULT_TIMEOUT_API_CALL: 600
+            VAULT_COMPARTMENT_ID: 156
+            VAULT_ATTESTATION_ID: 156
+            VAULT_HSM_DRIVER_NAME: emea
+            VAULT_WALLET_DAEMON_NAME: emea-lama
+            VAULT_MAX_NUMBER_OF_PROCESSES: 32
+            VAULT_MIN_NUMBER_OF_PROCESSES: 8
+          app:
+            resources:
+              requests:
+                cpu: "1"
+                memory: 1Gi
+              limits:
+                cpu: "2"
+                memory: 8Gi
+      gate-lacollection:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 387
+      gate-lexim:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 456
+            VAULT_ATTESTATION_ID: 429
+      gate-lofficiel:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 389
+      gate-lush:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 352
+      gate-lvmh:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 377
+      gate-lvmhdemo:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 340
+      gate-lvmhtest:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 419
+      gate-mazars:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 378
+      gate-metaltradingcompany:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 308
+      gate-mettrade:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 317
+      gate-nexo:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 414
+      gate-nucocloud:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 216
+      gate-okazio:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 450
+            VAULT_PRICING_PLAN_NAME: light
+      gate-opera:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 348
+      gate-p2p:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 452
+      gate-pmu:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 386
+      gate-pollux:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 359
+      gate-procapital:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 384
+      gate-quartys:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 186
+            VAULT_PRICING_PLAN_NAME: legacy
+      gate-sguiwulddgddryue:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 335
+      gate-starkware:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 356
+            VAULT_ATTESTATION_ID: 325
+            VAULT_PRICING_PLAN_NAME: business
+      gate-uap:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 307
+            VAULT_ATTESTATION_ID: 225
+      gate-unblockcapital:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 380
+      gate-uphold:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 135
+            VAULT_WALLET_DAEMON_NAME: uphold-lama
+            VAULT_PRICING_PLAN_NAME: enterprise
+            VAULT_MAX_NUMBER_OF_PROCESSES: 32
+            VAULT_TIMEOUT_API_CALL: 600
+          app:
+            podAnnotations:
+              cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+            resources:
+              requests:
+                cpu: "1"
+              limits:
+                cpu: 4
+                memory: 8Gi
+          worker:
+            resources:
+              limits:
+                cpu: 6
+      gate-upholdreserve:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 460
+            VAULT_ATTESTATION_ID: 135
+            VAULT_WALLET_DAEMON_NAME: uphold-lama
+            VAULT_PRICING_PLAN_NAME: enterprise
+            VAULT_MAX_NUMBER_OF_PROCESSES: 32
+            VAULT_TIMEOUT_API_CALL: 600
+          app:
+            podAnnotations:
+              cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+            resources:
+              requests:
+                cpu: "1"
+              limits:
+                cpu: 4
+                memory: 8Gi
+          worker:
+            resources:
+              limits:
+                cpu: 6
+      gate-upholduat2:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 447
+            VAULT_PRICING_PLAN_NAME: enterprise
+      gate-venga:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 436
+      gate-vero:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 376
+      gate-wella:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 371
+      gate-youhodler:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 179
+            VAULT_PRICING_PLAN_NAME: legacy
+    gates-apac:
+      gate-alphanodecapital:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 426
+      gate-bdacsdepository1:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 417
+      gate-cg:
+        inlineValues:
+          custom:
+            host: "vault.cryptogarage.co.jp"
+            pricingPlans:
+              custom_cg:
+                planLabel: "custom_cg"
+                planMaxAccounts: 2000
+                planMaxEntities: 10
+                planMaxGroups: 200
+                planMaxUsers: 200
+                planMaxWhitelists: 200
+                planTxRate: 500
+                planApprovalRate: 1000
+                planReadRate: 500
+          env:
+            VAULT_COMPARTMENT_ID: 374
+            VAULT_ATTESTATION_ID: 374
+            VAULT_PRICING_PLAN_NAME: custom_cg
+      gate-cguat:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 454
+      gate-coinstash:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 440
+            VAULT_PRICING_PLAN_NAME: light
+      gate-coinswitch:
+        inlineValues:
+          custom:
+            pricingPlans:
+              custom_coinswitch:
+                planLabel: "custom coinswitch"
+                planMaxAccounts: 2500
+                planMaxEntities: 0
+                planMaxGroups: 300
+                planMaxUsers: 500
+                planMaxWhitelists: 300
+                planTxRate: 500
+                planApprovalRate: 2000
+                planReadRate: 1000
+                planAddressRate: 500
+          env:
+            VAULT_COMPARTMENT_ID: 226
+            VAULT_PRICING_PLAN_NAME: custom_coinswitch
+            VAULT_PROCESS_TIMEOUT: 1800
+            VAULT_WALLET_DAEMON_HISTORY_WORKERS: 8
+          app:
+            resources:
+              limits:
+                cpu: 4
+                memory: "4Gi"
+          worker:
+            resources:
+              limits:
+                cpu: 4
+      gate-cryptocom:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 116
+            VAULT_WALLET_DAEMON_NAME: cryptocom-lama
+            VAULT_PRICING_PLAN_NAME: enterprise
+            VAULT_MAX_NUMBER_OF_PROCESSES: 32
+            VAULT_PROCESS_TIMEOUT: 1800
+            VAULT_TIMEOUT_API_CALL: 600
+            VAULT_RIPPLE_SHOULD_SYNCHRONISZE: "true"
+            VAULT_WALLET_DAEMON_HISTORY_WORKERS: 8
+          app:
+            podAnnotations:
+              cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+            resources:
+              requests:
+                cpu: "4"
+              limits:
+                cpu: "8"
+                memory: "6Gi"
+          worker:
+            resources:
+              limits:
+                cpu: "4"
+                memory: "2Gi"
+              requests:
+                cpu: "4"
+                memory: "1024Mi"
+      gate-dau:
+        inlineValues:
+          custom:
+            host: "vault.daucustody.com"
+          env:
+            VAULT_COMPARTMENT_ID: 429
+          worker:
+            resources:
+              limits:
+                cpu: 4
+      gate-ducatofinance:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 302
+      gate-et:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 413
+      gate-fnct:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 372
+      gate-hayvn:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 425
+      gate-kryptodian:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 358
+            VAULT_ATTESTATION_ID: 144
+            VAULT_MAX_NUMBER_OF_PROCESSES: 32
+            VAULT_WALLET_DAEMON_HISTORY_WORKERS: 8
+            VAULT_PRICING_PLAN_NAME: enterprise
+            VAULT_WORKER_CELERY_MAX_PROCESS: 12
+          app:
+            resources:
+              limits:
+                cpu: 4
+                memory: 8Gi
+          worker:
+            resources:
+              limits:
+                cpu: 12
+                memory: 8Gi
+      gate-legacytrust:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 129
+            VAULT_WALLET_DAEMON_NAME: legacytrust-lama
+            VAULT_PRICING_PLAN_NAME: business
+          worker:
+            resources:
+              limits:
+                cpu: "4"
+                memory: "2Gi"
+              requests:
+                cpu: "200m"
+                memory: "256Mi"
+      gate-sharering:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 215
+      gate-starstorm:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 330
+            VAULT_PRICING_PLAN_NAME: enterprise
+      gate-suncrypto:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 350
+      gate-uminers:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 457
+            VAULT_PRICING_PLAN_NAME: business
+      gate-zebpay:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 224
+
+    gates-internal:
+      gate-demoapac:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 101
+      gate-demoemea:
+        inlineValues:
+          custom:
+          env:
+            VAULT_COMPARTMENT_ID: 105
+            VAULT_WALLET_DAEMON_NAME: internal-nft2
+            VAULT_PRICING_PLAN_NAME: business
+            VAULT_MAX_NUMBER_OF_PROCESSES: 16
+            # VAULT_PROCESS_TIMEOUT: 120
+            VAULT_PROCESS_TIMEOUT: "1800"
+            VAULT_FEE_FACTOR_ETHEREUM_GAS_PRICE: 5
+          app:
+            resources:
+              limits:
+                cpu: "4"
+                memory: "4Gi"
+      gate-demoemeaxl:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 362
+            VAULT_ATTESTATION_ID: 105
+            VAULT_PRICING_PLAN_NAME: business
+            # VAULT_PROCESS_TIMEOUT: 120
+            VAULT_PROCESS_TIMEOUT: "1800"
+      gate-demoops:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 17
+            VAULT_PRICING_PLAN_NAME: business
+            # VAULT_PROCESS_TIMEOUT: 120
+            VAULT_PROCESS_TIMEOUT: "1800"
+          app:
+            resources:
+              limits:
+                cpu: "4"
+                memory: "4Gi"
+              requests:
+                cpu: "2"
+                memory: "2Gi"
+      gate-demoproduct:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 14
+            # VAULT_PROCESS_TIMEOUT: 120
+            VAULT_PROCESS_TIMEOUT: "1800"
+      gate-demovault:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 462
+            VAULT_PRICING_PLAN_NAME: business
+            VAULT_PROCESS_TIMEOUT: "1800"
+      gate-demous:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 112
+            # VAULT_PROCESS_TIMEOUT: 120
+            VAULT_PROCESS_TIMEOUT: "1800"
+      gate-ledgercorporate:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 206
+            # VAULT_PROCESS_TIMEOUT: 300
+            VAULT_PROCESS_TIMEOUT: "1800"
+      gate-ledgernft:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 339
+            VAULT_PRICING_PLAN_NAME: enterprise
+            # VAULT_PROCESS_TIMEOUT: 120
+            VAULT_PROCESS_TIMEOUT: "1800"
+      gate-qafunds:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 321
+            VAULT_PRICING_PLAN_NAME: enterprise
+      gate-test3cluster:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 10
+            VAULT_ATTESTATION_ID: 1
+            VAULT_PRICING_PLAN_NAME: enterprise
+            # VAULT_PROCESS_TIMEOUT: 120
+            VAULT_PROCESS_TIMEOUT: "1800"
+      gate-vaulteng:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 444
+            VAULT_PRICING_PLAN_NAME: business
+    gates-komainu:
+      gate-komainudigital:
+        inlineValues:
+          app:
+            podAnnotations:
+              cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+            resources:
+              limits:
+                cpu: 6
+                memory: "10Gi"
+          env:
+            VAULT_COMPARTMENT_ID: 162
+            VAULT_WALLET_DAEMON_NAME: komainudigital-lama
+            VAULT_MAX_NUMBER_OF_PROCESSES: 48
+          worker:
+            resources:
+              limits:
+                cpu: "4"
+                memory: "2Gi"
+              requests:
+                cpu: "2"
+                memory: "2Gi"
+      gate-komainudubai:
+        inlineValues:
+          app:
+            podAnnotations:
+              cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+            resources:
+              limits:
+                cpu: 2
+                memory: "4Gi"
+          env:
+            VAULT_COMPARTMENT_ID: 407
+            VAULT_WALLET_DAEMON_NAME: komainudigital-lama
+            VAULT_MAX_NUMBER_OF_PROCESSES: 32
+      gate-komainups:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 194
+            VAULT_WALLET_DAEMON_NAME: komainups-lama
+          app:
+            resources:
+              limits:
+                cpu: 4
+                memory: "4Gi"
+      gate-komainuuk:
+        inlineValues:
+          env:
+            VAULT_COMPARTMENT_ID: 428
+            VAULT_WALLET_DAEMON_NAME: komainudigital-lama
+            VAULT_MAX_NUMBER_OF_PROCESSES: 32
+          app:
+            podAnnotations:
+              cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+            resources:
+              limits:
+                cpu: 2
+                memory: "4Gi"
+
+    hsmdrivers:
+      hsm-driver-apac:
+        inlineValues:
+          env:
+            VAULT_HSM_GATEWAY_URL: "http://hsm-proxy-apac"
+      hsm-driver-emea:
+        inlineValues:
+          env:
+            VAULT_HSM_GATEWAY_URL: "http://hsm-proxy-emea"
+      hsm-driver-us:
+        inlineValues:
+          env:
+            VAULT_HSM_GATEWAY_URL: "http://hsm-proxy-us"
+      hsm-driver-internal:
+        inlineValues:
+          env:
+            VAULT_HSM_GATEWAY_URL: "http://hsm-proxy-internal"
+      hsm-driver-komainu:
+        inlineValues:
+          env:
+            # VSD-3991
+            VAULT_HSM_DRIVER_ENABLE_BITCOIN_REFACTOR: "false"
+            VAULT_HSM_GATEWAY_URL: "http://hsm-proxy-komainu"
+          custom:
+            postgresDB: "hsmdriver_emea"
+            postgresPasswordSecret: tf-hsm-driver-emea
+
+    hsmproxys:
+      hsm-proxy-internal: {}
+      hsm-proxy-apac: {}
+      hsm-proxy-emea: {}
+      hsm-proxy-us: {}
+      hsm-proxy-komainu:
+        inlineValues:
+          env:
+            VAULT_HSM_DATABASE_DBNAME: hsmdriver_emea
+            VAULT_HSM_DATABASE_HOST: pg-main.2108-vault-prd.aws.ldg-prd.net
+            VAULT_HSM_DATABASE_USER: hsmdriver_emea
+
+    hsmproxysequencers:
+      hsm-proxy-sequencer-internal: {}
+      hsm-proxy-sequencer-apac: {}
+      hsm-proxy-sequencer-emea: {}
+      hsm-proxy-sequencer-us: {}
+      hsm-proxy-sequencer-komainu:
+        inlineValues:
+          env:
+            VAULT_HSM_DATABASE_DBNAME: hsmdriver_emea
+            VAULT_HSM_DATABASE_HOST: pg-main.2108-vault-prd.aws.ldg-prd.net
+            VAULT_HSM_DATABASE_USER: hsmdriver_emea
+
+    wds:
+      wd-apac-lama:
+        inlineValues:
+          env:
+            FALLBACK_TIMEOUT: 1000
+          resources:
+            requests:
+              memory: "24Gi"
+              cpu: "1"
+            limits:
+              memory: "32Gi"
+              cpu: "2"
+      wd-emea-lama:
+        inlineValues:
+          env:
+            DAEMON_LOG_LEVEL: "INFO"
+            HTTP_SERVER_LOG_LEVEL: "INFO"
+            SERVICES_LOG_LEVEL: "INFO"
+          probes:
+            liveness:
+              spec:
+                failureThreshold: 6
+                httpGet:
+                  path: /_health
+                  port: 9200
+                  scheme: HTTP
+                periodSeconds: 300
+                successThreshold: 1
+                timeoutSeconds: 3
+          resources:
+            requests:
+              memory: "8Gi"
+              cpu: "4"
+            limits:
+              memory: "32Gi"
+              cpu: "8"
+      wd-internal-lama:
+        inlineValues:
+          env:
+            CORE_PG_CONNECTION_POOL_SIZE_PER_WALLET_POOL: 2
+            CORE_OPS_THREADS_FACTOR: 2
+          resources:
+            requests:
+              memory: "4Gi"
+              cpu: "1"
+            limits:
+              memory: "6Gi"
+              cpu: "2"
+      wd-internal-nft2:
+        inlineValues:
+          env:
+            CORE_PG_CONNECTION_POOL_SIZE_PER_WALLET_POOL: 2
+            CORE_OPS_THREADS_FACTOR: 2
+          resources:
+            requests:
+              memory: "4Gi"
+              cpu: "1"
+            limits:
+              memory: "6Gi"
+              cpu: "2"
+      wd-us-lama:
+        inlineValues:
+          env:
+            CORE_LOG_LEVEL: "INFO"
+            DAEMON_LOG_LEVEL: "INFO"
+            HTTP_SERVER_LOG_LEVEL: "INFO"
+            SERVICES_LOG_LEVEL: "INFO"
+          resources:
+            requests:
+              memory: "8Gi"
+              cpu: "1"
+            limits:
+              memory: "10Gi"
+              cpu: "2"
+      wd-bankfrick-lama:
+        inlineValues:
+          env:
+            CORE_OPS_THREADS_FACTOR: 3
+            CORE_PG_CONNECTION_POOL_SIZE_PER_WALLET_POOL: 12
+          resources:
+            requests:
+              memory: "8Gi"
+              cpu: "2"
+            limits:
+              memory: "16Gi"
+              cpu: "4"
+      wd-bosonprotocol-lama:
+        inlineValues:
+          env:
+            CORE_OPS_THREADS_FACTOR: 3
+            CORE_PG_CONNECTION_POOL_SIZE_PER_WALLET_POOL: 12
+          resources:
+            requests:
+              memory: "8Gi"
+              cpu: "2"
+            limits:
+              memory: "16Gi"
+              cpu: "4"
+      wd-cryptocom-lama:
+        inlineValues:
+          env:
+            MAX_UTXO_IN_TRANSACTION: 100
+            FALLBACK_TIMEOUT: 14000
+            CORE_OPS_THREADS_FACTOR: 3
+            CORE_PG_CONNECTION_POOL_SIZE_PER_WALLET_POOL: 12
+          podAnnotations:
+            cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+          resources:
+            requests:
+              memory: "16Gi"
+              cpu: "2"
+            limits:
+              memory: "16Gi"
+              cpu: "5"
+      wd-exmoexchange-lama:
+        inlineValues:
+          resources:
+            requests:
+              memory: "4Gi"
+              cpu: "2"
+            limits:
+              memory: "24Gi"
+              cpu: "6"
+      wd-komainudigital-lama:
+        inlineValues:
+          env:
+            CORE_OPS_THREADS_FACTOR: 3
+            CORE_PG_CONNECTION_POOL_SIZE_PER_WALLET_POOL: 12
+          resources:
+            requests:
+              memory: "8Gi"
+              cpu: "2"
+            limits:
+              memory: "16Gi"
+              cpu: "4"
+      wd-komainups-lama:
+        inlineValues:
+          env:
+            CORE_OPS_THREADS_FACTOR: 3
+            CORE_PG_CONNECTION_POOL_SIZE_PER_WALLET_POOL: 12
+          resources:
+            requests:
+              memory: "4Gi"
+              cpu: "1"
+            limits:
+              memory: "16Gi"
+              cpu: "4"
+      wd-legacytrust-lama:
+        inlineValues:
+          resources:
+            requests:
+              memory: "5Gi"
+              cpu: "1"
+            limits:
+              memory: "6Gi"
+              cpu: "2"
+      wd-tetratrust-lama:
+        inlineValues:
+          env:
+            CORE_OPS_THREADS_FACTOR: 3
+            CORE_PG_CONNECTION_POOL_SIZE_PER_WALLET_POOL: 12
+          resources:
+            requests:
+              memory: "8Gi"
+              cpu: "2"
+            limits:
+              memory: "16Gi"
+              cpu: "4"
+      wd-uphold-lama:
+        inlineValues:
+          env:
+            CORE_OPS_THREADS_FACTOR: 3
+            CORE_PG_CONNECTION_POOL_SIZE_PER_WALLET_POOL: 12
+          resources:
+            requests:
+              memory: "8Gi"
+              cpu: "2"
+            limits:
+              memory: "16Gi"
+              cpu: "4"

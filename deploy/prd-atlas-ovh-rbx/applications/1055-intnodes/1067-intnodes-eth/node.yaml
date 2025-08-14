@@ -1,0 +1,63 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: 1067-intnodes-eth
+  namespace: argocd
+spec:
+  generators:
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/intnodes: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/bhs8: "true"
+      values:
+        datacenter: bhs
+        maintenance: "false"
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/intnodes: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/rbx8: "true"
+      values:
+        datacenter: rbx
+        maintenance: "false"
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/intnodes: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/fsn1: "true"
+      values:
+        datacenter: fsn
+        maintenance: "false"
+  template:
+    metadata:
+      name: "{{name}}-1067-intnodes-eth"
+      annotations:
+        argocd.ledger.fr/environment: "Production"
+      labels:
+        service: "1067-intnodes-eth"
+        env: "production"
+        coin: "eth"
+        type: "int-node"
+    spec:
+      project: 1055-intnodes
+      sources:
+        - repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+          targetRevision: main
+          path: "deploy/production/internal-blockchain-nodes/1067-intnodes-eth"
+          helm:
+            releaseName: int-eth-mainnet-node
+            values: |
+              intnodes-eth:
+                datacenter: "{{values.datacenter}}"
+                maintenance: "{{values.maintenance}}"
+      destination:
+        server: "{{server}}"
+        namespace: "1067-intnodes-eth"
+      syncPolicy:
+        syncOptions:
+        - CreateNamespace=true

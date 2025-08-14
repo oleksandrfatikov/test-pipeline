@@ -1,0 +1,130 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: ptx-services-prd
+  namespace: argocd-central
+spec:
+  goTemplate: true
+  ignoreApplicationDifferences:
+    - jqPathExpressions:
+        - .spec.source.helm.parameters
+  templatePatch: |
+    metadata:
+      annotations:
+      {{- if eq .app "buy-sell-ui" }}
+        argocd.ledger.fr/environment: "Production - ArgoCD"
+        notifications.argoproj.io/subscribe.github: ""
+        argocd-image-updater.argoproj.io/image-list: buy-sell-ui=ghcr.io/ledgerhq/buy-sell-ui:main
+        argocd-image-updater.argoproj.io/update-strategy: digest
+        argocd-image-updater.argoproj.io/buy-sell-ui.helm.image-name: app-template.image.repository
+        argocd-image-updater.argoproj.io/buy-sell-ui.helm.image-tag: app-template.custom.imageTag
+      {{- else if eq .app "buy" }}
+        argocd.ledger.fr/environment: "Production"
+        notifications.argoproj.io/subscribe.github: ""
+      {{- else if eq .app "earn-live-app" }}
+        argocd.ledger.fr/environment: "Production - ArgoCD"
+        argocd-image-updater.argoproj.io/image-list: buy-sell-ui=ghcr.io/ledgerhq/earn-live-app:main
+        argocd-image-updater.argoproj.io/update-strategy: digest
+        argocd-image-updater.argoproj.io/buy-sell-ui.helm.image-name: app-template.image.repository
+        argocd-image-updater.argoproj.io/buy-sell-ui.helm.image-tag: app-template.image.tag
+      {{- else if eq .app "buy-sell-ui-business-snapshot" }}
+        argocd.ledger.fr/environment: "Production - ArgoCD"
+        notifications.argoproj.io/subscribe.github: ""
+        argocd-image-updater.argoproj.io/image-list: buy-sell-ui=ghcr.io/ledgerhq/buy-sell-ui:main
+        argocd-image-updater.argoproj.io/update-strategy: digest
+        argocd-image-updater.argoproj.io/buy-sell-ui.helm.image-name: app-template.image.repository
+        argocd-image-updater.argoproj.io/buy-sell-ui.helm.image-tag: app-template.custom.imageTag
+      {{- end }}
+    {{- if eq .app "buy-sell-ui-business-snapshot" }}
+    spec:
+      source:
+        repoURL: 'https://github.com/LedgerHQ/buy-sell-ui.git'
+        targetRevision: '{{.revision}}'
+        path: '{{.path}}'
+        helm:
+          releaseName: '{{.app}}'
+          valueFiles:
+            - 'values.yaml'
+    {{- end }}
+    {{- if eq .app "transaction-history" }}
+    spec:
+      source:
+        repoURL: 'https://github.com/LedgerHQ/exchange-tx-manager.git'
+      destination:
+        namespace: '{{.project_id}}-exchange-tx-manager'
+    {{- end }}
+  generators:
+    - list:
+        elements:
+          - app: buy
+            project_id: '2205'
+            revision: main
+            path: 'argocd/prd'
+          - app: swap
+            project_id: '2050'
+            revision: master
+            path: 'argocd/prd'
+          - app: earn-service-backend
+            project_id: '2188'
+            revision: main
+            path: 'argocd/prd'
+          - app: buy-sell-ui
+            project_id: '2214'
+            revision: main
+            path: 'argocd/prd'
+          - app: 'earn-live-app'
+            project_id: '2237'
+            revision: main
+            path: 'argocd/prd'
+          - app: 'buy-sell-ui-business-snapshot'
+            project_id: '2214'
+            revision: main
+            path: 'argocd/business-snapshot'
+          - app: idverse
+            project_id: '2245'
+            revision: main
+            path: 'argocd/prd'
+          - app: exchange-tx-manager
+            project_id: '2254'
+            revision: main
+            path: 'argocd/exchange-tx-manager/prd'
+          - app: transaction-history
+            project_id: '2254'
+            revision: main
+            path: 'argocd/transaction-history/prd'
+  template:
+    metadata:
+      name: '{{.app}}-prd'
+      namespace: argocd-central
+      labels:
+        environment: prd
+        owner: ptx-services
+        project: '{{.project_id}}'
+        organization: 'consumer'
+        service: '{{.app}}'
+    spec:
+      project: ptx-services
+      ignoreDifferences:
+        - group: "apps"
+          kind: "Deployment"
+          jsonPointers:
+            - /spec/replicas
+      source:
+        repoURL: 'https://github.com/LedgerHQ/{{.app}}.git'
+        targetRevision: '{{.revision}}'
+        path: '{{.path}}'
+        helm:
+          releaseName: '{{.app}}'
+          valueFiles:
+            - 'values.yaml'
+      destination:
+        name: shared-application-2086-cluster
+        namespace: '{{.project_id}}-{{.app}}'
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true
+          - RespectIgnoreDifferences=true
+  syncPolicy:
+    preserveResourcesOnDeletion: true

@@ -1,0 +1,22 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: ecommerce-shop-email
+  namespace: argocd-central
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: ecommerce-shop-email project
+  sourceRepos:
+    - "https://github.com/LedgerHQ/ecommerce-shop-email.git"
+    - "ghcr.io"
+    - "ghcr.io/ledgerhq/charts"
+  destinations:
+    - namespace: "ecommerce-shop-email-pr*"
+      name: shared-application-2021-cluster
+    - namespace: ecommerce-shop-email-stg
+      name: shared-application-2021-cluster
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

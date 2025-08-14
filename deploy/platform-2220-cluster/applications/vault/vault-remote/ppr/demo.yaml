@@ -1,0 +1,20 @@
+---
+app-template:
+  valueBundles:
+    eksPpr:
+      enabled: true
+  image:
+    tag: "0.11.897"
+  env:
+    FRONT_HOST: "remote.minivault.demo.ledger-test.com"
+    MAX_MINIVAULT_INSTANCES: "30"
+    PREDEFINED: "1"
+    WEBLUE_DOMAIN: "weblue.ledger-stg.com"
+    VAULT_HSM_ENDPOINT: "https://vault-prd.hsmsaas3.cit.ledger-test.com/ocv-selfs-17.2.4/process"
+    NAMESPACES_PREFIX: "minivault-demo-"
+    MINIVAULT_HOST: "minivault.demo.ledger-test.com"
+  ingress:
+    main:
+      ingressClassName: "nginx"
+      annotations:
+        nginx.ingress.kubernetes.io/whitelist-source-range: 37.58.221.152/32,77.158.138.66/32,37.58.221.154/32,77.158.138.67/32,167.99.199.228/32,85.233.221.192/28,195.68.107.68/32,52.50.31.80/32,34.240.150.212/32

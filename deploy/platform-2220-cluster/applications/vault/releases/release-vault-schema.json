@@ -1,0 +1,693 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "type": "object",
+  "$defs": {
+    "defaultObject": {
+      "type": "object",
+      "additionalProperties": false
+    }
+  },
+  "required": ["appset"],
+  "properties": {
+    "appset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["categoryValues", "projectValues"],
+      "properties": {
+        "categoryValues": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "upstream": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["disableDefaultTagRevision", "path"],
+              "properties": {
+                "disableDefaultTagRevision": { "type": "boolean" },
+                "path": { "type": "string" }
+              }
+            },
+            "gates-base": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["repoUrl", "path"],
+              "properties": {
+                "repoUrl": { "type": "string", "format": "uri" },
+                "path": { "type": "string" }
+              }
+            },
+            "gates-previous": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["targetRevision"],
+              "properties": {
+                "targetRevision": {
+                  "type": "string"
+                }
+              }
+            },
+            "gates-current": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["targetRevision"],
+              "properties": {
+                "targetRevision": {
+                  "type": "string"
+                }
+              }
+            },
+            "wds": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "repoUrl",
+                "path",
+                "targetRevision",
+                "useAppTemplate",
+                "inlineValues"
+              ],
+              "properties": {
+                "repoUrl": { "type": "string" },
+                "path": { "type": "string" },
+                "targetRevision": { "type": "string" },
+                "useAppTemplate": { "type": "boolean" },
+                "inlineValues": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["image"],
+                  "properties": {
+                    "additionalProperties": false,
+                    "image": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["tag"],
+                      "properties": {
+                        "tag": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "projectValues": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["upstream", "all"],
+          "properties": {
+            "upstream": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["common-secrets", "vault-rabbitmq", "keycloak"],
+              "properties": {
+                "common-secrets": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "repoUrl",
+                    "chartName",
+                    "targetRevision",
+                    "inlineValues"
+                  ],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "chartName": { "type": "string" },
+                    "targetRevision": { "type": "string" },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["controller", "service"],
+                      "properties": {
+                        "controller": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["enabled"],
+                          "properties": {
+                            "enabled": { "type": "boolean" }
+                          }
+                        },
+                        "service": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["main"],
+                          "properties": {
+                            "main": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": ["enabled"],
+                              "properties": {
+                                "enabled": { "type": "boolean" }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "vault-rabbitmq": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "repoUrl",
+                    "chartName",
+                    "targetRevision",
+                    "valueFiles"
+                  ],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "chartName": { "type": "string" },
+                    "targetRevision": { "type": "string" },
+                    "valueFiles": { "type": "array" }
+                  }
+                },
+                "keycloak": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "repoUrl",
+                    "chartName",
+                    "targetRevision",
+                    "valueFiles",
+                    "inlineValues"
+                  ],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "chartName": { "type": "string" },
+                    "targetRevision": { "type": "string" },
+                    "valueFiles": { "type": "array" },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "image",
+                        "production",
+                        "ingress",
+                        "tls",
+                        "extraEnvVars"
+                      ],
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["tag"],
+                          "properties": { "tag": { "type": "string" } }
+                        },
+                        "production": { "type": "boolean" },
+                        "ingress": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["enabled", "hostnameStrict", "tls"],
+                          "properties": {
+                            "enabled": { "type": "boolean" },
+                            "hostnameStrict": { "type": "boolean" },
+                            "tls": { "type": "boolean" }
+                          }
+                        },
+                        "tls": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["enabled", "autoGenerated"],
+                          "properties": {
+                            "enabled": { "type": "boolean" },
+                            "autoGenerated": { "type": "boolean" }
+                          }
+                        },
+                        "extraEnvVars": { "type": "array" }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "all": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "api-gateway",
+                "api-keys",
+                "apdu-connector",
+                "aum-api",
+                "authentication-service",
+                "coin-gateway",
+                "device-registry",
+                "front",
+                "nfts-api",
+                "notification-center",
+                "notification-server",
+                "notifier",
+                "organizations-api",
+                "platform-manager",
+                "tradelink",
+                "tx-scheduler",
+                "web3checks-vault",
+                "web3-handler-api"
+              ],
+              "properties": {
+                "api-gateway": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "useAppTemplate", "targetRevision"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "useAppTemplate": { "type": "boolean" },
+                    "targetRevision": { "type": "string" },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "repository": { "type": "string" },
+                            "tag": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "api-keys": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "useAppTemplate", "targetRevision"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "useAppTemplate": { "type": "boolean" },
+                    "targetRevision": { "type": "string" },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "repository": { "type": "string" },
+                            "tag": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "apdu-connector": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "useAppTemplate", "targetRevision"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "useAppTemplate": { "type": "boolean" },
+                    "targetRevision": { "type": "string" },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "repository": { "type": "string" },
+                            "tag": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "aum-api": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "useAppTemplate", "targetRevision"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "useAppTemplate": { "type": "boolean" },
+                    "targetRevision": { "type": "string" },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "repository": { "type": "string" },
+                            "tag": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "authentication-service": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "useAppTemplate", "targetRevision"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "useAppTemplate": { "type": "boolean" },
+                    "targetRevision": { "type": "string" },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "repository": { "type": "string" },
+                            "tag": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "coin-gateway": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "useAppTemplate", "targetRevision"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "useAppTemplate": { "type": "boolean" },
+                    "targetRevision": { "type": "string" },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "repository": { "type": "string" },
+                            "tag": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "device-registry": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "useAppTemplate", "targetRevision"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "useAppTemplate": { "type": "boolean" },
+                    "targetRevision": { "type": "string" },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "repository": { "type": "string" },
+                            "tag": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "front": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "targetRevision"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "targetRevision": { "type": "string" },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "repository": { "type": "string" },
+                            "tag": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "nfts-api": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "useAppTemplate", "targetRevision"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "useAppTemplate": { "type": "boolean" },
+                    "targetRevision": { "type": "string" },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "repository": { "type": "string" },
+                            "tag": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "notification-center": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "useAppTemplate", "targetRevision"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "useAppTemplate": { "type": "boolean" },
+                    "targetRevision": { "type": "string" },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "repository": { "type": "string" },
+                            "tag": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "notification-server": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "useAppTemplate", "targetRevision"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "useAppTemplate": { "type": "boolean" },
+                    "targetRevision": { "type": "string" },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "repository": { "type": "string" },
+                            "tag": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "notifier": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "targetRevision"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "targetRevision": { "type": "string" },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "repository": { "type": "string" },
+                            "tag": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "organizations-api": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "useAppTemplate", "targetRevision"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "useAppTemplate": { "type": "boolean" },
+                    "targetRevision": { "type": "string" },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "repository": { "type": "string" },
+                            "tag": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "platform-manager": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "targetRevision"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "targetRevision": { "type": "string" },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "repository": { "type": "string" },
+                            "tag": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "tradelink": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "repoUrl",
+                    "targetRevision",
+                    "useAppTemplate",
+                    "inlineValues"
+                  ],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "targetRevision": { "type": "string" },
+                    "useAppTemplate": { "type": "boolean" },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["image"],
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["tag"],
+                          "properties": {
+                            "tag": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "tx-scheduler": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "useAppTemplate", "targetRevision"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "useAppTemplate": { "type": "boolean" },
+                    "targetRevision": { "type": "string" },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "repository": { "type": "string" },
+                            "tag": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "web3checks-vault": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "useAppTemplate", "targetRevision"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "useAppTemplate": { "type": "boolean" },
+                    "targetRevision": { "type": "string" },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "repository": { "type": "string" },
+                            "tag": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "web3-handler-api": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "useAppTemplate", "targetRevision"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "useAppTemplate": { "type": "boolean" },
+                    "targetRevision": { "type": "string" },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "repository": { "type": "string" },
+                            "tag": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

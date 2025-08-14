@@ -1,0 +1,29 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ledger-quest-webapp-prd
+  namespace: argocd-central
+  annotations:
+    notifications.argoproj.io/subscribe.slack: "infra-ecommerce-cd"
+    notifications.argoproj.io/subscribe.github: ""
+    argocd.ledger.fr/environment: "prd"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2138"
+    organization: "consumer"
+    service: "ledger-quest-webapp"
+spec:
+  project: ledger-quest-webapp
+  source:
+    repoURL: https://github.com/LedgerHQ/ledger-quest-webapp.git
+    targetRevision: "main"
+    path: argocd/prd
+  destination:
+    name: shared-application-2086-cluster
+    namespace: 2138-ledger-quest-webapp
+  syncPolicy:
+    automated: {}

@@ -1,0 +1,34 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ecommerce-shop-email-stg
+  namespace: argocd-central
+  annotations:
+    notifications.argoproj.io/subscribe.slack: "infra-ecommerce-cd"
+    notifications.argoproj.io/subscribe.github: ""
+    argocd.ledger.fr/environment: "Staging"
+    argocd-image-updater.argoproj.io/image-list: ecommerce-shop-email=ghcr.io/ledgerhq/ecommerce-shop-email:main
+    argocd-image-updater.argoproj.io/update-strategy: digest
+    argocd-image-updater.argoproj.io/ecommerce-shop-email.helm.image-name: app-template.image.repository
+    argocd-image-updater.argoproj.io/ecommerce-shop-email.helm.image-tag: app-template.image.tag
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    environment: "stg"
+    owner: "team-infra-sre"
+    project: "2234"
+    organization: "consumer"
+    service: "ecommerce-shop-email"
+spec:
+  project: ecommerce-shop-email
+  source:
+    repoURL: https://github.com/LedgerHQ/ecommerce-shop-email.git
+    targetRevision: "main"
+    path: argocd/stg
+  destination:
+    name: shared-application-2021-cluster
+    namespace: ecommerce-shop-email-stg
+  syncPolicy:
+    automated:
+      prune: true

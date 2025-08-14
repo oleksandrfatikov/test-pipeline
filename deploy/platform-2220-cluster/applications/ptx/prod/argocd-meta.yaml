@@ -1,0 +1,75 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: ptx-services
+  namespace: argocd-central
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: ptx app project
+  sourceRepos:
+    - 'https://github.com/LedgerHQ/buy.git'
+    - 'https://github.com/LedgerHQ/swap.git'
+    - 'https://github.com/LedgerHQ/earn-service-backend.git'
+    - 'https://github.com/LedgerHQ/sre-argocd.git'
+    - 'https://github.com/LedgerHQ/buy-sell-ui.git'
+    - 'https://github.com/LedgerHQ/earn-live-app.git'
+    - 'https://github.com/LedgerHQ/idverse'
+    - 'https://github.com/LedgerHQ/exchange-tx-manager.git'
+    - 'ghcr.io'
+  destinations:
+    - namespace: argocd-central
+      name: in-cluster
+      #### STG EKS
+    - namespace: 2204-buy
+      name: shared-application-2021-cluster
+    - namespace: '2032-swap'
+      name: shared-application-2021-cluster
+    - namespace: 2184-earn-service-backend
+      name: shared-application-2021-cluster
+    - namespace: 2213-buy-sell-ui
+      name: shared-application-2021-cluster
+    - namespace: "2215-buy-sell-ui-pr*"
+      name: shared-application-2021-cluster
+    - namespace: 2236-earn-live-app
+      name: shared-application-2021-cluster
+    - namespace: 2247-idverse
+      name: shared-application-2021-cluster
+    - namespace: 2252-exchange-tx-manager
+      name: shared-application-2021-cluster
+    - namespace: 2252-transaction-history
+      name: shared-application-2021-cluster
+      #### PPR EKS
+    - namespace: 2206-buy
+      name: shared-application-2094-cluster
+    - namespace: '2144-swap'
+      name: shared-application-2094-cluster
+    - namespace: 2216-buy-sell-ui
+      name: shared-application-2094-cluster
+    - namespace: 2246-idverse
+      name: shared-application-2094-cluster
+    - namespace: 2253-exchange-tx-manager
+      name: shared-application-2094-cluster
+    - namespace: 2253-transaction-history
+      name: shared-application-2094-cluster
+      #### PRD EKS
+    - namespace: 2205-buy
+      name: shared-application-2086-cluster
+    - namespace: '2050-swap'
+      name: shared-application-2086-cluster
+    - namespace: 2188-earn-service-backend
+      name: shared-application-2086-cluster
+    - namespace: 2214-buy-sell-ui
+      name: shared-application-2086-cluster
+    - namespace: 2237-earn-live-app
+      name: shared-application-2086-cluster
+    - namespace: 2214-buy-sell-ui-business-snapshot
+      name: shared-application-2086-cluster
+    - namespace: 2245-idverse
+      name: shared-application-2086-cluster
+    - namespace: 2254-exchange-tx-manager
+      name: shared-application-2086-cluster
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

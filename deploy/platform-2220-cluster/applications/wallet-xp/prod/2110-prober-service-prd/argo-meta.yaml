@@ -1,0 +1,19 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: prober-service-prd
+  namespace: argocd-central
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: prober-service project
+  sourceRepos:
+    - 'https://github.com/LedgerHQ/prober-service.git'
+    - 'ghcr.io'
+  destinations:
+    - namespace: 2110-prober-service
+      name: shared-application-2086-cluster
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

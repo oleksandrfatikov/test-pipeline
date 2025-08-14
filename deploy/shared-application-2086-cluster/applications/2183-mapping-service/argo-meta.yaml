@@ -1,0 +1,25 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: 2183-mapping-service-prd
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: mapping-service
+  namespace: argocd
+  # finalizers:
+  #   - resources-finalizer.argocd.argoproj.io
+spec:
+  description: mapping-service project
+  sourceRepos:
+    - 'https://github.com/LedgerHQ/mapping-service.git'
+    - 'ghcr.io'
+  destinations:
+    - namespace: 2183-mapping-service-prd
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+

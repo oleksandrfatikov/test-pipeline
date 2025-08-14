@@ -1,0 +1,23 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: test-argo-rbac-jobs
+  namespace: argocd
+  labels:
+    environment: "sbx"
+    owner: "team-infra-sre"
+    project: "9999"
+    organization: "consumer"
+    service: "test-argo-rbac"
+spec:
+  project: test-argo-rbac
+  source:
+    repoURL: https://github.com/LedgerHQ/test-argo-rbac.git
+    targetRevision: main
+    path: argocd/workflows/sbx
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: test-argo-rbac
+  syncPolicy:
+    automated: {}

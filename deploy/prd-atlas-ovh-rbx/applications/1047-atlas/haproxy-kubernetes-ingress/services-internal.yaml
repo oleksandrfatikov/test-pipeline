@@ -1,0 +1,864 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-bhs8-atlas-1047-worker-01-internal
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+    - name: stat
+      protocol: TCP
+      port: 1024
+      targetPort: 1024
+    - name: healthz
+      protocol: TCP
+      port: 1042
+      targetPort: 1042
+  clusterIP: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: prd-bhs8-atlas-1047-worker-01-internal
+  namespace: 1047-atlas
+subsets:
+  - addresses:
+      - ip: 10.99.8.43
+    ports:
+      - name: http
+        port: 80
+        protocol: TCP
+      - name: https
+        port: 443
+        protocol: TCP
+      - name: stat
+        port: 1024
+        protocol: TCP
+      - name: healthz
+        port: 1042
+        protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-bhs8-atlas-1047-worker-02-internal
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+    - name: stat
+      protocol: TCP
+      port: 1024
+      targetPort: 1024
+    - name: healthz
+      protocol: TCP
+      port: 1042
+      targetPort: 1042
+  clusterIP: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: prd-bhs8-atlas-1047-worker-02-internal
+  namespace: 1047-atlas
+subsets:
+  - addresses:
+      - ip: 10.99.8.44
+    ports:
+      - name: http
+        port: 80
+        protocol: TCP
+      - name: https
+        port: 443
+        protocol: TCP
+      - name: stat
+        port: 1024
+        protocol: TCP
+      - name: healthz
+        port: 1042
+        protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-bhs8-atlas-1047-worker-03-internal
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+    - name: stat
+      protocol: TCP
+      port: 1024
+      targetPort: 1024
+    - name: healthz
+      protocol: TCP
+      port: 1042
+      targetPort: 1042
+  clusterIP: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: prd-bhs8-atlas-1047-worker-03-internal
+  namespace: 1047-atlas
+subsets:
+  - addresses:
+      - ip: 10.99.8.45
+    ports:
+      - name: http
+        port: 80
+        protocol: TCP
+      - name: https
+        port: 443
+        protocol: TCP
+      - name: stat
+        port: 1024
+        protocol: TCP
+      - name: healthz
+        port: 1042
+        protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-rbx8-atlas-1047-worker-01-internal
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+    - name: stat
+      protocol: TCP
+      port: 1024
+      targetPort: 1024
+    - name: healthz
+      protocol: TCP
+      port: 1042
+      targetPort: 1042
+  clusterIP: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: prd-rbx8-atlas-1047-worker-01-internal
+  namespace: 1047-atlas
+subsets:
+  - addresses:
+      - ip: 10.99.2.43
+    ports:
+      - name: http
+        port: 80
+        protocol: TCP
+      - name: https
+        port: 443
+        protocol: TCP
+      - name: stat
+        port: 1024
+        protocol: TCP
+      - name: healthz
+        port: 1042
+        protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-rbx8-atlas-1047-worker-02-internal
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+    - name: stat
+      protocol: TCP
+      port: 1024
+      targetPort: 1024
+    - name: healthz
+      protocol: TCP
+      port: 1042
+      targetPort: 1042
+  clusterIP: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: prd-rbx8-atlas-1047-worker-02-internal
+  namespace: 1047-atlas
+subsets:
+  - addresses:
+      - ip: 10.99.2.44
+    ports:
+      - name: http
+        port: 80
+        protocol: TCP
+      - name: https
+        port: 443
+        protocol: TCP
+      - name: stat
+        port: 1024
+        protocol: TCP
+      - name: healthz
+        port: 1042
+        protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-rbx8-atlas-1047-worker-03-internal
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+    - name: stat
+      protocol: TCP
+      port: 1024
+      targetPort: 1024
+    - name: healthz
+      protocol: TCP
+      port: 1042
+      targetPort: 1042
+  clusterIP: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: prd-rbx8-atlas-1047-worker-03-internal
+  namespace: 1047-atlas
+subsets:
+  - addresses:
+      - ip: 10.99.2.45
+    ports:
+      - name: http
+        port: 80
+        protocol: TCP
+      - name: https
+        port: 443
+        protocol: TCP
+      - name: stat
+        port: 1024
+        protocol: TCP
+      - name: healthz
+        port: 1042
+        protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-fsn1-atlas-1047-worker-01-internal
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+    - name: stat
+      protocol: TCP
+      port: 1024
+      targetPort: 1024
+    - name: healthz
+      protocol: TCP
+      port: 1042
+      targetPort: 1042
+  clusterIP: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: prd-fsn1-atlas-1047-worker-01-internal
+  namespace: 1047-atlas
+subsets:
+  - addresses:
+      - ip: 10.99.7.43
+    ports:
+      - name: http
+        port: 80
+        protocol: TCP
+      - name: https
+        port: 443
+        protocol: TCP
+      - name: stat
+        port: 1024
+        protocol: TCP
+      - name: healthz
+        port: 1042
+        protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-fsn1-atlas-1047-worker-02-internal
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+    - name: stat
+      protocol: TCP
+      port: 1024
+      targetPort: 1024
+    - name: healthz
+      protocol: TCP
+      port: 1042
+      targetPort: 1042
+  clusterIP: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: prd-fsn1-atlas-1047-worker-02-internal
+  namespace: 1047-atlas
+subsets:
+  - addresses:
+      - ip: 10.99.7.44
+    ports:
+      - name: http
+        port: 80
+        protocol: TCP
+      - name: https
+        port: 443
+        protocol: TCP
+      - name: stat
+        port: 1024
+        protocol: TCP
+      - name: healthz
+        port: 1042
+        protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-fsn1-atlas-1047-worker-03-internal
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+    - name: stat
+      protocol: TCP
+      port: 1024
+      targetPort: 1024
+    - name: healthz
+      protocol: TCP
+      port: 1042
+      targetPort: 1042
+  clusterIP: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: prd-fsn1-atlas-1047-worker-03-internal
+  namespace: 1047-atlas
+subsets:
+  - addresses:
+      - ip: 10.99.7.45
+    ports:
+      - name: http
+        port: 80
+        protocol: TCP
+      - name: https
+        port: 443
+        protocol: TCP
+      - name: stat
+        port: 1024
+        protocol: TCP
+      - name: healthz
+        port: 1042
+        protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-fsn1-atlas-1047-worker-08-internal
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+    - name: stat
+      protocol: TCP
+      port: 1024
+      targetPort: 1024
+    - name: healthz
+      protocol: TCP
+      port: 1042
+      targetPort: 1042
+  clusterIP: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: prd-fsn1-atlas-1047-worker-08-internal
+  namespace: 1047-atlas
+subsets:
+  - addresses:
+      - ip: 10.99.7.55
+    ports:
+      - name: http
+        port: 80
+        protocol: TCP
+      - name: https
+        port: 443
+        protocol: TCP
+      - name: stat
+        port: 1024
+        protocol: TCP
+      - name: healthz
+        port: 1042
+        protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-bhs8-atlas-1047-worker-08-internal
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+    - name: stat
+      protocol: TCP
+      port: 1024
+      targetPort: 1024
+    - name: healthz
+      protocol: TCP
+      port: 1042
+      targetPort: 1042
+  clusterIP: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: prd-bhs8-atlas-1047-worker-08-internal
+  namespace: 1047-atlas
+subsets:
+  - addresses:
+      - ip: 10.99.8.54
+    ports:
+      - name: http
+        port: 80
+        protocol: TCP
+      - name: https
+        port: 443
+        protocol: TCP
+      - name: stat
+        port: 1024
+        protocol: TCP
+      - name: healthz
+        port: 1042
+        protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-rbx8-atlas-1047-worker-08-internal
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+    - name: stat
+      protocol: TCP
+      port: 1024
+      targetPort: 1024
+    - name: healthz
+      protocol: TCP
+      port: 1042
+      targetPort: 1042
+  clusterIP: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: prd-rbx8-atlas-1047-worker-08-internal
+  namespace: 1047-atlas
+subsets:
+  - addresses:
+      - ip: 10.99.2.54
+    ports:
+      - name: http
+        port: 80
+        protocol: TCP
+      - name: https
+        port: 443
+        protocol: TCP
+      - name: stat
+        port: 1024
+        protocol: TCP
+      - name: healthz
+        port: 1042
+        protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-bhs8-atlas-1047-ingress-01-internal
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+    - name: stat
+      protocol: TCP
+      port: 1024
+      targetPort: 1024
+    - name: healthz
+      protocol: TCP
+      port: 1042
+      targetPort: 1042
+  clusterIP: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: prd-bhs8-atlas-1047-ingress-01-internal
+  namespace: 1047-atlas
+subsets:
+  - addresses:
+      - ip: 10.99.8.69
+    ports:
+      - name: http
+        port: 80
+        protocol: TCP
+      - name: https
+        port: 443
+        protocol: TCP
+      - name: stat
+        port: 1024
+        protocol: TCP
+      - name: healthz
+        port: 1042
+        protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-bhs8-atlas-1047-ingress-02-internal
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+    - name: stat
+      protocol: TCP
+      port: 1024
+      targetPort: 1024
+    - name: healthz
+      protocol: TCP
+      port: 1042
+      targetPort: 1042
+  clusterIP: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: prd-bhs8-atlas-1047-ingress-02-internal
+  namespace: 1047-atlas
+subsets:
+  - addresses:
+      - ip: 10.99.8.70
+    ports:
+      - name: http
+        port: 80
+        protocol: TCP
+      - name: https
+        port: 443
+        protocol: TCP
+      - name: stat
+        port: 1024
+        protocol: TCP
+      - name: healthz
+        port: 1042
+        protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-rbx8-atlas-1047-ingress-01-internal
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+    - name: stat
+      protocol: TCP
+      port: 1024
+      targetPort: 1024
+    - name: healthz
+      protocol: TCP
+      port: 1042
+      targetPort: 1042
+  clusterIP: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: prd-rbx8-atlas-1047-ingress-01-internal
+  namespace: 1047-atlas
+subsets:
+  - addresses:
+      - ip: 10.99.2.69
+    ports:
+      - name: http
+        port: 80
+        protocol: TCP
+      - name: https
+        port: 443
+        protocol: TCP
+      - name: stat
+        port: 1024
+        protocol: TCP
+      - name: healthz
+        port: 1042
+        protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-rbx8-atlas-1047-ingress-02-internal
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+    - name: stat
+      protocol: TCP
+      port: 1024
+      targetPort: 1024
+    - name: healthz
+      protocol: TCP
+      port: 1042
+      targetPort: 1042
+  clusterIP: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: prd-rbx8-atlas-1047-ingress-02-internal
+  namespace: 1047-atlas
+subsets:
+  - addresses:
+      - ip: 10.99.2.70
+    ports:
+      - name: http
+        port: 80
+        protocol: TCP
+      - name: https
+        port: 443
+        protocol: TCP
+      - name: stat
+        port: 1024
+        protocol: TCP
+      - name: healthz
+        port: 1042
+        protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-fsn1-atlas-1047-ingress-01-internal
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+    - name: stat
+      protocol: TCP
+      port: 1024
+      targetPort: 1024
+    - name: healthz
+      protocol: TCP
+      port: 1042
+      targetPort: 1042
+  clusterIP: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: prd-fsn1-atlas-1047-ingress-01-internal
+  namespace: 1047-atlas
+subsets:
+  - addresses:
+      - ip: 10.99.7.71
+    ports:
+      - name: http
+        port: 80
+        protocol: TCP
+      - name: https
+        port: 443
+        protocol: TCP
+      - name: stat
+        port: 1024
+        protocol: TCP
+      - name: healthz
+        port: 1042
+        protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-fsn1-atlas-1047-ingress-02-internal
+  namespace: 1047-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+    - name: stat
+      protocol: TCP
+      port: 1024
+      targetPort: 1024
+    - name: healthz
+      protocol: TCP
+      port: 1042
+      targetPort: 1042
+  clusterIP: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: prd-fsn1-atlas-1047-ingress-02-internal
+  namespace: 1047-atlas
+subsets:
+  - addresses:
+      - ip: 10.99.7.72
+    ports:
+      - name: http
+        port: 80
+        protocol: TCP
+      - name: https
+        port: 443
+        protocol: TCP
+      - name: stat
+        port: 1024
+        protocol: TCP
+      - name: healthz
+        port: 1042
+        protocol: TCP

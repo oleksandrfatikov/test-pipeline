@@ -1,0 +1,31 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: atlas-fluent-operator
+  namespace: argocd
+spec:
+  generators:
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/atlas: "true"
+          environment.ledger.com/production: "true"
+  template:
+    metadata:
+      name: "{{name}}-atlas-fluent-operator"
+      labels:
+        service: "atlas"
+        env: "production"
+        organization: "infrastructure"
+    spec:
+      project: internal
+      source:
+        repoURL: https://github.com/LedgerHQ/sre-argocd.git
+        targetRevision: main
+        path: "deploy/prd-atlas-ovh-rbx/applications/1047-atlas/fluent-operator"
+      destination:
+        server: "{{server}}"
+        namespace: "1047-atlas"
+      # syncPolicy:
+      #   automated: {}

@@ -1,0 +1,59 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: ledger-quest-webapp-prx-cf
+  namespace: argocd-central
+spec:
+  # Ignore argocd image updater change
+  ignoreApplicationDifferences:
+    - jsonPointers:
+        - /spec/source/helm/parameters
+  generators:
+    - pullRequest:
+        requeueAfterSeconds: 1800
+        github:
+          owner: LedgerHQ
+          repo: ledger-quest-webapp
+          appSecretName: ledgerhq-repository
+          labels:
+            - argocd/preview-cf
+  template:
+    metadata:
+      name: "ledger-quest-webapp-pr-cf-{{ number }}"
+      namespace: argocd
+      annotations:
+        notifications.argoproj.io/subscribe.github: ""
+        argocd.ledger.fr/environment: "preview"
+        argocd-image-updater.argoproj.io/image-list: ledger-quest-webapp=ghcr.io/ledgerhq/ledger-quest-webapp:pr-{{ number }}
+        argocd-image-updater.argoproj.io/update-strategy: digest
+        argocd-image-updater.argoproj.io/ledger-quest-webapp.helm.image-name: app-template.image.repository
+        argocd-image-updater.argoproj.io/ledger-quest-webapp.helm.image-tag: app-template.image.tag
+      labels:
+        environment: "prx"
+        owner: "team-infra-sre"
+        project: "2138"
+        organization: "consumer"
+        service: "ledger-quest-webapp"
+    spec:
+      project: ledger-quest-webapp
+      source:
+        repoURL: https://github.com/LedgerHQ/ledger-quest-webapp.git
+        targetRevision: "{{ branch }}"
+        path: argocd/prx
+        helm:
+          valuesObject:
+            app-template:
+              image:
+                tag: "pr-{{ number }}"
+              custom:
+                host: ledger-wp-website-pr{{ number }}.dev-stg.aws.ledger-test.com
+              ingress:
+                main:
+                  ingressClassName: cloudflare
+      destination:
+        name: shared-application-2021-cluster
+        namespace: "ledger-quest-webapp-pr-cf-{{ number }}"
+      syncPolicy:
+        automated:
+          prune: true

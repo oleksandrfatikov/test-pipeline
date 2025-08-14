@@ -1,0 +1,72 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stg-fsn1-intnodes-1054-worker-01-external
+  namespace: 1054-intnodes
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: static.45.216.202.116.clients.your-server.de
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stg-fsn1-intnodes-1054-worker-02-external
+  namespace: 1054-intnodes
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: static.117.165.202.116.clients.your-server.de
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stg-sbg5-intnodes-1054-worker-02-external
+  namespace: 1054-intnodes
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: ns31722376.ip-162-19-103.eu
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stg-sbg5-intnodes-1054-worker-01-external
+  namespace: 1054-intnodes
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: ns31722380.ip-162-19-103.eu

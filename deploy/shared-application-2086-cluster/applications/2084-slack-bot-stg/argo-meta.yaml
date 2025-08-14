@@ -1,0 +1,24 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: 2084-slack-bot-prd
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: slack-bot
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: slack-bot-prd project
+  sourceRepos:
+    - 'https://github.com/LedgerHQ/slack_bot.git'
+    - 'ghcr.io'
+  destinations:
+    - namespace: 2084-slack-bot-prd
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

@@ -1,0 +1,94 @@
+---
+statefulsetAnnotations:
+  reloader.stakater.com/search: "true"
+
+adminIngress:
+  enabled: true
+  ingressClassName: trusted
+  hostname: "" # fill this on specific env value
+  tls: true
+  annotations:
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: 128k
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+
+resourcesPreset: "large"
+
+auth:
+  adminUser: keycloak
+  existingSecret: common-secrets-keycloak
+  passwordSecretKey: brokerAdminPwd
+
+postgresql:
+  enabled: false # Disable builtin postgres
+
+externalDatabase:
+  host: "" # fill this on specific env value
+  user: keycloak
+  database: keycloak
+  existingSecret: common-secrets-keycloak
+  existingSecretPasswordKey: pgUserPwd
+
+extraEnvVars:
+  - name: KC_HOSTNAME_URL
+    value: "https://{{ .Values.adminIngress.hostname }}"
+
+logging:
+  output: json
+
+initContainers:
+  - name: init-db-postgres
+    image: ghcr.io/ledgerhq/postgres-initdb:v14.11@sha256:b53b1945eaf871885871e027835d41f6f699b85fd997f43538526e0838e1634e
+    imagePullPolicy: IfNotPresent
+    env:
+      - name: POSTGRES_HOST
+        value: "{{ .Values.externalDatabase.host }}"
+      - name: POSTGRES_PORT
+        value: "{{ .Values.externalDatabase.port }}"
+      - name: POSTGRES_SUPER_USER
+        value: "postgres"
+      - name: POSTGRES_SUPER_PASS
+        valueFrom:
+          secretKeyRef:
+            name: common-secrets-postgresql
+            key: main
+      - name: POSTGRES_USER
+        value: "{{ .Values.externalDatabase.user }}"
+      - name: POSTGRES_PASS
+        valueFrom:
+          secretKeyRef:
+            name: "{{ .Values.externalDatabase.existingSecret }}"
+            key: "{{ .Values.externalDatabase.existingSecretPasswordKey }}"
+      - name: POSTGRES_DB
+        value: "{{ .Values.externalDatabase.database }}"
+
+metrics:
+  enabled: true
+
+podAnnotations:
+  ad.datadoghq.com/keycloak.checks: |
+    {
+      "openmetrics": {
+        "init_config": {},
+        "instances": [
+          {
+            "openmetrics_endpoint": "http://%%host%%:8080/realms/master/metrics",
+            "namespace": "keycloak",
+            "metrics": [
+              "jvm_memory_bytes_used",
+              "jvm_memory_bytes_max",
+              "jvm_memory_bytes_committed",
+              "keycloak_logins*",
+              "keycloak_response*",
+              "keycloak_client_logins*",
+              "keycloak_failed_login_attempts*",
+              "keycloak_request_duration*"
+            ],
+            "tag_by_endpoint": false,
+            "collect_histogram_buckets": true,
+            "histogram_buckets_as_distributions": true,
+            "collect_counters_with_distributions": true
+          }
+        ]
+      }
+    }

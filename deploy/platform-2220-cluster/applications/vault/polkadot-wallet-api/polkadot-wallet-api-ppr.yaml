@@ -1,0 +1,31 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: polkadot-wallet-api-ppr
+  annotations:
+    argocd.ledger.fr/environment: "PreProduction"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    environment: ppr
+    owner: team-infra-sre
+    organization: enterprise
+    service: polkadot-wallet-api
+spec:
+  project: polkadot-wallet-api
+  sources:
+    - repoURL: https://github.com/LedgerHQ/polkadot-wallet-api.git
+      path: "argocd/ppr"
+      targetRevision: main
+      helm:
+        releaseName: polkadot-wallet-api
+  destination:
+    name: shared-application-2094-cluster
+    namespace: 2060-vault-ppr
+  syncPolicy:
+    # automated:
+    #   selfHeal: true
+    syncOptions:
+      - Validate=true
+      - CreateNamespace=true

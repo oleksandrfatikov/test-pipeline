@@ -1,0 +1,16 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: backend-core-services
+  namespace: argocd-central
+spec:
+  description: backend-core-service project
+  sourceRepos:
+    - '*'
+  destinations:
+    - namespace: '*'
+      name: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

@@ -1,0 +1,108 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-fsn1-intnodes-1055-worker-01-external
+  namespace: 1055-intnodes
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: static.6.88.90.157.clients.your-server.de
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-fsn1-intnodes-1055-worker-02-external
+  namespace: 1055-intnodes
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: static.7.36.90.157.clients.your-server.de
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-rbx10-intnodes-1055-worker-01-external
+  namespace: 1055-intnodes
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: ns31694304.ip-51-91-233.eu
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-rbx10-intnodes-1055-worker-02-external
+  namespace: 1055-intnodes
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: ns3240691.ip-141-94-46.eu
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-bhs8-intnodes-1055-worker-01-external
+  namespace: 1055-intnodes
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: ns5028764.ip-148-113-187.net
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prd-bhs8-intnodes-1055-worker-02-external
+  namespace: 1055-intnodes
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: ns5030807.ip-148-113-199.net

@@ -1,0 +1,22 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: ledger-quest-webapp
+  namespace: argocd-central
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: ledger-quest-webapp project
+  sourceRepos:
+    - "https://github.com/LedgerHQ/ledger-quest-webapp.git"
+    - "ghcr.io"
+    - "ghcr.io/ledgerhq/charts"
+  destinations:
+    - namespace: "ledger-quest-webapp-pr*"
+      name: shared-application-2021-cluster
+    - namespace: ledger-quest-webapp-stg
+      name: shared-application-2021-cluster
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

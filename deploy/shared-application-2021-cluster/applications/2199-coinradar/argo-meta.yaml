@@ -1,0 +1,19 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: coinradar
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: coinradar project
+  sourceRepos:
+    - 'https://github.com/LedgerHQ/coinradar.git'
+    - 'ghcr.io'
+  destinations:
+    - namespace: 2199-coinradar
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

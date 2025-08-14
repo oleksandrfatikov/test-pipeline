@@ -1,0 +1,101 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: |
+      adapter=ghcr.io/ledgerhq/lama-adapter,
+      alpaca-xrp=ghcr.io/ledgerhq/alpaca-coin-module,
+      alpaca-xrp-testnet=ghcr.io/ledgerhq/alpaca-coin-module,
+      alpaca-tezos=ghcr.io/ledgerhq/alpaca-coin-module,
+      alpaca-tezos-testnet=ghcr.io/ledgerhq/alpaca-coin-module,
+      alpaca-stellar=ghcr.io/ledgerhq/alpaca-coin-module,
+      alpaca-stellar-testnet=ghcr.io/ledgerhq/alpaca-coin-module,
+      alpaca-sui=ghcr.io/ledgerhq/alpaca-coin-module,
+      alpaca-sui-testnet=ghcr.io/ledgerhq/alpaca-coin-module,
+      alpaca-hedera=ghcr.io/ledgerhq/alpaca-coin-module,
+      alpaca-hedera-testnet=ghcr.io/ledgerhq/alpaca-coin-module,
+      alpaca-tron=ghcr.io/ledgerhq/alpaca-coin-module,
+      alpaca-tron-testnet=ghcr.io/ledgerhq/alpaca-coin-module
+    argocd-image-updater.argoproj.io/write-back-method: argocd
+    argocd-image-updater.argoproj.io/adapter.update-strategy: semver
+    argocd-image-updater.argoproj.io/adapter.allow-tags: regexp:\d+\.\d+\.\d+(-(?i)(M|RC)\d+)?
+    argocd-image-updater.argoproj.io/adapter.helm.image-name: main.image.name
+    argocd-image-updater.argoproj.io/adapter.helm.image-tag: main.image.tag
+    argocd-image-updater.argoproj.io/alpaca-xrp.update-strategy: semver
+    argocd-image-updater.argoproj.io/alpaca-xrp.allow-tags: regexp:\d+\.\d+\.\d+$
+    argocd-image-updater.argoproj.io/alpaca-xrp.helm.image-name: alpaca-xrp.image.name
+    argocd-image-updater.argoproj.io/alpaca-xrp.helm.image-tag: alpaca-xrp.image.tag
+    argocd-image-updater.argoproj.io/alpaca-xrp-testnet.update-strategy: semver
+    argocd-image-updater.argoproj.io/alpaca-xrp-testnet.allow-tags: regexp:\d+\.\d+\.\d+$
+    argocd-image-updater.argoproj.io/alpaca-xrp-testnet.helm.image-name: alpaca-xrp-testnet.image.name
+    argocd-image-updater.argoproj.io/alpaca-xrp-testnet.helm.image-tag: alpaca-xrp-testnet.image.tag
+    argocd-image-updater.argoproj.io/alpaca-tezos.update-strategy: semver
+    argocd-image-updater.argoproj.io/alpaca-tezos.allow-tags: regexp:\d+\.\d+\.\d+$
+    argocd-image-updater.argoproj.io/alpaca-tezos.helm.image-name: alpaca-tezos.image.name
+    argocd-image-updater.argoproj.io/alpaca-tezos.helm.image-tag: alpaca-tezos.image.tag
+    argocd-image-updater.argoproj.io/alpaca-tezos-testnet.update-strategy: semver
+    argocd-image-updater.argoproj.io/alpaca-tezos-testnet.allow-tags: regexp:\d+\.\d+\.\d+$
+    argocd-image-updater.argoproj.io/alpaca-tezos-testnet.helm.image-name: alpaca-tezos-testnet.image.name
+    argocd-image-updater.argoproj.io/alpaca-tezos-testnet.helm.image-tag: alpaca-tezos-testnet.image.tag
+    argocd-image-updater.argoproj.io/alpaca-stellar.update-strategy: semver
+    argocd-image-updater.argoproj.io/alpaca-stellar.allow-tags: regexp:\d+\.\d+\.\d+$
+    argocd-image-updater.argoproj.io/alpaca-stellar.helm.image-name: alpaca-stellar.image.name
+    argocd-image-updater.argoproj.io/alpaca-stellar.helm.image-tag: alpaca-stellar.image.tag
+    argocd-image-updater.argoproj.io/alpaca-stellar-testnet.update-strategy: semver
+    argocd-image-updater.argoproj.io/alpaca-stellar-testnet.allow-tags: regexp:\d+\.\d+\.\d+$
+    argocd-image-updater.argoproj.io/alpaca-stellar-testnet.helm.image-name: alpaca-stellar-testnet.image.name
+    argocd-image-updater.argoproj.io/alpaca-stellar-testnet.helm.image-tag: alpaca-stellar-testnet.image.tag
+    argocd-image-updater.argoproj.io/alpaca-sui.update-strategy: semver
+    argocd-image-updater.argoproj.io/alpaca-sui.allow-tags: regexp:\d+\.\d+\.\d+$
+    argocd-image-updater.argoproj.io/alpaca-sui.helm.image-name: alpaca-sui.image.name
+    argocd-image-updater.argoproj.io/alpaca-sui.helm.image-tag: alpaca-sui.image.tag
+    argocd-image-updater.argoproj.io/alpaca-sui-testnet.update-strategy: semver
+    argocd-image-updater.argoproj.io/alpaca-sui-testnet.allow-tags: regexp:\d+\.\d+\.\d+$
+    argocd-image-updater.argoproj.io/alpaca-sui-testnet.helm.image-name: alpaca-sui-testnet.image.name
+    argocd-image-updater.argoproj.io/alpaca-sui-testnet.helm.image-tag: alpaca-sui-testnet.image.tag
+    argocd-image-updater.argoproj.io/alpaca-hedera.update-strategy: semver
+    argocd-image-updater.argoproj.io/alpaca-hedera.allow-tags: regexp:\d+\.\d+\.\d+$
+    argocd-image-updater.argoproj.io/alpaca-hedera.helm.image-name: alpaca-hedera.image.name
+    argocd-image-updater.argoproj.io/alpaca-hedera.helm.image-tag: alpaca-hedera.image.tag
+    argocd-image-updater.argoproj.io/alpaca-hedera-testnet.update-strategy: semver
+    argocd-image-updater.argoproj.io/alpaca-hedera-testnet.allow-tags: regexp:\d+\.\d+\.\d+$
+    argocd-image-updater.argoproj.io/alpaca-hedera-testnet.helm.image-name: alpaca-hedera-testnet.image.name
+    argocd-image-updater.argoproj.io/alpaca-hedera-testnet.helm.image-tag: alpaca-hedera-testnet.image.tag
+    argocd-image-updater.argoproj.io/alpaca-tron.update-strategy: semver
+    argocd-image-updater.argoproj.io/alpaca-tron.allow-tags: regexp:\d+\.\d+\.\d+$
+    argocd-image-updater.argoproj.io/alpaca-tron.helm.image-name: alpaca-tron.image.name
+    argocd-image-updater.argoproj.io/alpaca-tron.helm.image-tag: alpaca-tron.image.tag
+    argocd-image-updater.argoproj.io/alpaca-tron-testnet.update-strategy: semver
+    argocd-image-updater.argoproj.io/alpaca-tron-testnet.allow-tags: regexp:\d+\.\d+\.\d+$
+    argocd-image-updater.argoproj.io/alpaca-tron-testnet.helm.image-name: alpaca-tron-testnet.image.name
+    argocd-image-updater.argoproj.io/alpaca-tron-testnet.helm.image-tag: alpaca-tron-testnet.image.tag
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: lama-adapter-stg
+  namespace: argocd-central
+  labels:
+    environment: "stg"
+    owner: "team-infra-sre"
+    project: "2300"
+    organization: "wallet-services"
+    service: "lama-adapter"
+    service_family: "lama"
+    service_group: "lama-adapter"
+spec:
+  project: lama-adapter-stg
+  source:
+    repoURL: https://github.com/LedgerHQ/lama-adapter.git
+    targetRevision: main
+    path: argocd/stg
+    helm:
+      releaseName: lama-adapter
+      valueFiles:
+        - 'values.yaml'
+  destination:
+    name: shared-application-2021-cluster
+    namespace: 2300-lama-adapter-stg
+  syncPolicy:
+    automated: {}
+    syncOptions:
+      - CreateNamespace=true

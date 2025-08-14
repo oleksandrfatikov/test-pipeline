@@ -1,0 +1,25 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: 2133-web3checks-backend-prd
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: web3checks-backend
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: web3checks-backend project
+  sourceRepos:
+    - 'https://github.com/LedgerHQ/web3checks-backend.git'
+    - 'ghcr.io'
+  destinations:
+    - namespace: 2133-web3checks-backend-prd
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+

@@ -1,0 +1,446 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: selfsigned
+  name: haproxy-kubernetes-ingress-healthz
+  namespace: 1047-atlas
+spec:
+  ingressClassName: haproxy
+  rules:
+    - host: &host1 ns5022005.ip-148-113-161.net
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-bhs8-atlas-1047-worker-01-internal
+                port:
+                  number: 1042
+            path: /healthz
+            pathType: Prefix
+    - host: &host2 ns5022018.ip-148-113-161.net
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-bhs8-atlas-1047-worker-02-internal
+                port:
+                  number: 1042
+            path: /healthz
+            pathType: Prefix
+    - host: &host3 ns5022021.ip-148-113-161.net
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-bhs8-atlas-1047-worker-03-internal
+                port:
+                  number: 1042
+            path: /healthz
+            pathType: Prefix
+    - host: &host4 ns3230976.ip-57-128-94.eu
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-rbx8-atlas-1047-worker-01-internal
+                port:
+                  number: 1042
+            path: /healthz
+            pathType: Prefix
+    - host: &host5 ns3230967.ip-57-128-94.eu
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-rbx8-atlas-1047-worker-02-internal
+                port:
+                  number: 1042
+            path: /healthz
+            pathType: Prefix
+    - host: &host6 ns3230975.ip-57-128-94.eu
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-rbx8-atlas-1047-worker-03-internal
+                port:
+                  number: 1042
+            path: /healthz
+            pathType: Prefix
+    - host: &host7 static.28.131.12.49.clients.your-server.de
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-fsn1-atlas-1047-worker-01-internal
+                port:
+                  number: 1042
+            path: /healthz
+            pathType: Prefix
+    - host: &host8 static.214.130.12.49.clients.your-server.de
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-fsn1-atlas-1047-worker-02-internal
+                port:
+                  number: 1042
+            path: /healthz
+            pathType: Prefix
+    - host: &host9 static.169.130.12.49.clients.your-server.de
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-fsn1-atlas-1047-worker-03-internal
+                port:
+                  number: 1042
+            path: /healthz
+            pathType: Prefix
+    - host: &host10 static.84.70.119.168.clients.your-server.de
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-fsn1-atlas-1047-worker-08-internal
+                port:
+                  number: 1042
+            path: /healthz
+            pathType: Prefix
+    - host: &host11 ns5022523.ip-148-113-161.net
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-bhs8-atlas-1047-worker-08-internal
+                port:
+                  number: 1042
+            path: /healthz
+            pathType: Prefix
+    - host: &host12 ns31546459.ip-141-94-197.eu
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-rbx8-atlas-1047-worker-08-internal
+                port:
+                  number: 1042
+            path: /healthz
+            pathType: Prefix
+    - host: &host13 ns5032882.ip-148-113-208.net
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-bhs8-atlas-1047-ingress-01-internal
+                port:
+                  number: 1042
+            path: /healthz
+            pathType: Prefix
+    - host: &host14 ns5032883.ip-148-113-208.net
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-bhs8-atlas-1047-ingress-02-internal
+                port:
+                  number: 1042
+            path: /healthz
+            pathType: Prefix
+    - host: &host15 ns3246126.ip-91-134-34.eu
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-rbx8-atlas-1047-ingress-01-internal
+                port:
+                  number: 1042
+            path: /healthz
+            pathType: Prefix
+    - host: &host16 ns31754044.ip-91-134-59.eu
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-rbx8-atlas-1047-ingress-02-internal
+                port:
+                  number: 1042
+            path: /healthz
+            pathType: Prefix
+    - host: &host17 static.17.221.130.94.clients.your-server.de
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-fsn1-atlas-1047-ingress-01-internal
+                port:
+                  number: 1042
+            path: /healthz
+            pathType: Prefix
+    - host: &host18 static.221.239.130.94.clients.your-server.de
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-fsn1-atlas-1047-ingress-02-internal
+                port:
+                  number: 1042
+            path: /healthz
+            pathType: Prefix
+  tls:
+    - hosts:
+        - *host1
+        - *host2
+        - *host3
+        - *host4
+        - *host5
+        - *host6
+        - *host7
+        - *host8
+        - *host9
+        - *host10
+        - *host11
+        - *host12
+        - *host13
+        - *host14
+        - *host15
+        - *host16
+        - *host17
+        - *host18
+      secretName: haproxy-kubernetes-ingress-cert
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: selfsigned
+    haproxy.org/whitelist: "52.50.31.80/32, 34.240.150.212/32, 195.68.107.68/32, 192.30.252.0/22, 185.199.108.0/22, 140.82.112.0/20, 143.55.64.0/20"
+  name: haproxy-kubernetes-ingress-stat
+  namespace: 1047-atlas
+spec:
+  ingressClassName: haproxy
+  rules:
+    - host: &host1 ns5022005.ip-148-113-161.net
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-bhs8-atlas-1047-worker-01-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host2 ns5022018.ip-148-113-161.net
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-bhs8-atlas-1047-worker-02-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host3 ns5022021.ip-148-113-161.net
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-bhs8-atlas-1047-worker-03-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host4 ns3230976.ip-57-128-94.eu
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-rbx8-atlas-1047-worker-01-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host5 ns3230967.ip-57-128-94.eu
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-rbx8-atlas-1047-worker-02-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host6 ns3230975.ip-57-128-94.eu
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-rbx8-atlas-1047-worker-03-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host7 static.28.131.12.49.clients.your-server.de
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-fsn1-atlas-1047-worker-01-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host8 static.214.130.12.49.clients.your-server.de
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-fsn1-atlas-1047-worker-02-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host9 static.169.130.12.49.clients.your-server.de
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-fsn1-atlas-1047-worker-03-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host10 static.84.70.119.168.clients.your-server.de
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-fsn1-atlas-1047-worker-08-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host11 ns5022523.ip-148-113-161.net
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-bhs8-atlas-1047-worker-08-internal
+                port:
+                  number: 1042
+            path: /stat
+            pathType: Prefix
+    - host: &host12 ns31546459.ip-141-94-197.eu
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-rbx8-atlas-1047-worker-08-internal
+                port:
+                  number: 1042
+            path: /stat
+            pathType: Prefix
+    - host: &host13 ns5032882.ip-148-113-208.net
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-bhs8-atlas-1047-ingress-01-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host14 ns5032883.ip-148-113-208.net
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-bhs8-atlas-1047-ingress-02-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host15 ns3246126.ip-91-134-34.eu
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-rbx8-atlas-1047-ingress-01-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host16 ns31754044.ip-91-134-59.eu
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-rbx8-atlas-1047-ingress-02-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host17 static.17.221.130.94.clients.your-server.de
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-fsn1-atlas-1047-ingress-01-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+    - host: &host18 static.221.239.130.94.clients.your-server.de
+      http:
+        paths:
+          - backend:
+              service:
+                name: prd-fsn1-atlas-1047-ingress-02-internal
+                port:
+                  number: 1024
+            path: /stat
+            pathType: Prefix
+  tls:
+    - hosts:
+        - *host1
+        - *host2
+        - *host3
+        - *host4
+        - *host5
+        - *host6
+        - *host7
+        - *host8
+        - *host9
+        - *host10
+        - *host11
+        - *host12
+        - *host13
+        - *host14
+        - *host15
+        - *host16
+        - *host17
+        - *host18
+      secretName: haproxy-kubernetes-ingress-cert
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: selfsigned
+    haproxy.org/whitelist: "52.50.31.80/32, 34.240.150.212/32, 195.68.107.68/32"
+  name: haproxy-kubernetes-ingress-metrics
+  namespace: 1047-atlas
+spec:
+  ingressClassName: haproxy
+  rules:
+    - http:
+        paths:
+          - backend:
+              service:
+                name: haproxy-kubernetes-ingress
+                port:
+                  number: 1024
+            path: /metrics
+            pathType: Prefix

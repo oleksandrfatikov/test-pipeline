@@ -1,0 +1,28 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: trustchain-backend-prd
+  namespace: argocd
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2192"
+    organization: "consumer"
+    service: "trustchain-backend"
+  annotations:
+    notifications.argoproj.io/subscribe.slack: "backend-b2c-private-trustchain"
+    argocd.ledger.fr/environment: "Production"
+spec:
+  project: trustchain-backend
+  source:
+    repoURL: https://github.com/LedgerHQ/trustchain-backend.git
+    targetRevision: main
+    path: argocd/prd
+    helm:
+      releaseName: trustchain-backend
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2192-trustchain-backend
+  syncPolicy:
+    automated: {}

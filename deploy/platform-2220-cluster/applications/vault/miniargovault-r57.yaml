@@ -1,0 +1,113 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: miniargovault-r57
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    environment: miniargovault
+    owner: team-infra-sre
+    project: miniargovault
+    organization: enterprise
+    service: vault
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/LedgerHQ/sre-argocd.git
+        revision: HEAD
+        files:
+          - path: deploy/platform-2220-cluster/applications/vault/miniargovault/r57/*.yaml
+        values:
+          envName: miniargovault-r57-{{ trimSuffix ".yaml" .path.filenameNormalized }}
+  template:
+    metadata:
+      name: "{{ .values.envName }}"
+    spec:
+      project: vault-argocd
+      sources:
+        - repoURL: https://github.com/LedgerHQ/sre-argocd.git
+          targetRevision: main
+          ref: values
+        - repoURL: ghcr.io/ledgerhq/charts
+          chart: argocd-appset-env
+          targetRevision: "0.10.5"
+          helm:
+            passCredentials: true
+            valueFiles:
+              - "$values/deploy/platform-2220-cluster/applications/vault/releases/revault-1.12.yaml"
+              - "$values/deploy/platform-2220-cluster/applications/vault/releases/custody-1.2.yaml"
+              - "$values/deploy/platform-2220-cluster/applications/vault/releases/miniargovault/miniargovault.yaml"
+              - "$values/deploy/platform-2220-cluster/applications/vault/releases/miniargovault/miniargovault-stg.yaml"
+              - "$values/{{ .path.path }}/{{ .path.filename }}"
+            valuesObject:
+              appproject:
+                roles:
+                  - name: admin-vault-stg
+                    description: Add admin permission to stg envs
+                    policies:
+                      - p, proj:{{ .values.envName }}:admin-vault-stg, exec, create, {{ .values.envName }}/*, allow
+                      - p, proj:{{ .values.envName }}:admin-vault-stg, applications, update, {{ .values.envName }}/*, allow
+                      - p, proj:{{ .values.envName }}:admin-vault-stg, applications, delete, {{ .values.envName }}/*, allow
+                      - p, proj:{{ .values.envName }}:admin-vault-stg, applications, override, {{ .values.envName }}/*, allow
+                      - p, proj:{{ .values.envName }}:admin-vault-stg, applications, action/*, {{ .values.envName }}/*, allow
+                      - p, proj:{{ .values.envName }}:admin-vault-stg, exec, create, {{ .values.envName }}/*, allow
+                    groups:
+                      - infra-app-green-rundeck-vault-user-stg
+                      - infra-group-vault-tech-leads
+              labels:
+                environment: "{{ .values.envName }}"
+                owner: team-infra-sre
+                project: miniargovault
+                organization: enterprise
+                service: vault
+              destination:
+                name: shared-application-2021-cluster
+                namespace: "{{ .values.envName }}"
+              appset:
+                categoryValues:
+                  upstream:
+                    annotateNamespace:
+                      enabled: true
+                  default:
+                    inlineValues:
+                      datadog:
+                        env: "{{ .values.envName }}"
+                      custom:
+                        env: "{{ .values.envName }}"
+                projectValues:
+                  upstream:
+                    vault-rabbitmq:
+                      inlineValues:
+                        ingress:
+                          hostname: vault-rabbitmq-{{ .values.envName }}.aws.stg.ldg-tech.com
+                    keycloak:
+                      inlineValues:
+                        adminIngress:
+                          hostname: vault-keycloak-{{ .values.envName }}.aws.stg.ldg-tech.com
+                  all:
+                    miniargovault:
+                      inlineValues:
+                        env:
+                          VAULT_COMPARTMENT_ID: &compartmentId '{{ add 100000 (mod (int64 (trunc 18 (trimPrefix "0" (regexReplaceAllLiteral "[a-zA-Z]" (sha1sum .values.envName) "")))) 100000) }}'
+                  gates-current:
+                    gate-miniargovault:
+                      inlineValues:
+                        env:
+                          VAULT_WORKSPACE: 'miniargovault'
+                          VAULT_COMPARTMENT_ID: *compartmentId
+                          VAULT_ATTESTATION_ID: 1
+                        custom:
+                          calVersion: 2025.38.2629
+
+      destination:
+        name: in-cluster
+        namespace: argocd-central
+      syncPolicy:
+        automated:
+          selfHeal: true
+        syncOptions:
+          - Validate=true
+          - ServerSideApply=true

@@ -1,0 +1,8 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./argo-meta.yaml
+  - ./backend-core-services-job-stg.yaml
+  - ./backend-core-services-secret-stg.yaml
+  - ./backend-core-services-stg.yaml

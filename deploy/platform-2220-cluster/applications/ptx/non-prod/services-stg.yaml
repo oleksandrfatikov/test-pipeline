@@ -1,0 +1,182 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: ptx-services-stg
+  namespace: argocd-central
+spec:
+  goTemplate: true
+  ignoreApplicationDifferences:
+    - jqPathExpressions:
+        - .spec.source.helm.parameters
+  templatePatch: |
+    metadata:
+      annotations:
+      {{- if eq .app "buy"}}
+        argocd-image-updater.argoproj.io/image-list: ptx=ghcr.io/ledgerhq/ptx-server
+        argocd-image-updater.argoproj.io/write-back-method: argocd
+        argocd-image-updater.argoproj.io/ptx.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/ptx.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+        argocd-image-updater.argoproj.io/ptx.helm.image-name: app-template.image.name
+        argocd-image-updater.argoproj.io/ptx.helm.image-tag: app-template.image.tag
+        argocd.ledger.fr/environment: "Staging"
+        notifications.argoproj.io/subscribe.github: ""
+      {{- else if eq .app "buy-sell-ui"}}
+        argocd.ledger.fr/environment: "Staging - ArgoCD"
+        notifications.argoproj.io/subscribe.github: ""
+        argocd-image-updater.argoproj.io/image-list: ptx=ghcr.io/ledgerhq/{{.app}}:main
+        argocd-image-updater.argoproj.io/update-strategy: digest
+        argocd-image-updater.argoproj.io/ptx.helm.image-name: app-template.image.repository
+        argocd-image-updater.argoproj.io/ptx.helm.image-tag: app-template.custom.imageTag
+      {{- else if eq .app "swap-live-app"}}
+        argocd.ledger.fr/environment: "Staging - ArgoCD"
+        notifications.argoproj.io/subscribe.github: ""
+        argocd-image-updater.argoproj.io/image-list: ptx=jfrog.ledgerlabs.net/ptx-oci-prod-green/{{.app}}:main
+        argocd-image-updater.argoproj.io/update-strategy: digest
+        argocd-image-updater.argoproj.io/ptx.helm.image-name: app-template.image.repository
+        argocd-image-updater.argoproj.io/ptx.helm.image-tag: app-template.custom.imageTag
+      {{- else if eq .app "idverse" }}
+        argocd-image-updater.argoproj.io/write-back-method: argocd
+        argocd-image-updater.argoproj.io/image-list: app=ghcr.io/ledgerhq/{{.app}},secret-rotation=ghcr.io/ledgerhq/idverse-secret-rotation:main
+        argocd-image-updater.argoproj.io/app.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/app.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+        argocd-image-updater.argoproj.io/secret-rotation.update-strategy: digest
+        argocd-image-updater.argoproj.io/app.helm.image-name: app.image.repository
+        argocd-image-updater.argoproj.io/app.helm.image-tag: app.image.tag
+        argocd-image-updater.argoproj.io/secret-rotation.helm.image-name: renewKey.image.repository
+        argocd-image-updater.argoproj.io/secret-rotation.helm.image-tag: renewKey.image.tag
+        argocd.ledger.fr/environment: "Staging"
+        notifications.argoproj.io/subscribe.github: ""
+      {{- else if eq .app "exchange-tx-manager" }}
+        argocd-image-updater.argoproj.io/write-back-method: argocd
+        argocd-image-updater.argoproj.io/image-list: app=ghcr.io/ledgerhq/{{.app}}
+        argocd-image-updater.argoproj.io/app.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/app.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+        argocd-image-updater.argoproj.io/app.helm.image-name: app-template.image.repository
+        argocd-image-updater.argoproj.io/app.helm.image-tag: app-template.image.tag
+        argocd.ledger.fr/environment: "Staging"
+        notifications.argoproj.io/subscribe.github: ""
+      {{- else if eq .app "transaction-history" }}
+        argocd-image-updater.argoproj.io/write-back-method: argocd
+        argocd-image-updater.argoproj.io/image-list: app=ghcr.io/ledgerhq/{{.app}}
+        argocd-image-updater.argoproj.io/app.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/app.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+        argocd-image-updater.argoproj.io/app.helm.image-name: app-template.image.repository
+        argocd-image-updater.argoproj.io/app.helm.image-tag: app-template.image.tag
+        argocd.ledger.fr/environment: "Staging"
+        notifications.argoproj.io/subscribe.github: ""
+      {{- else if eq .app "earn-live-app"}}
+        argocd-image-updater.argoproj.io/image-list: ptx=ghcr.io/ledgerhq/{{.app}}:develop
+        argocd-image-updater.argoproj.io/write-back-method: argocd
+        argocd-image-updater.argoproj.io/ptx.update-strategy: digest
+        argocd-image-updater.argoproj.io/ptx.helm.image-name: app-template.image.repository
+        argocd-image-updater.argoproj.io/ptx.helm.image-tag: app-template.image.tag
+      {{- else if eq .app "earn-service-backend" }}
+        argocd-image-updater.argoproj.io/write-back-method: argocd
+        argocd-image-updater.argoproj.io/image-list: app=ghcr.io/ledgerhq/{{.app}}
+        argocd-image-updater.argoproj.io/app.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/app.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+        argocd-image-updater.argoproj.io/app.helm.image-name: app-template.image.repository
+        argocd-image-updater.argoproj.io/app.helm.image-tag: app-template.image.tag
+      {{- else if eq .app "swap" }}
+        argocd-image-updater.argoproj.io/write-back-method: argocd
+        argocd-image-updater.argoproj.io/image-list: completer=ghcr.io/ledgerhq/swap/completer,service=ghcr.io/ledgerhq/swap/service,services-init-db=ghcr.io/ledgerhq/swap/db-migration
+        argocd-image-updater.argoproj.io/completer.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/completer.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+        argocd-image-updater.argoproj.io/service.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/service.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+        argocd-image-updater.argoproj.io/services-init-db.helm.image-spec: services.initContainers.services-init-db.image
+        argocd-image-updater.argoproj.io/services-init-db.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/services-init-db.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+      {{- else }}
+        argocd-image-updater.argoproj.io/image-list: ptx=ghcr.io/ledgerhq/{{.app}}
+        argocd-image-updater.argoproj.io/write-back-method: argocd
+        argocd-image-updater.argoproj.io/ptx.update-strategy: newest-build
+        argocd-image-updater.argoproj.io/ptx.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+        argocd-image-updater.argoproj.io/ptx.helm.image-name: image.name
+        argocd-image-updater.argoproj.io/ptx.helm.image-tag: image.tag
+      {{- end }}
+      {{- if .notification }}
+        notifications.argoproj.io/subscribe.slack: {{.notification}}
+      {{- end }}
+    {{- if eq .app "transaction-history" }}
+    spec:
+      source:
+        repoURL: 'https://github.com/LedgerHQ/exchange-tx-manager.git'
+      destination:
+        namespace: '{{.project_id}}-exchange-tx-manager'
+    {{- end }}
+  generators:
+    - list:
+        elements:
+          - app: buy
+            project_id: '2204'
+            revision: main
+            path: 'argocd/stg'
+          - app: buy-sell-ui
+            project_id: '2213'
+            revision: main
+            path: 'argocd/stg'
+          - app: idverse
+            project_id: '2247'
+            revision: main
+            path: 'argocd/stg'
+          - app: exchange-tx-manager
+            project_id: '2252'
+            revision: main
+            path: 'argocd/exchange-tx-manager/stg'
+          - app: transaction-history
+            project_id: '2252'
+            revision: main
+            path: 'argocd/transaction-history/stg'
+          - app: earn-service-backend
+            project_id: '2184'
+            revision: main
+            path: 'argocd/stg'
+          - app: earn-live-app
+            project_id: '2236'
+            revision: 'develop'
+            path: 'argocd/stg'
+          - app: swap
+            project_id: '2032'
+            revision: master
+            path: 'argocd/stg'
+          - app: swap-live-app
+            project_id: '2271'
+            revision: main
+            path: 'argocd/stg'
+  template:
+    metadata:
+      name: '{{.app}}-stg'
+      namespace: argocd-central
+      labels:
+        environment: stg
+        owner: team-infra-sre
+        project: '{{.project_id}}'
+        organization: 'consumer'
+        service: '{{.app}}'
+    spec:
+      project: ptx-services
+      ignoreDifferences:
+        - group: "apps"
+          kind: "Deployment"
+          jsonPointers:
+            - /spec/replicas
+      source:
+        repoURL: 'https://github.com/LedgerHQ/{{.app}}.git'
+        targetRevision: '{{.revision}}'
+        path: '{{.path}}'
+        helm:
+          releaseName: '{{.app}}'
+          valueFiles:
+            - 'values.yaml'
+      destination:
+        name: shared-application-2021-cluster
+        namespace: '{{.project_id}}-{{.app}}'
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true
+          - RespectIgnoreDifferences=true
+  syncPolicy:
+    preserveResourcesOnDeletion: true

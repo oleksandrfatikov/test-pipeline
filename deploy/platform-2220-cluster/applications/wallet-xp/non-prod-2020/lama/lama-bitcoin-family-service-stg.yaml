@@ -1,0 +1,51 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: lama-bitcoin-family-service-stg
+  namespace: argocd-central
+spec:
+  # Ignore argocd image updater change
+  ignoreApplicationDifferences:
+    - jsonPointers:
+        - /spec/source/helm/parameters
+  generators:
+    - list:
+        elements:
+          - environment: stg
+            app: bitcoin-family-service
+            clusterName: shared-application-2021-cluster
+            project_id: "2063"
+            namespace: 2063-vault-stg
+  template:
+    metadata:
+      name: 'lama-{{app}}-{{environment}}'
+      namespace: argocd-central
+      annotations:
+        argocd-image-updater.argoproj.io/image-list: bitcoin-family-service=ghcr.io/ledgerhq/bitcoin-family-service
+        argocd-image-updater.argoproj.io/bitcoin-family-service.update-strategy: semver
+        argocd-image-updater.argoproj.io/bitcoin-family-service.allow-tags: regexp:^\d+\.\d+\.\d+(-(?i)(M|RC)\d+)?$
+        argocd-image-updater.argoproj.io/bitcoin-family-service.helm.image-tag: bitcoin-family-service.image.tag
+      labels:
+        environment: '{{environment}}'
+        owner: team-infra-sre
+        project: '{{project_id}}'
+        organization: 'wallet-services'
+        service: '{{app}}'
+        service_family: "lama"
+        service_group: "lama-bitcoin"
+    spec:
+      project: 1048-atlas
+      source:
+        repoURL: https://github.com/LedgerHQ/bitcoin-family-service.git
+        targetRevision: main
+        path: 'argocd/{{environment}}'
+        helm:
+          releaseName: '{{app}}'
+      destination:
+        name: '{{clusterName}}'
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true

@@ -1,0 +1,19 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: app-store-front
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: app-store-front project
+  sourceRepos:
+    - 'https://github.com/LedgerHQ/nano-appstore-front.git'
+    - 'ghcr.io'
+  destinations:
+    - namespace: 2039-app-store-api
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

@@ -1,0 +1,1034 @@
+---
+global:
+  logging:
+    level: warn
+
+## Argo Configs
+configs:
+  cm:
+    url: "https://argocd-non-prod.infra.ldg-prd.net"
+    oidc.config: |
+      name: Okta
+      issuer: https://ledger-fr.okta.com
+      clientID: $oidc.okta.clientID
+      cliClientID: $oidc.okta.cliClientID
+      clientSecret: $oidc.okta.clientSecret
+      requestedScopes: ["openid", "profile", "email", "groups"]
+    ui.bannercontent: "Central ArgoCD non PRD"
+    ui.bannerpermanent: "true"
+    ui.bannerposition: "top"
+    accounts.backstage-ro: apiKey
+    accounts.bot-atlas: apiKey
+    kustomize.buildOptions: --enable-alpha-plugins --enable-helm
+    exec.enabled: true
+    installationID: argocd-central-non-prod
+
+  params:
+    server.insecure: true
+    reposerver.enable.git.submodule: false
+    reposerver.parallelism.limit: "14"
+    controller.repo.server.timeout.seconds: "92"
+
+  # Argo CD RBAC policy configuration
+  # Role definition example to allow team-backend-blockchain group to exec terminal
+  # Policy structure: <app-project>/<app-ns>/<app-name> i.e
+  # p, example-user, logs, get, example-project/app-namespace/my-app, allow
+  # p, role:exec, exec, create, 1048-atlas/*, allow
+  # g, team-backend-blockchain, role:readonly
+  # g, team-backend-blockchain, role:exec
+  rbac:
+    policy.default: role:org-readonly
+    policy.csv: |
+      p, role:org-readonly, clusters, get, */*, allow
+      p, role:org-readonly, projects, get, */*, allow
+      p, role:org-readonly, applications, get, */*, allow
+      p, role:org-readonly, applications, sync, */*, allow
+      p, role:org-readonly, applicationsets, get, */*, allow
+      p, role:org-readonly, applicationsets, sync, */*, allow
+      p, role:org-readonly, repositories, get, */*, allow
+      p, role:org-readonly, accounts, get, */*, allow
+      p, role:org-readonly, logs, get, */*, allow
+      g, infra-role-infra-pe, role:admin
+      g, infra-role-infra-sre, role:admin
+      g, infra-role-infra-ms-deployment, role:admin
+      g, infra-role-infra-ms-core, role:admin
+      g, backstage-ro, role:readonly
+      g, bot-atlas, role:readonly
+      p, bot-atlas, applications, update, 1048-atlas/*, allow
+    scopes: "[groups]"
+
+  ssh:
+    knownHosts: |
+      [ssh.github.com]:443 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg=
+      [ssh.github.com]:443 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+      [ssh.github.com]:443 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+VTTvDP6mHBL9j1aNUkY4Ue1gvwnGLVlOhGeYrnZaMgRK6+PKCUXaDbC7qtbW8gIkhL7aGCsOr/C56SJMy/BCZfxd1nWzAOxSDPgVsmerOBYfNqltV9/hWCqBywINIR+5dIg6JTJ72pcEpEjcYgXkE2YEFXV1JHnsKgbLWNlhScqb2UmyRkQyytRLtL+38TGxkxCflmO+5Z8CSSNY7GidjMIZ7Q4zMjA2n1nGrlTDkzwDCsw+wqFPGQA179cnfGWOWRVruj16z6XyvxvjJwbz0wQZ75XK5tKSb7FNyeIEs4TT4jk+S4dhPeAUC5y+bDYirYgM4GC7uEnztnZyaVWQ7B381AK4Qdrwt51ZqExKbQpTUNn+EjqoTwvqNj4kqx5QUCI0ThS/YkOxJCXmPUWZbhjpCg56i+2aB6CmK2JGhn57K5mj0MNdBXA4/WnwH6XoPWJzK5Nyu2zB3nAZp+S5hpQs+p1vN1/wsjk=
+      github.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg=
+      github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+      github.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+VTTvDP6mHBL9j1aNUkY4Ue1gvwnGLVlOhGeYrnZaMgRK6+PKCUXaDbC7qtbW8gIkhL7aGCsOr/C56SJMy/BCZfxd1nWzAOxSDPgVsmerOBYfNqltV9/hWCqBywINIR+5dIg6JTJ72pcEpEjcYgXkE2YEFXV1JHnsKgbLWNlhScqb2UmyRkQyytRLtL+38TGxkxCflmO+5Z8CSSNY7GidjMIZ7Q4zMjA2n1nGrlTDkzwDCsw+wqFPGQA179cnfGWOWRVruj16z6XyvxvjJwbz0wQZ75XK5tKSb7FNyeIEs4TT4jk+S4dhPeAUC5y+bDYirYgM4GC7uEnztnZyaVWQ7B381AK4Qdrwt51ZqExKbQpTUNn+EjqoTwvqNj4kqx5QUCI0ThS/YkOxJCXmPUWZbhjpCg56i+2aB6CmK2JGhn57K5mj0MNdBXA4/WnwH6XoPWJzK5Nyu2zB3nAZp+S5hpQs+p1vN1/wsjk=
+
+  # Shard 0 -> low resources (note: rancher is not managed here)
+  # shard 1-2 -> number of resources managed in desc order (2094, 2021)
+  clusterCredentials:
+    shared-application-2094-cluster:
+      shard: "1"
+      server: "https://ACFFD399B117F87D0C166B84DC4C80D4.yl4.eu-west-1.eks.amazonaws.com"
+      labels:
+        project: "2094"
+        environment: preproduction
+        dc: aws
+      config:
+        awsAuthConfig:
+          clusterName: shared-application-2094-cluster
+          roleARN: "arn:aws:iam::737219370090:role/argocd-non-prod-2020"
+        tlsClientConfig:
+          insecure: false
+          caData: |-
+            LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM1ekNDQWMrZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQjRYRFRJeE1EVXlOVEV4TVRBd05Wb1hEVE14TURVeU16RXhNVEF3TlZvd0ZURVRNQkVHQTFVRQpBeE1LYTNWaVpYSnVaWFJsY3pDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTjdGClltYnVWUnprZ3pGOGFNaTY4NEZ4aVc4U2dINmF2Z2V3Wmw4Ym51L1ZzYWNEZ2laZDBjd0N5V0RjTGlPdVBLVXIKd3VoYWpQWXpOK3BVaHFadWtJc2c1SmdrYlhCREp2R3ZsODFzQ01DQXl2Z2l1VUMyK29pRmd1THdWU0hnWFBNdgppT3U1NWx4RXFudUJqUmVRTitnalNIZDFuVDRHS1QySG5jSFF6cGRDVHdJSjdRTE1kT2kvanI5Nmd1ZEE3cXBTCnhwN3UvQkJxUHluajRzaVpvUm1pellzcENQdlNBbkwvcElZUlNRVGJhWXpCODFBSmxlYWwzU2t6THR0VktZV3UKS3VZb1dmWmdBRjRNamtxdU13U2NRNUc3RkRrYWR4UFM0YWx4WDZpbGtiMVoxS1VweGJ4Mmsrb3hBQ1RKaGtwYgpqQ2xlUUNqczdheVd0aVVBSlQ4Q0F3RUFBYU5DTUVBd0RnWURWUjBQQVFIL0JBUURBZ0trTUE4R0ExVWRFd0VCCi93UUZNQU1CQWY4d0hRWURWUjBPQkJZRUZNek9UYUNUV3RmcDRWeEVXN2JwSHpGS1RaK01NQTBHQ1NxR1NJYjMKRFFFQkN3VUFBNElCQVFCaVFBa3Q2VWowd1hqaHgyemFDZVhpY3MvREEzSmZrUU4rZjJEczBJT1VpNE1vYUI3TApIMzdLNWNYWG8zWjZPcUl3MTc1d0JUUVRTS3JDY3dRTUtqQWpNSnh1blY1ekIvekJjaWFINm1qa3BFRGVIbDdvCkg1VkF4R1dETTRBazJEd3JYNmx6VFZPbnpKRE9QTSs5WHc4VEcvd0l3WDA2bGVYVTlBa0Q1bTNremJSVGR4ZEIKTmZKRnE3QVlURTZ0OThqYWIra3o5WVBBTDgwN1ZzR3oyMTFsb1BEL2RldVBTK2NNSG12M3pCbHdFNWNoVWgweAp6OHkvdzRWTjFuTjJaV1htZlVsZmFTRXgwM2FLdTRZaHMydWVzWHM2VE9wY01McEwyYnpaY3c4U1QyNnRDTUtZClhTaWFrbWI0MmpkMEN1WnpuZUx6UG5jTVlvbHR5Z0VhOWRJegotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+    platform-2020-cluster:
+      shard: "0"
+      server: "https://8BEBA45BB032AE8298F299594DFF917B.gr7.eu-west-1.eks.amazonaws.com"
+      labels:
+        project: "2020"
+        environment: production
+        dc: aws
+      config:
+        awsAuthConfig:
+          clusterName: platform-2020-cluster
+          roleARN: "arn:aws:iam::737219370090:role/argocd-non-prod-2020"
+        tlsClientConfig:
+          insecure: false
+          caData: |-
+            LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURCVENDQWUyZ0F3SUJBZ0lJYS9MdlBTWXVDQTR3RFFZSktvWklodmNOQVFFTEJRQXdGVEVUTUJFR0ExVUUKQXhNS2EzVmlaWEp1WlhSbGN6QWVGdzB5TlRBMU1EWXhORE15TURKYUZ3MHpOVEExTURReE5ETTNNREphTUJVeApFekFSQmdOVkJBTVRDbXQxWW1WeWJtVjBaWE13Z2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLCkFvSUJBUUNsQkxEUkRvdTdJNWVRRk9IZERvS3RmZ01sdm9Oa2FDOHJUZzhDamhMYldvRkxONE1HMURXeUFHdU4KdGdqVlNhOTlrS0pGY2VVd1NFN09GSUt2d0xLMC91djZtbk5mSXI5Y2xXS3hNOUt0Nm1abWJNUkZoNi9iZGcyTgpNaDhHcjVwMldKZFg1RlB3dTRMd1Faak5Oa3dVd1N1SU9hVlBDYmlhdWxxS1pTbXVHaDdtSnZpdG1scUFRVThuCmVncUk3ZWVkQ3UrWUpuNGw1WCszZTBEN3g3eUQ0elVHb0dTN29jYTB5ZXJFWllTdnNxaXArcm5pQVRUUlhCWGUKazY5VHdVOGYrczRKZ2hjeEhwZWpzdEk3WXdxZDlqU3ZhQUc2TjdhTmlOcGJHcm94dGkxY255dy9LN0VvWFU3SQprOGlmTjVRa3hIcy9kVG4xMS9YQ2ZqcDBZS0pyQWdNQkFBR2pXVEJYTUE0R0ExVWREd0VCL3dRRUF3SUNwREFQCkJnTlZIUk1CQWY4RUJUQURBUUgvTUIwR0ExVWREZ1FXQkJTYzliYUV6VE5iTHZTUUtCNUdQWWh2clpyWW9qQVYKQmdOVkhSRUVEakFNZ2dwcmRXSmxjbTVsZEdWek1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQkFRQUxtSHB1ZHd2bQpJMk1IS0pCcHV3djZoc2lpVldyZG9rSWFNUzIvMUxyZGE0Sy9QSFkxSnNHc1lkRTJSaFpsTlp4R1JmSmNlY2xmCnhRN1pXYm8yY1F5cGE4bE4rQWJ5Y2VqQUgyUUtNR0dNS3N5b0xVOGl5ckRFSTBKZ1lnYlFNZlRLaDl5djhFeHMKRnlqWEkvSUxtQlVyUFFaSkViV2Z3RXJNMGZwYno5ejV5Szd1enArTDVvc1pkRjhpOXcvOWxRMDBYTGVZTUsyawpOQ2hBQ2NMczVQVW9aMFptV2xpZFhSSE0vcWYzUkUvakZjU2U2NE85NFJ3OFg2enFyWUNRbDVJekNFRWJ6V05mCmFYdUQ0YnU4N2ZLejhqWElzVVNEQW9iRnc5Uk43SVB2dm9Yb051VEtkVlZtSXIza29maFNoWEt3ZS9XekFzaHkKRjYvSDQ2ZjdoSlZ1Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+
+    in-cluster:
+      shard: "0"
+      server: "https://kubernetes.default.svc"
+      config:
+        tlsClientConfig:
+          insecure: false
+    sandbox-2042-cluster:
+      shard: "0"
+      server: "https://0C1165AB8B2A64CBFC6A7910F8C62F98.sk1.eu-west-1.eks.amazonaws.com"
+      labels:
+        project: "2042"
+        environment: sandbox
+        dc: aws
+      config:
+        awsAuthConfig:
+          clusterName: sandbox-2042-cluster
+          roleARN: "arn:aws:iam::737219370090:role/argocd-non-prod-2020"
+        tlsClientConfig:
+          insecure: false
+          caData: |-
+            LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUN5RENDQWJDZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQjRYRFRJeE1ESXhNakUwTXprME0xb1hEVE14TURJeE1ERTBNemswTTFvd0ZURVRNQkVHQTFVRQpBeE1LYTNWaVpYSnVaWFJsY3pDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTU9aCnF0UmpTdDhqUjgxYm14eHA5MitJenRJNzl6RFRVbTlDV1pYc01yNnRUWXJjd2lRbVh3eDBOWTlBS2xkUWRrdHgKS1pLRHRFTzhNL1dhUzYyR01zS1BZRjl4L2c2NS9NSHdEQzFjaE5mSy80VDFmNjJtb3JLQUhKZGl5Vm9WMm1MRQo3YTRlY3lPY0x4Z0k0YWV4S1Y5VEh1OGplZ2ZHYWxST28wTXR2OEdVMXpnbUVTR0w1MDdNU0RHaFRpeS84eFFsCmFTaGxWY2lZdkFPYzVzZUdOUjg5UmpERFc5YjRWa1hIeVh3cHI3QkVVRUhWL0c4VzJlRkJrS1hydlhRYkFtY1MKN29scGgvYnJJcityQWFKbnV3dDNYZGhPeFU0SGVGNUd0blNyazlvU1kzMmFIU0ZWTm9RTWlsNHVCOEVFUkFXbApVRXRGc2NYM3dLaTVuY1NhbnNrQ0F3RUFBYU1qTUNFd0RnWURWUjBQQVFIL0JBUURBZ0trTUE4R0ExVWRFd0VCCi93UUZNQU1CQWY4d0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dFQkFFaFFCRGZjL09YQUd4c3gydjFZUUI4Q01OOWgKRGY2MGl6T1NPNDZvNG9PSGRSeWY2VTA4VnpiQ2hJL2JwV3c1MTVrUVg3N3BiL3RiaWNTb3E0bHYxcjJ6Mm9tWQplT3MvcExGZG9naWFZZUVTOXNNZ0hrUU9SZFljQkZub1NaRmpkZHhHS3Rqb3pvcnlIbXVNcHhWM3VTSWN3OFEvCnF1cGZrdFdHMG9DSC82WUZoRi9uUXJmZlpYZmFGdTFPWXhoMW5uVDgvQ040eE5hUlVoMTZQZXpZSjEvR3hoVTcKaEgxVTYvUkFXcjFTVHJrMVIrME5JVVNudExlQjVEaXUrMG53NFlOMkNpTWdiMDNIZlpPQS9zTm5lc3BxNnJwMwpZOHRSRXgvL252cGFidGF2VjJEVFFUWGt2bmM0bE9LYWo1UUJFYldrR3NHN0pKVDVvNlRsZGl4RC80az0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+    shared-application-2021-cluster:
+      shard: "2"
+      server: "https://390840C714E0420BC2138E179D1C35F4.yl4.eu-west-1.eks.amazonaws.com"
+      labels:
+        project: "2021"
+        environment: staging
+        dc: aws
+      config:
+        awsAuthConfig:
+          clusterName: shared-application-2021-cluster
+          roleARN: "arn:aws:iam::737219370090:role/argocd-non-prod-2020"
+        tlsClientConfig:
+          insecure: false
+          caData: |-
+            LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUN5RENDQWJDZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQjRYRFRJd01ETXlOakV4TVRRME1Wb1hEVE13TURNeU5ERXhNVFEwTVZvd0ZURVRNQkVHQTFVRQpBeE1LYTNWaVpYSnVaWFJsY3pDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTUdjCm5HV2F2VmRFajkxSWRXTExRa3RwRjNHR3haMWxZUE5HMllscmoyeGpTbXNsbXVjamRZUHd3MXEzTTB1cWZzck0KbXRZaE1sSDQ5dU4wODRQZFEyN3U4RXl5dnYwOVpDMzNCOEx4R0R3UlJOR2Q3dXZ3NldsRTR5MjZEdjdsZzhUYgo2aUc3Wmx6YnRpeHVibzJtQ0hQQmlCR1dZUGgyRUpQZUpkN3FpaVFhYVRDSTdZQUdzWVNyUlJZUnY2RG5OSGZ0CmhDS20vSDVyRkFpTVlzdEYwemNWMnZIRXpaZC9jVnNtK2RLL0d1QldBcTZqRFBKSGxkSGgvUmwyZWlGTUIwbGoKZVBnMGl2enVtMEh0Ynp5alBMSHhhNHcvdTB2QjRmYzhJdy9ETUtsVGRXV29jU05FVXQvMTVuaU44QmthZDhxSAo0WGhKRTBsQm5TWERQSHlQZXI4Q0F3RUFBYU1qTUNFd0RnWURWUjBQQVFIL0JBUURBZ0trTUE4R0ExVWRFd0VCCi93UUZNQU1CQWY4d0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dFQkFHVCtaWElBM1B1ZlVSQkdsN0NYKzN4MlpielAKTnpXOXgxN0pSbExZYmtpeE1mOEo4S3UyZHhLY0ZFbUJ3WmRZbkRld0lBMzNOYU1DRnFVUlN1d1RubFdtNk9PWgozK2JTMDEvYmx4NTh2TGx1Qkp5N3Vqb3NDRHo1V1RjR3Nxd0l3TW9hWnh3TFQzbXB0M0VYTXpJZnFHaU1nWGxICndzL0dvejk2Q1Ewd2FxTGlUNXo0NXFWOE9OVnd1S1hwYWlxdGJvNXgyb0tIUU14cDdXMmtkQmtTZnRIWHYvbUcKaWd1S2JVaVpoOTh0cTRsWGlHQkhPbjRkU2JMRjR4em1TNVdhYmhENEo2cmRNRW8rY2w4VWl3dkV4VStoZVRjZgpYVzFWVjh1OTlRaFJnVitOTTR2Ym05VGVuOGNTbWxSN1dITFd0MFY5cEsvSUc5aUp3SHRjdmxIRmhucz0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+    internal-systems-2018-cluster:
+      shard: "0"
+      server: "https://6298FFD82DACBD5E5F3655C5AB2E8B30.sk1.eu-west-1.eks.amazonaws.com"
+      labels:
+        project: "2018"
+        environment: staging
+        dc: aws
+      config:
+        awsAuthConfig:
+          clusterName: internal-systems-2018-cluster
+          roleARN: "arn:aws:iam::737219370090:role/argocd-non-prod-2020"
+        tlsClientConfig:
+          insecure: false
+          caData: |-
+            LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUN5RENDQWJDZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQjRYRFRJd01ESXhPVEV6TkRVMU5Gb1hEVE13TURJeE5qRXpORFUxTkZvd0ZURVRNQkVHQTFVRQpBeE1LYTNWaVpYSnVaWFJsY3pDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTXY5CmkwOEVIVFVNMkxORGFjTGRCVENzclhUWmxjVGRmNlA4UVk2eGRkaS9SOStienpsemRVbFJGa0N0N0RpcnRHRE0KNXRaSGxKbzZoN2krOW9Oay8wM3JnSHlaV3NnUXVTR0hnUzM0RG9aVy9PMm1VbmN2dlVUemZFZzQ0L3ZDVEl4TApjSnloY3p3UmNvZklhOUlqYWE5eVM3NndZMkpvR1RJQXdoRzl4YnhSOWFGcHR3eFZRLzdyWnBmbjl1WVRhWWROClNqbjRwY0o3VjVBbzNJVmxQRllkM0Jwb08zaFpjUUR2YU1uMkFySXpvZW9PRGJLR2ZPdTEwcTNkS0dDOGxQR2sKZE40c3NnQXJIOEFFMGwwWGFIeHhwQmd6QzdsRExNU1FicjgrV25XRUZRT256bGN4b1I4ZXhraFF4QWN2R1QvdwpaeCtDUDdEcXR1WUtRR3JWTVBNQ0F3RUFBYU1qTUNFd0RnWURWUjBQQVFIL0JBUURBZ0trTUE4R0ExVWRFd0VCCi93UUZNQU1CQWY4d0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dFQkFMR2hla1RtN1JTcHFkSnNmK1RSdStkRnBqaUQKc29sQjlwZ3F4Vmg2TklQdlMvTS9DR3F0TUQ0YWwzd1BMNm9JdDk3YUo1Wmd1U2Rya0RBV3JET1l5K00wdnVVMwpka0Q5T2ZyZU15SHpaSXpnUmhuL0RLN0VOdjAyclM2QnVUZEdNN3oySit0SnhCbmxkMFBRVDFnMm9ueGpzVWhvCjBGc1pVYlZrWVc0N0xZaTdnRVpEempQbi9ZbkpVeXhRbGJHaTFQcVJNenBzMkJqVWxoc1E2a2gvMFIwMGl6WDAKU3RxYjdmaTMraUNYdGZacENSNWVoR1AvSTdoczBWdXpRN1g4NzA1UzNaQnN1SjZZVGcwMElVK1NRR2J2czgzQgpiTGpqc1RFYnBYWjBmVU5wbnRFcjVnblJTU0U5VHB1aVFVd0s0VjRiaC9iT3FQN0FtTWc2Wk1qTWxRVT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+
+controller:
+  replicas: 3
+  resources:
+    limits:
+      memory: "3.5Gi"
+    requests:
+      cpu: "2"
+      memory: "3.5Gi"
+  serviceAccount:
+    create: true
+    annotations:
+      eks.amazonaws.com/role-arn: "arn:aws:iam::737219370090:role/argocd-non-prod-2020"
+  metrics:
+    enabled: true
+  podAnnotations:
+    ad.datadoghq.com/application-controller.checks: |
+      {
+        "argocd": {
+          "init_config": {},
+          "instances": [
+            {
+              "app_controller_endpoint": "http://%%host%%:8082/metrics",
+              "rename_labels": {
+                "name": "app_controller"
+              }
+            }
+          ]
+        }
+      }
+
+dex:
+  enabled: false
+
+redis-ha:
+  enabled: true
+  redis:
+    resources:
+      limits:
+        memory: 256Mi
+      requests:
+        cpu: "0.8"
+        memory: 256Mi
+  haproxy:
+    resources:
+      limits:
+        memory: 256Mi
+      requests:
+        cpu: "0.2"
+        memory: 256Mi
+
+server:
+  replicas: 3
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: "0.2"
+      memory: 512Mi
+  metrics:
+    enabled: true
+  podAnnotations:
+    ad.datadoghq.com/server.checks: |
+      {
+        "argocd": {
+          "init_config": {},
+          "instances": [
+            {
+              "api_server_endpoint": "http://%%host%%:8083/metrics"
+            }
+          ]
+        }
+      }
+  serviceAccount:
+    create: true
+    annotations:
+      eks.amazonaws.com/role-arn: "arn:aws:iam::737219370090:role/argocd-non-prod-2020"
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    ingressClassName: "nginx"
+    hostname: argocd-non-prod.infra.ldg-prd.net
+    extraTls:
+      - secretName: argocd-non-prod-server-tls
+        hosts:
+          - argocd-non-prod.infra.ldg-prd.net
+
+repoServer:
+  # Install KSOPS for sops support
+  ## See: https://www.redhat.com/en/blog/a-guide-to-gitops-and-secret-management-with-argocd-operator-and-sops
+  env:
+    - name: XDG_CONFIG_HOME
+      value: /.config
+    - name: SOPS_AGE_KEY_FILE
+      value: /.config/sops/age/keys.txt
+    - name: ARGOCD_GIT_ATTEMPTS_COUNT
+      value: "2"
+  volumes:
+    - name: custom-tools
+      emptyDir: {}
+    - name: sops-age
+      secret:
+        secretName: sops-age
+  initContainers:
+    - name: install-ksops
+      image: viaductoss/ksops:v4.3.3@sha256:6b5ec4b6144307f78bcddffd8f09020482836eee34cf77bf4ce8614b0452a73c
+      command: ["/bin/sh", "-c"]
+      args:
+        - echo "Installing KSOPS..."; cp ksops /custom-tools/; cp $GOPATH/bin/kustomize /custom-tools/; echo "Done.";
+      volumeMounts:
+        - mountPath: /custom-tools
+          name: custom-tools
+  volumeMounts:
+    - mountPath: /usr/local/bin/kustomize
+      name: custom-tools
+      subPath: kustomize
+    - mountPath: /.config/kustomize/plugin/viaduct.ai/v1/ksops/ksops
+      name: custom-tools
+      subPath: ksops
+    - mountPath: /.config/sops/age/keys.txt
+      name: sops-age
+      subPath: keys.txt
+  replicas: 3
+  resources:
+    limits:
+      memory: 1.5Gi
+    requests:
+      cpu: "1"
+      memory: 1.5Gi
+  metrics:
+    enabled: true
+  podAnnotations:
+    ad.datadoghq.com/repo-server.checks: |
+      {
+        "argocd": {
+          "init_config": {},
+          "instances": [
+            {
+              "repo_server_endpoint": "http://%%host%%:8084/metrics"
+            }
+          ]
+        }
+      }
+
+applicationSet:
+  replicas: 2
+  serviceAccount:
+    annotations:
+      eks.amazonaws.com/role-arn: "arn:aws:iam::737219370090:role/argocd-non-prod-2020"
+  metrics:
+    enabled: true
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: "0.5"
+      memory: 512Mi
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    labels: {}
+    ingressClassName: nginx
+    hostname: argocd-non-prod-appset.infra.ldg-prd.net
+    path: /
+    pathType: Prefix
+    extraTls:
+      - hosts:
+          - argocd-non-prod-appset.infra.ldg-prd.net
+        secretName: argocd-non-prod-appset-tls
+
+notifications:
+  argocdUrl: https://argocd-non-prod.infra.ldg-prd.net/
+  secret:
+    create: false
+  resources:
+    limits:
+      memory: 2Gi
+    requests:
+      cpu: "0.2"
+      memory: 2Gi
+  notifiers:
+    service.slack: |
+      token: $slack-token
+    service.github: |
+      appID: 1117759
+      installationId: 59830567
+      privateKey: $github-notification-privateKey
+  templates:
+    template.app-created: |
+      message: Application {{.app.metadata.name}} has been created.
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        pullRequestComment:
+          content: |
+            Application {{.app.metadata.name}} has been created.
+            URL(s): {{range $index, $url := .app.status.summary.externalURLs}}{{$url}} {{end}}
+            See more here: {{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true
+      slack:
+        attachments: |
+          [{
+            "title": "{{ .app.metadata.name}}",
+            "title_link":"{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+            "color": "#18be52",
+            "fields": [
+            {
+              "title": "Sync Status",
+              "value": "{{.app.status.sync.status}}",
+              "short": true
+            },
+            {
+              "title": "Repository",
+              "value": "{{.app.spec.source.repoURL}}",
+              "short": true
+            },
+            {
+              "title": "Revision",
+              "value": "{{.app.status.sync.revision}}",
+              "short": true
+            }
+            {{range $index, $c := .app.status.conditions}}
+            {{if not $index}},{{end}}
+            {{if $index}},{{end}}
+            {
+              "title": "{{$c.type}}",
+              "value": "{{$c.message}}",
+              "short": true
+            }
+            {{end}}
+            ]
+          }]
+    template.app-deleted: |
+      message: Application {{.app.metadata.name}} has been deleted.
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        deployment:
+          state: inactive
+          environment: >-
+            {{- if and (.app.metadata.annotations) (index .app.metadata.annotations "argocd.ledger.fr/environment") -}}
+              {{- index .app.metadata.annotations "argocd.ledger.fr/environment" -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.environment) -}}
+              {{- .app.metadata.labels.environment -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.env) -}}
+              {{- .app.metadata.labels.env -}}
+            {{- else -}}
+               default
+            {{- end -}}
+          environmentURL: "{{with .app.status.summary.externalURLs}}{{index . 0}}{{end}}"
+          logURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+          requiredContexts: []
+      slack:
+        attachments: |
+          [{
+            "title": "{{ .app.metadata.name}}",
+            "title_link":"{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+            "color": "#18be52",
+            "fields": [
+            {
+              "title": "Sync Status",
+              "value": "{{.app.status.sync.status}}",
+              "short": true
+            },
+            {
+              "title": "Repository",
+              "value": "{{.app.spec.source.repoURL}}",
+              "short": true
+            },
+            {
+              "title": "Revision",
+              "value": "{{.app.status.sync.revision}}",
+              "short": true
+            }
+            {{range $index, $c := .app.status.conditions}}
+            {{if not $index}},{{end}}
+            {{if $index}},{{end}}
+            {
+              "title": "{{$c.type}}",
+              "value": "{{$c.message}}",
+              "short": true
+            }
+            {{end}}
+            ]
+          }]
+    template.app-deployed: |
+      message: |
+        {{if eq .serviceType "slack"}}:white_check_mark:{{end}} Application {{.app.metadata.name}} is now running new version of deployments manifests.
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        status:
+          state: success
+          label: "continuous-delivery/{{.app.metadata.name}}"
+          targetURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+        deployment:
+          state: success
+          environment: >-
+            {{- if and (.app.metadata.annotations) (index .app.metadata.annotations "argocd.ledger.fr/environment") -}}
+              {{- index .app.metadata.annotations "argocd.ledger.fr/environment" -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.environment) -}}
+              {{- .app.metadata.labels.environment -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.env) -}}
+              {{- .app.metadata.labels.env -}}
+            {{- else -}}
+               default
+            {{- end -}}
+          environmentURL: "{{with .app.status.summary.externalURLs}}{{index . 0}}{{end}}"
+          logURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+          requiredContexts: []
+      slack:
+        attachments: |
+          [{
+            "title": "{{ .app.metadata.name}}",
+            "title_link":"{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+            "color": "#18be52",
+            "fields": [
+            {
+              "title": "Sync Status",
+              "value": "{{.app.status.sync.status}}",
+              "short": true
+            },
+            {
+              "title": "Repository",
+              "value": "{{.app.spec.source.repoURL}}",
+              "short": true
+            },
+            {
+              "title": "Revision",
+              "value": "{{.app.status.sync.revision}}",
+              "short": true
+            }
+            {{range $index, $c := .app.status.conditions}}
+            {{if not $index}},{{end}}
+            {{if $index}},{{end}}
+            {
+              "title": "{{$c.type}}",
+              "value": "{{$c.message}}",
+              "short": true
+            }
+            {{end}}
+            ]
+          }]
+    template.app-health-degraded: |
+      message: |
+        {{if eq .serviceType "slack"}}:exclamation:{{end}} Application {{.app.metadata.name}} has degraded.
+        Application details: {{.context.argocdUrl}}/applications/{{.app.metadata.name}}.
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        status:
+          state: error
+          label: "continuous-delivery/{{.app.metadata.name}}"
+          targetURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+        deployment:
+          state: error
+          environment: >-
+            {{- if and (.app.metadata.annotations) (index .app.metadata.annotations "argocd.ledger.fr/environment") -}}
+              {{- index .app.metadata.annotations "argocd.ledger.fr/environment" -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.environment) -}}
+              {{- .app.metadata.labels.environment -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.env) -}}
+              {{- .app.metadata.labels.env -}}
+            {{- else -}}
+               default
+            {{- end -}}
+          environmentURL: "{{with .app.status.summary.externalURLs}}{{index . 0}}{{end}}"
+          logURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+          requiredContexts: []
+      slack:
+        attachments: |-
+          [{
+            "title": "{{ .app.metadata.name}}",
+            "title_link": "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+            "color": "#f4c030",
+            "fields": [
+            {
+              "title": "Sync Status",
+              "value": "{{.app.status.sync.status}}",
+              "short": true
+            },
+            {
+              "title": "Repository",
+              "value": "{{.app.spec.source.repoURL}}",
+              "short": true
+            }
+            {{range $index, $c := .app.status.conditions}}
+            {{if not $index}},{{end}}
+            {{if $index}},{{end}}
+            {
+              "title": "{{$c.type}}",
+              "value": "{{$c.message}}",
+              "short": true
+            }
+            {{end}}
+            ]
+          }]
+    template.app-sync-failed: |
+      message: |
+        {{if eq .serviceType "slack"}}:exclamation:{{end}}  The sync operation of application {{.app.metadata.name}} has failed at {{.app.status.operationState.finishedAt}} with the following error: {{.app.status.operationState.message}}
+        Sync operation details are available at: {{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true .
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        status:
+          state: failure
+          label: "continuous-delivery/{{.app.metadata.name}}"
+          targetURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+        deployment:
+          state: failure
+          environment: >-
+            {{- if and (.app.metadata.annotations) (index .app.metadata.annotations "argocd.ledger.fr/environment") -}}
+              {{- index .app.metadata.annotations "argocd.ledger.fr/environment" -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.environment) -}}
+              {{- .app.metadata.labels.environment -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.env) -}}
+              {{- .app.metadata.labels.env -}}
+            {{- else -}}
+               default
+            {{- end -}}
+          environmentURL: "{{with .app.status.summary.externalURLs}}{{index . 0}}{{end}}"
+          logURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+          requiredContexts: []
+      slack:
+        attachments: |-
+          [{
+            "title": "{{ .app.metadata.name}}",
+            "title_link":"{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+            "color": "#E96D76",
+            "fields": [
+            {
+              "title": "Sync Status",
+              "value": "{{.app.status.sync.status}}",
+              "short": true
+            },
+            {
+              "title": "Repository",
+              "value": "{{.app.spec.source.repoURL}}",
+              "short": true
+            }
+            {{range $index, $c := .app.status.conditions}}
+            {{if not $index}},{{end}}
+            {{if $index}},{{end}}
+            {
+              "title": "{{$c.type}}",
+              "value": "{{$c.message}}",
+              "short": true
+            }
+            {{end}}
+            ]
+          }]
+    template.app-sync-running: |
+      message: |
+        The sync operation of application {{.app.metadata.name}} has started at {{.app.status.operationState.startedAt}}.
+        Sync operation details are available at: {{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true .
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        status:
+          state: in_progress
+          label: "continuous-delivery/{{.app.metadata.name}}"
+          targetURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+        deployment:
+          state: in_progress
+          environment: >-
+            {{- if and (.app.metadata.annotations) (index .app.metadata.annotations "argocd.ledger.fr/environment") -}}
+              {{- index .app.metadata.annotations "argocd.ledger.fr/environment" -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.environment) -}}
+              {{- .app.metadata.labels.environment -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.env) -}}
+              {{- .app.metadata.labels.env -}}
+            {{- else -}}
+               default
+            {{- end -}}
+          environmentURL: "{{with .app.status.summary.externalURLs}}{{index . 0}}{{end}}"
+          logURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+          requiredContexts: []
+      slack:
+        attachments: |-
+          [{
+            "title": "{{ .app.metadata.name}}",
+            "title_link":"{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+            "color": "#0DADEA",
+            "fields": [
+            {
+              "title": "Sync Status",
+              "value": "{{.app.status.sync.status}}",
+              "short": true
+            },
+            {
+              "title": "Repository",
+              "value": "{{.app.spec.source.repoURL}}",
+              "short": true
+            }
+            {{range $index, $c := .app.status.conditions}}
+            {{if not $index}},{{end}}
+            {{if $index}},{{end}}
+            {
+              "title": "{{$c.type}}",
+              "value": "{{$c.message}}",
+              "short": true
+            }
+            {{end}}
+            ]
+          }]
+    template.app-sync-status-unknown: |
+      message: |
+        {{if eq .serviceType "slack"}}:exclamation:{{end}} Application {{.app.metadata.name}} sync is 'Unknown'.
+        Application details: {{.context.argocdUrl}}/applications/{{.app.metadata.name}}.
+        {{if ne .serviceType "slack"}}
+        {{range $c := .app.status.conditions}}
+            * {{$c.message}}
+        {{end}}
+        {{end}}
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        status:
+          state: pending
+          label: "continuous-delivery/{{.app.metadata.name}}"
+          targetURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+        deployment:
+          state: pending
+          environment: >-
+            {{- if and (.app.metadata.annotations) (index .app.metadata.annotations "argocd.ledger.fr/environment") -}}
+              {{- index .app.metadata.annotations "argocd.ledger.fr/environment" -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.environment) -}}
+              {{- .app.metadata.labels.environment -}}
+            {{- else if and (.app.metadata.labels) (.app.metadata.labels.env) -}}
+              {{- .app.metadata.labels.env -}}
+            {{- else -}}
+               default
+            {{- end -}}
+          environmentURL: "{{with .app.status.summary.externalURLs}}{{index . 0}}{{end}}"
+          logURL: "{{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true"
+          requiredContexts: []
+      slack:
+        attachments: |-
+          [{
+            "title": "{{ .app.metadata.name}}",
+            "title_link":"{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+            "color": "#E96D76",
+            "fields": [
+            {
+              "title": "Sync Status",
+              "value": "{{.app.status.sync.status}}",
+              "short": true
+            },
+            {
+              "title": "Repository",
+              "value": "{{.app.spec.source.repoURL}}",
+              "short": true
+            }
+            {{range $index, $c := .app.status.conditions}}
+            {{if not $index}},{{end}}
+            {{if $index}},{{end}}
+            {
+              "title": "{{$c.type}}",
+              "value": "{{$c.message}}",
+              "short": true
+            }
+            {{end}}
+            ]
+          }]
+    template.app-sync-succeeded: |
+      message: |
+        {{if eq .serviceType "slack"}}:white_check_mark:{{end}} Application {{.app.metadata.name}} has been successfully synced at {{.app.status.operationState.finishedAt}}.
+        Sync operation details are available at: {{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true .
+      slack:
+        attachments: |-
+          [{
+            "title": "{{ .app.metadata.name}}",
+            "title_link":"{{.context.argocdUrl}}/applications/{{.app.metadata.name}}",
+            "color": "#18be52",
+            "fields": [
+            {
+              "title": "Sync Status",
+              "value": "{{.app.status.sync.status}}",
+              "short": true
+            },
+            {
+              "title": "Repository",
+              "value": "{{.app.spec.source.repoURL}}",
+              "short": true
+            }
+            {{range $index, $c := .app.status.conditions}}
+            {{if not $index}},{{end}}
+            {{if $index}},{{end}}
+            {
+              "title": "{{$c.type}}",
+              "value": "{{$c.message}}",
+              "short": true
+            }
+            {{end}}
+            ]
+          }]
+    template.app-sync-running-pr-comment: |
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        pullRequestComment:
+          content: |
+            :arrows_counterclockwise: The sync operation of application {{.app.metadata.name}} has started at {{.app.status.operationState.startedAt}}
+            See more here: {{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true
+    template.app-sync-failed-pr-comment: |
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        pullRequestComment:
+          content: |
+            :x: The sync operation of application {{.app.metadata.name}} has failed at {{.app.status.operationState.finishedAt}} with the following error: {{.app.status.operationState.message}}
+            Sync operation details are available at: {{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true .
+    template.app-sync-succeeded-pr-comment: |
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        pullRequestComment:
+          content: |
+            :white_check_mark: Application {{.app.metadata.name}} has been successfully synced at {{.app.status.operationState.finishedAt}}.
+            Sync operation details are available at: {{.context.argocdUrl}}/applications/{{.app.metadata.name}}?operation=true .
+    template.app-health-degraded-pr-comment: |
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+      pullRequestComment:
+        content: |
+          :x: Application {{.app.metadata.name}} has degraded.
+          Application details: {{.context.argocdUrl}}/applications/{{.app.metadata.name}}.
+    template.app-deployed-always-pr-comment: |
+      github:
+        repoURLPath: "{{.app.spec.source.repoURL}}"
+        revisionPath: "{{.app.status.operationState.syncResult.revision}}"
+        pullRequestComment:
+          content: |
+            :white_check_mark: Application {{.app.metadata.name}} is now running new version of deployments manifests.
+            Application details: {{.context.argocdUrl}}/applications/{{.app.metadata.name}}.
+  triggers:
+    trigger.on-created: |
+      - description: Application is created.
+        oncePer: app.metadata.name
+        send:
+        - app-created
+        # Delay the app-created by 10 seconds for the github notification to work properly
+        when: "app.status.operationState != nil and time.Now().Sub(time.Parse(app.status.operationState.startedAt)).Seconds() >= 10"
+    trigger.on-deleted: |
+      - description: Application is deleted.
+        oncePer: app.metadata.name
+        send:
+        - app-deleted
+        when: app.metadata.deletionTimestamp != nil
+    trigger.on-deployed: |
+      - description: Application is synced and healthy.
+        send:
+        - app-deployed
+        oncePer: app.status.sync.revision
+        when: app.status.operationState != nil and app.status.operationState.phase in ['Succeeded']
+          and app.status.health.status == 'Healthy' and app.status.sync.status != 'Unknown'
+    trigger.on-deployed-always: |
+      - description: Application is synced and healthy.
+        send:
+        - app-deployed
+        when: app.status.operationState != nil and app.status.operationState.phase in ['Succeeded']
+          and app.status.health.status == 'Healthy' and app.status.sync.status != 'Unknown'
+    trigger.on-health-degraded: |
+      - description: Application has degraded
+        send:
+        - app-health-degraded
+        when: app.status.health.status == 'Degraded'
+    trigger.on-sync-failed: |
+      - description: Application syncing has failed
+        send:
+        - app-sync-failed
+        when: app.status.operationState != nil and app.status.operationState.phase in ['Error',
+          'Failed']
+    trigger.on-sync-running: |
+      - description: Application is being synced
+        send:
+        - app-sync-running
+        when: app.status.operationState != nil and app.status.operationState.phase in ['Running']
+    trigger.on-sync-status-unknown: |
+      - description: Application status is 'Unknown'
+        send:
+        - app-sync-status-unknown
+        when: app.status.sync.status == 'Unknown'
+    trigger.on-sync-succeeded: |
+      - description: Application syncing has succeeded
+        send:
+        - app-sync-succeeded
+        when: app.status.operationState != nil and app.status.operationState.phase in ['Succeeded']
+    trigger.on-sync-running-pr-comment: |
+      - description: Application is being synced
+        send:
+        - app-sync-running-pr-comment
+        when: app.status.operationState != nil and app.status.operationState.phase in ['Running']
+    trigger.on-sync-failed-pr-comment: |
+      - description: Application syncing has failed
+        send:
+        - app-sync-failed-pr-comment
+        when: app.status.operationState != nil and app.status.operationState.phase in ['Error',
+          'Failed']
+    trigger.on-sync-succeeded-pr-comment: |
+      - description: Application syncing has succeeded
+        send:
+        - app-sync-succeeded-pr-comment
+        when: app.status.operationState != nil and app.status.operationState.phase in ['Succeeded']
+    trigger.on-deployed-always-pr-comment: |
+      - description: Application is synced and healthy.
+        send:
+        - app-deployed-always-pr-comment
+        when: app.status.operationState != nil and app.status.operationState.phase in ['Succeeded']
+          and app.status.health.status == 'Healthy' and app.status.sync.status != 'Unknown'
+    trigger.on-health-degraded-pr-comment: |
+      - description: Application has degraded
+        send:
+        - app-health-degraded-pr-comment
+        when: app.status.health.status == 'Degraded'
+
+    defaultTriggers.slack: |
+      - on-health-degraded
+      - on-sync-failed
+      - on-sync-status-unknown
+      - on-sync-succeeded
+      - on-deployed
+      - on-created
+      - on-deleted
+
+    defaultTriggers.github: |
+      - on-health-degraded
+      - on-sync-failed
+      - on-sync-status-unknown
+      - on-sync-running
+      - on-deployed-always
+      - on-created
+      - on-deleted
+
+    defaultTriggers.github-pr-comments: |
+      - on-sync-running-pr-comment
+
+  subscriptions: []
+
+extraObjects:
+  - apiVersion: external-secrets.io/v1beta1
+    kind: ExternalSecret
+    metadata:
+      name: ledgerhq-repo-secrets
+      labels:
+        argocd.argoproj.io/secret-type: repo-creds
+    spec:
+      secretStoreRef:
+        name: aws-ledgerprd
+        kind: ClusterSecretStore
+      refreshInterval: 1h
+      target:
+        creationPolicy: Owner
+        name: ledgerhq-repository
+      data:
+        - remoteRef:
+            key: 2020/2020-prd
+            property: githubAppID
+          secretKey: githubAppID
+        - remoteRef:
+            key: 2020/2020-prd
+            property: githubAppInstallationID
+          secretKey: githubAppInstallationID
+        - remoteRef:
+            key: 2020/2020-prd
+            property: githubAppPrivateKey
+          secretKey: githubAppPrivateKey
+        - remoteRef:
+            key: 2020/2020-prd
+            property: githubType
+          secretKey: type
+        - remoteRef:
+            key: 2020/2020-prd
+            property: githubUrl
+          secretKey: url
+
+  - apiVersion: external-secrets.io/v1beta1
+    kind: ExternalSecret
+    metadata:
+      name: ghcr-ledgerhq
+      labels:
+        argocd.argoproj.io/secret-type: repository
+    spec:
+      secretStoreRef:
+        name: aws-ledgerprd
+        kind: ClusterSecretStore
+      refreshInterval: 1h
+      target:
+        creationPolicy: Owner
+        name: ghcr.io-ledgerhq
+      data:
+        - remoteRef:
+            key: 2020/2020-prd
+            property: ghcrForceHttpBasicAuth
+          secretKey: ForceHttpBasicAuth
+        - remoteRef:
+            key: 2020/2020-prd
+            property: ghcrEnableOCI
+          secretKey: enableOCI
+        - remoteRef:
+            key: 2020/2020-prd
+            property: ghcrName
+          secretKey: name
+        - remoteRef:
+            key: 2020/2020-prd
+            property: ghcrPassword
+          secretKey: password
+        - remoteRef:
+            key: 2020/2020-prd
+            property: ghcrType
+          secretKey: type
+        - remoteRef:
+            key: 2020/2020-prd
+            property: ghcrUrl
+          secretKey: url
+        - remoteRef:
+            key: 2020/2020-prd
+            property: ghcrUsername
+          secretKey: username
+
+  - apiVersion: external-secrets.io/v1beta1
+    kind: ExternalSecret
+    metadata:
+      name: argocd-notification
+    spec:
+      secretStoreRef:
+        name: aws-ledgerprd
+        kind: ClusterSecretStore
+      refreshInterval: 1h
+      target:
+        creationPolicy: Owner
+        name: argocd-notifications-secret
+      data:
+        - remoteRef:
+            key: 2020/2020-prd
+            property: githubNotificationAppPrivateKey
+          secretKey: github-notification-privateKey
+        - remoteRef:
+            key: 2020/2020-prd
+            property: slackToken
+          secretKey: slack-token
+
+  - apiVersion: external-secrets.io/v1beta1
+    kind: ExternalSecret
+    metadata:
+      name: argocd-secret-merge
+    spec:
+      secretStoreRef:
+        name: aws-ledgerprd
+        kind: ClusterSecretStore
+      refreshInterval: 1h
+      target:
+        creationPolicy: Merge
+        name: argocd-secret
+      data:
+        - remoteRef:
+            key: 2020/2020-prd
+            property: backstageRoToken
+          secretKey: accounts.backstage-ro.tokens
+        - remoteRef:
+            key: 2020/2020-prd
+            property: botAtlasToken
+          secretKey: accounts.bot-atlas.tokens
+        - remoteRef:
+            key: 2020/2020-prd
+            property: githubWebhookSecret
+          secretKey: webhook.github.secret
+        - remoteRef:
+            key: 2020/2020-prd
+            property: oktaClientSecret
+          secretKey: oidc.okta.clientSecret
+        - remoteRef:
+            key: 2020/2020-prd
+            property: oktaClientID
+          secretKey: oidc.okta.clientID
+        - remoteRef:
+            key: 2020/2020-prd
+            property: oktaCliClientID
+          secretKey: oidc.okta.cliClientID

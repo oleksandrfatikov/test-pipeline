@@ -1,0 +1,29 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: web-nft-token-gating-prd
+  namespace: argocd-central
+  annotations:
+    notifications.argoproj.io/subscribe.slack: "infra-ecommerce-cd"
+    notifications.argoproj.io/subscribe.github: ""
+    argocd.ledger.fr/environment: "prd"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2158"
+    organization: "consumer"
+    service: "web-nft-token-gating"
+spec:
+  project: web-nft-token-gating
+  source:
+    repoURL: https://github.com/LedgerHQ/web-nft-token-gating.git
+    targetRevision: main
+    path: argocd/prd
+  destination:
+    name: shared-application-2086-cluster
+    namespace: 2158-web-nft-token-gating
+  syncPolicy:
+    automated: {}

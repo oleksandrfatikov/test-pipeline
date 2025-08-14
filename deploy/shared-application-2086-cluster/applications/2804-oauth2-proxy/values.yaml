@@ -1,0 +1,50 @@
+---
+config:
+  existingSecret: oauth2-proxy
+
+  configFile: |
+    provider  = "google"
+    upstreams = [ "file:///dev/null" ]
+
+    email_domains     = [ "ledger.fr", "ledger.com" ]
+    cookie_domains    = [ ".aws.prd.ldg-tech.com", ".infra.ldg-prd.net", ".ledger.com", ".ledgerwallet.com" ]
+    whitelist_domains = [ ".aws.prd.ldg-tech.com", ".infra.ldg-prd.net", ".ledger.com", ".ledgerwallet.com" ]
+
+    reverse_proxy        = true
+    pass_user_headers    = true
+    pass_host_header     = true
+    silence_ping_logging = true
+
+deploymentAnnotations:
+  secret.reloader.stakater.com/reload: oauth2-proxy
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 32Mi
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    # We need to refer to oauth2-proxy by the same domain name as the protected app
+    # So it needs to be accessible with multiple domains
+    - proxy.aws.prd.ldg-tech.com
+    - proxy.infra.ldg-prd.net
+    - proxy.ledger.com
+    - proxy.ledgerwallet.com
+
+  tls:
+    - hosts:
+        - proxy.aws.prd.ldg-tech.com
+        - proxy.infra.ldg-prd.net
+        - proxy.ledger.com
+        - proxy.ledgerwallet.com
+      secretName: oauth2-proxy-tls
+
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/whitelist-source-range: 0.0.0.0/0, ::/0

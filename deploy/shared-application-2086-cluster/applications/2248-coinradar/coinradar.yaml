@@ -1,0 +1,28 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: coinradar-prd
+  namespace: argocd
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2248"
+    organization: "consumer"
+    service: "coinradar"
+  annotations:
+    notifications.argoproj.io/subscribe.slack: "backend-b2c-private-coinradar"
+    argocd.ledger.fr/environment: "Production"
+spec:
+  project: coinradar
+  source:
+    repoURL: https://github.com/LedgerHQ/coinradar.git
+    targetRevision: main
+    path: argocd/prd
+    helm:
+      releaseName: coinradar
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2248-coinradar
+  syncPolicy:
+    automated: {}

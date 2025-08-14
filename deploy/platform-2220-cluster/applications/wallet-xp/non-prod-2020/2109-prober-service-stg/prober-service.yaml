@@ -1,0 +1,29 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: prober-service-stg
+  namespace: argocd-central
+  labels:
+    environment: "stg"
+    owner: "team-infra-sre"
+    project: "2109"
+    organization: "consumer"
+    service: "prober-service"
+spec:
+  project: prober-service
+  source:
+    repoURL: https://github.com/LedgerHQ/prober-service.git
+    targetRevision: master
+    path: argocd/stg
+    helm:
+      releaseName: prober-service-lb
+  destination:
+    name: shared-application-2021-cluster
+    namespace: 2109-prober-service-stg
+  syncPolicy:
+    automated: {}
+    syncOptions:
+      - CreateNamespace=true

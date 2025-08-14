@@ -1,0 +1,357 @@
+---
+appset:
+  categoryValues:
+    upstream:
+      disableDefaultTagRevision: true
+      path: ""
+    default:
+      inlineValues:
+        valueBundles:
+          eksStg:
+            enabled: true
+        custom:
+          env: stg
+          projectId: "2340"
+          envName: staging
+  projectValues:
+    upstream:
+      common-secrets:
+        repoUrl: ghcr.io/ledgerhq/charts
+        chartName: app-template
+        targetRevision: 4.10.4
+        inlineValues:
+          controller:
+            enabled: false
+          service:
+            main:
+              enabled: false
+          valueBundles:
+            eksStg:
+              enabled: true
+          externalSecret:
+            rabbitmq:
+              enabled: true
+              dataFrom:
+                - extract:
+                    key: 2340/tf-multisig-rabbitmq
+
+      rabbitmq:
+        repoUrl: https://charts.bitnami.com/bitnami
+        chartName: rabbitmq
+        targetRevision: 12.15.0
+        valueFiles:
+          - $git-ledgerhq-sreargocd/deploy/platform-2220-cluster/applications/vault/multisig/common-tools/values-rabbitmq.yaml
+        inlineValues:
+          replicaCount: 3
+          image:
+            registry: jfrog.ledgerlabs.net
+            repository: ossproxy-oci-proxy-dockerio/bitnami/rabbitmq
+            pullSecrets:
+              - name: container-registries
+          ingress:
+            enabled: true
+            hostname: multisig-rabbitmq.aws.stg.ldg-tech.com
+          podAnnotations:
+            ad.datadoghq.com/rabbitmq.instances: |
+              [
+                {
+                  "rabbitmq_api_url":"http://%%host%%:15672/api/",
+                  "username":"datadog",
+                  "password":"%%env_DD_RABBITMQ_PASSWORD_STG_VAULT_NEXT%%"
+                }
+              ]
+
+    all:
+
+      txservice-sepolia:
+        disableDefaultTagRevision: true
+        repoUrl: https://github.com/LedgerHQ/les-multisig-infra
+        path: argocd/transaction-service
+        targetRevision: "v1.2.1"
+        inlineValues:
+          custom:
+            valkeyKeyspace: "2"
+          indexer:
+            resources:
+              requests:
+                cpu: "500m"
+                memory: "1Gi"
+              limits:
+                cpu: "2"
+                memory: "16Gi"
+            env:
+              ETH_TX_RECEIPTS_BATCH_SIZE: "80"
+              ETH_INTERNAL_TRACE_TXS_BATCH_SIZE: "80"
+              TOKENS_ERC20_GET_BALANCES_BATCH: "80"
+              ETH_EVENTS_QUERY_CHUNK_SIZE: "80"
+          worker:
+            resources:
+              requests:
+                cpu: "500m"
+                memory: "1Gi"
+              limits:
+                cpu: "2"
+                memory: "4Gi"
+            env:
+              ETH_INTERNAL_TX_DECODED_PROCESS_BATCH: "200"
+              DB_STATEMENT_TIMEOUT: "300000"
+      txservice-polygon:
+        disableDefaultTagRevision: true
+        repoUrl: https://github.com/LedgerHQ/les-multisig-infra
+        path: argocd/transaction-service
+        targetRevision: "main"
+        inlineValues:
+          custom:
+            valkeyKeyspace: "4"
+          web:
+            resources:
+              requests:
+                cpu: "500m"
+                memory: "1Gi"
+              limits:
+                cpu: "4"
+                memory: "12Gi"
+          indexer:
+            enabled: false
+            resources:
+              requests:
+                cpu: "500m"
+                memory: "1Gi"
+              limits:
+                cpu: "4"
+                memory: "12Gi"
+            env:
+              ETH_INTERNAL_TXS_BLOCK_PROCESS_LIMIT: "5000"
+              ETH_INTERNAL_TXS_NUMBER_TRACE_BLOCKS: "5"
+              ETH_INTERNAL_TRACE_TXS_BATCH_SIZE: "10"
+          worker:
+            resources:
+              requests:
+                cpu: "500m"
+                memory: "1Gi"
+              limits:
+                cpu: "2"
+                memory: "4Gi"
+            env:
+              ETH_INTERNAL_TX_DECODED_PROCESS_BATCH: "50"
+              DB_STATEMENT_TIMEOUT: "1200000"
+              CELERY_LOCK_TIMEOUT: "3600"
+              CELERY_SOFT_TIMEOUT: "2400"
+              CONTRACT_TASK_SOFT_TIMEOUT: "300"
+              CONTRACT_TASK_TIMEOUT: "600"
+              CELERYD_CONCURRENCY: "1000"
+      txservice-eth:
+        disableDefaultTagRevision: true
+        repoUrl: https://github.com/LedgerHQ/les-multisig-infra
+        path: argocd/transaction-service
+        targetRevision: "main"
+        inlineValues:
+          custom:
+            valkeyKeyspace: "7"
+          indexer:
+            resources:
+              requests:
+                cpu: "500m"
+                memory: "1Gi"
+              limits:
+                cpu: "4"
+                memory: "8Gi"
+            env:
+              ETH_INTERNAL_TXS_BLOCK_PROCESS_LIMIT: "5000"
+              ETH_INTERNAL_TXS_NUMBER_TRACE_BLOCKS: "5"
+              ETH_INTERNAL_TRACE_TXS_BATCH_SIZE: "10"
+          worker:
+            resources:
+              requests:
+                cpu: "500m"
+                memory: "1Gi"
+              limits:
+                cpu: "2"
+                memory: "4Gi"
+            env:
+              ETH_INTERNAL_TX_DECODED_PROCESS_BATCH: "500"
+              DB_STATEMENT_TIMEOUT: "1200000"
+              CELERY_LOCK_TIMEOUT: "3600"
+              CELERY_SOFT_TIMEOUT: "2400"
+              CONTRACT_TASK_SOFT_TIMEOUT: "300"
+              CONTRACT_TASK_TIMEOUT: "600"
+              CELERYD_CONCURRENCY: "1000"
+      txservice-arbitrum:
+        disableDefaultTagRevision: true
+        repoUrl: https://github.com/LedgerHQ/les-multisig-infra
+        path: argocd/transaction-service
+        targetRevision: "v1.2.1"
+        inlineValues:
+          custom:
+            valkeyKeyspace: "5"
+            isL2: "True"
+          indexer:
+            resources:
+              requests:
+                cpu: "500m"
+                memory: "1Gi"
+              limits:
+                cpu: "4"
+                memory: "6Gi"
+            env:
+              ETH_INTERNAL_TXS_BLOCK_PROCESS_LIMIT: "1"
+              ETH_EVENTS_GET_LOGS_CONCURRENCY: "10"
+              ETH_EVENTS_BLOCK_PROCESS_LIMIT: "1"
+              ETH_EVENTS_BLOCKS_TO_REINDEX_AGAIN: "3"
+              ETH_INTERNAL_TXS_NUMBER_TRACE_BLOCKS: "5"
+              ETH_REORG_BLOCKS_BATCH: "100"
+              ETH_EVENTS_QUERY_CHUNK_SIZE: "2000"
+              ETH_ERC20_LOAD_ADDRESSES_CHUNK_SIZE: "1000000"
+          worker:
+            resources:
+              requests:
+                cpu: "500m"
+                memory: "1Gi"
+              limits:
+                cpu: "2"
+                memory: "4Gi"
+            env:
+              ETH_INTERNAL_TX_DECODED_PROCESS_BATCH: "200"
+              DB_STATEMENT_TIMEOUT: "300000"
+      # L2 part
+      txservice-base:
+        disableDefaultTagRevision: true
+        repoUrl: https://github.com/LedgerHQ/les-multisig-infra
+        path: argocd/transaction-service
+        targetRevision: "v1.2.1"
+        inlineValues:
+          custom:
+            valkeyKeyspace: "1"
+            isL2: "True"
+          indexer:
+            resources:
+              requests:
+                cpu: "500m"
+                memory: "1Gi"
+              limits:
+                cpu: "4"
+                memory: "12Gi"
+          worker:
+            resources:
+              requests:
+                cpu: "500m"
+                memory: "1Gi"
+              limits:
+                cpu: "2"
+                memory: "8Gi"
+          worker:
+            resources:
+              requests:
+                cpu: "500m"
+                memory: "1Gi"
+              limits:
+                cpu: "2"
+                memory: "4Gi"
+            env:
+              ETH_INTERNAL_TX_DECODED_PROCESS_BATCH: "200"
+              DB_STATEMENT_TIMEOUT: "300000"
+      txservice-optimism:
+        disableDefaultTagRevision: true
+        repoUrl: https://github.com/LedgerHQ/les-multisig-infra
+        path: argocd/transaction-service
+        targetRevision: "v1.2.1"
+        inlineValues:
+          custom:
+            valkeyKeyspace: "6"
+            isL2: "True"
+          indexer:
+            resources:
+              requests:
+                cpu: "500m"
+                memory: "1Gi"
+              limits:
+                cpu: "4"
+                memory: "6Gi"
+            env:
+              ETH_INTERNAL_TXS_BLOCK_PROCESS_LIMIT: "5000"
+              ETH_INTERNAL_TXS_NUMBER_TRACE_BLOCKS: "5"
+              ETH_INTERNAL_TRACE_TXS_BATCH_SIZE: "10"
+              ETH_INTERNAL_TX_DECODED_PROCESS_BATCH: "200"
+          worker:
+            resources:
+              requests:
+                cpu: "500m"
+                memory: "1Gi"
+              limits:
+                cpu: "2"
+                memory: "4Gi"
+            env:
+              ETH_INTERNAL_TX_DECODED_PROCESS_BATCH: "200"
+              DB_STATEMENT_TIMEOUT: "300000"
+      dune-exporter:
+        disableDefaultTagRevision: true
+        repoUrl: https://github.com/LedgerHQ/les-multisig-infra
+        path: argocd/dune-exporter
+        useAppTemplate: true
+        targetRevision: main
+
+      node-proxifier:
+        disableDefaultTagRevision: true
+        repoUrl: https://github.com/LedgerHQ/les-multisig-infra
+        path: argocd/node-proxifier
+        useAppTemplate: true
+        targetRevision: main
+
+      config-service:
+        disableDefaultTagRevision: true
+        repoUrl: https://github.com/LedgerHQ/les-multisig-infra
+        path: argocd/config-service
+        useAppTemplate: true
+        targetRevision: main
+
+      client-gateway:
+        disableDefaultTagRevision: true
+        repoUrl: https://github.com/LedgerHQ/les-multisig-infra
+        path: argocd/client-gateway
+        useAppTemplate: true
+        targetRevision: main
+
+      event-service:
+        disableDefaultTagRevision: true
+        repoUrl: https://github.com/LedgerHQ/les-multisig-infra
+        path: argocd/event-service
+        useAppTemplate: true
+        targetRevision: main
+
+      multisig-web:
+        repoUrl: https://github.com/LedgerHQ/les-multisig-web
+        path: argocd/base
+        useAppTemplate: true
+        imageUpdater: jfrog.ledgerlabs.net/multisig-oci-prod-green/les-multisig-web:main
+        targetRevision: main
+        inlineValues:
+          ingress:
+            main:
+              ingressClassName: trusted
+          env:
+            # If set to "1", will enable the dev tools & panel (useful in dev)
+            ENABLE_DEV_TOOLS: "1"
+
+            # If set to "1", will use the public Safe backend services
+            USE_SAFE_BACKEND: "0"
+
+            # URL for Safe Gateway service
+            SAFE_CLIENT_GATEWAY_URL: "https://multisig-safe-client-gateway.aws.stg.ldg-tech.com"
+
+            # URLs for transaction services
+            SAFE_TRANSACTION_SERVICE_ARBITRUM_URL: "https://multisig-tx-service-arbitrum.aws.stg.ldg-tech.com/api"
+            SAFE_TRANSACTION_SERVICE_BASE_URL: "https://multisig-tx-service-base.aws.stg.ldg-tech.com/api"
+            SAFE_TRANSACTION_SERVICE_BSC_URL: "https://safe-transaction-bsc.safe.global/api"
+            SAFE_TRANSACTION_SERVICE_MAINNET_URL: "https://safe-transaction-mainnet.safe.global/api"
+            SAFE_TRANSACTION_SERVICE_OPTIMISM_URL: "https://safe-transaction-optimism.safe.global/api"
+            SAFE_TRANSACTION_SERVICE_POLYGON_URL: "https://safe-transaction-polygon.safe.global/api"
+            SAFE_TRANSACTION_SERVICE_SEPOLIA_URL: "https://multisig-tx-service-sepolia.aws.stg.ldg-tech.com/api"
+
+            # URLs for RPC nodes
+            RPC_NODE_ARBITRUM_URL: "https://multisig-node-proxifier.aws.stg.ldg-tech.com/nodes/arbitrum/"
+            RPC_NODE_BASE_URL: "https://multisig-node-proxifier.aws.stg.ldg-tech.com/nodes/base/"
+            RPC_NODE_BSC_URL: "https://bsc-mainnet.infura.io/v3/c0c3514370b2454d9e58a001876167af"
+            RPC_NODE_MAINNET_URL: "https://eth.blinklabs.xyz/v1/df2b3dec4c8f5855f60d4005e819ad96a0613c30efba4a4239ecdee6cf2a8141"
+            RPC_NODE_OPTIMISM_URL: "https://optimism-mainnet.infura.io/v3/c0c3514370b2454d9e58a001876167af"
+            RPC_NODE_POLYGON_URL: "https://polygon-mainnet.infura.io/v3/c0c3514370b2454d9e58a001876167af"
+            RPC_NODE_SEPOLIA_URL: "https://multisig-node-proxifier.aws.stg.ldg-tech.com/nodes/sepolia/" # /!\ need to keep the trailing slash to avoid redirect loops

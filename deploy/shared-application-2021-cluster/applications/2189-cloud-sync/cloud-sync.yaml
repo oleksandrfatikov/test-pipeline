@@ -1,0 +1,53 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: cloudsync=ghcr.io/ledgerhq/cloud-sync-backend
+    argocd-image-updater.argoproj.io/write-back-method: argocd
+    argocd-image-updater.argoproj.io/cloudsync.update-strategy: latest
+    argocd-image-updater.argoproj.io/cloudsync.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+    notifications.argoproj.io/subscribe.slack: "backend-b2c-private-cloudsync"
+    argocd.ledger.fr/environment: "Staging"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: cloud-sync-backend-stg
+  namespace: argocd
+  labels:
+    environment: "stg"
+    owner: "backend-core"
+    project: "2189"
+    organization: "wallet-services"
+    service: "cloud-sync-backend"
+spec:
+  project: cloud-sync-backend
+  source:
+    repoURL: https://github.com/LedgerHQ/cloud-sync-backend.git
+    targetRevision: main
+    path: argocd/stg
+    helm:
+      releaseName: cloud-sync-backend
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2189-cloud-sync-backend
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cloud-sync-backend-jobs-stg
+  namespace: argocd
+  labels:
+    environment: "stg"
+    owner: "backend-core"
+    project: "2189"
+    organization: "wallet-services"
+    service: "cloud-sync-backend"
+spec:
+  project: cloud-sync-backend
+  source:
+    repoURL: https://github.com/LedgerHQ/cloud-sync-backend.git
+    targetRevision: main
+    path: argocd/workflows/stg
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2189-cloud-sync-backend

@@ -1,0 +1,36 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: intnodes-haproxy-kubernetes-ingress
+  namespace: argocd-central
+spec:
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            application.ledger.com/intnodes: "true"
+            environment.ledger.com/staging: "true"
+  template:
+    metadata:
+      name: "{{name}}-intnodes-haproxy-kubernetes-ingress"
+      labels:
+        service: "intnodes-ingress"
+        env: "staging"
+    spec:
+      project: 1054-intnodes
+      source:
+        repoURL: https://github.com/LedgerHQ/sre-argocd.git
+        targetRevision: main
+        path: "deploy/platform-2220-cluster/applications/wallet-xp/non-prod-2020/1054-intnodes/applications/intnodes-haproxy-kubernetes-ingress"
+      destination:
+        server: "{{server}}"
+        namespace: "1054-intnodes"
+      syncPolicy:
+        managedNamespaceMetadata:
+          annotations:
+            field.cattle.io/projectId: c-m-mqq5lrn6:p-qccf8
+          labels:
+            field.cattle.io/projectId: p-qccf8
+        syncOptions:
+          - CreateNamespace=true

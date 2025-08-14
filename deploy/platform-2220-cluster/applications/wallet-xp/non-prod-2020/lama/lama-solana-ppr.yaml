@@ -1,0 +1,57 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: lama-solana-ppr
+  namespace: argocd-central
+spec:
+  generators:
+    - list:
+        elements:
+          - app: solana-account-reader
+            environment: ppr
+            clusterName: shared-application-2094-cluster
+            project_id: "2060"
+            namespace: 2060-vault-ppr
+          - app: solana-account-synchronizer
+            environment: ppr
+            clusterName: shared-application-2094-cluster
+            project_id: "2060"
+            namespace: 2060-vault-ppr
+          - app: solana-transaction-crafter
+            environment: ppr
+            clusterName: shared-application-2094-cluster
+            project_id: "2060"
+            namespace: 2060-vault-ppr
+          - app: solana-sdk
+            environment: ppr
+            clusterName: shared-application-2094-cluster
+            project_id: "2060"
+            namespace: 2060-vault-ppr
+  template:
+    metadata:
+      name: 'lama-{{app}}-{{environment}}'
+      namespace: argocd-central
+      labels:
+        environment: '{{environment}}'
+        owner: team-infra-sre
+        project: '{{project_id}}'
+        organization: 'wallet-services'
+        service: '{{app}}'
+        service_family: "lama"
+        service_group: "lama-solana"
+    spec:
+      project: 1048-atlas
+      source:
+        repoURL: https://github.com/LedgerHQ/lama-solana.git
+        targetRevision: main
+        path: 'argocd/{{app}}/{{environment}}'
+        helm:
+          releaseName: '{{app}}'
+      destination:
+        name: '{{clusterName}}'
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true

@@ -1,0 +1,42 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: 2167-nft-burning-service-prd
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: nft-burning-service-argocd
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: nft-burning-service argocd project
+  sourceRepos:
+    - 'https://github.com/LedgerHQ/nft-burning-service.git'
+  destinations:
+    - namespace: argocd
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: nft-burning-service
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: nft-burning-service project
+  sourceRepos:
+    - 'https://github.com/LedgerHQ/nft-burning-service.git'
+    - 'ghcr.io'
+  destinations:
+    - namespace: 2167-nft-burning-service-prd
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

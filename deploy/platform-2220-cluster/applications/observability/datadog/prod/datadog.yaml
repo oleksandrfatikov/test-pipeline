@@ -1,0 +1,98 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: datadog
+  namespace: argocd-central
+spec:
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  generators:
+    # Production
+    - clusters:
+        selector:
+          matchExpressions:
+            - key: project
+              operator: In
+              values: ["2017", "2026", "2220", "2086"]
+        values:
+          path: 'deploy/platform-2220-cluster/applications/observability/datadog/prod'
+          env_secret: production-secrets.yaml
+
+  goTemplate: true
+  template:
+    metadata:
+      name: "datadog-{{.name}}"
+      labels:
+        owner: "team-infra-sre"
+        project: "observability"
+        organization: "infrastructure"
+        service: "datadog"
+    spec:
+      project: observability
+      syncPolicy:
+        managedNamespaceMetadata:
+          labels:
+            project: '{{index .metadata.labels "project"}}'
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - Validate=true
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+          - RespectIgnoreDifferences=true
+        retry:
+          limit: 10
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
+      revisionHistoryLimit: 10
+      sources:
+        - repoURL: https://helm.datadoghq.com
+          chart: datadog
+          targetRevision: 3.118.2
+          helm:
+            releaseName: datadog
+            valueFiles:
+              - '$values/deploy/platform-2220-cluster/applications/observability/datadog/prod/{{.name}}.yaml'
+        - repoURL: https://github.com/LedgerHQ/sre-argocd.git
+          targetRevision: main
+          ref: values
+        - repoURL: https://github.com/LedgerHQ/sre-argocd.git
+          targetRevision: main
+          path: 'deploy/platform-2220-cluster/applications/observability/datadog/prod'
+          directory:
+            recurse: false
+            include: production-secrets.yaml
+      destination:
+        name: '{{.name}}'
+        namespace: monitoring
+      ignoreDifferences:
+        - group: ""
+          kind: Secret
+          name: datadog-cluster-agent
+          namespace: monitoring
+          jsonPointers:
+            - /data/token
+        - group: apps
+          kind: DaemonSet
+          name: datadog
+          namespace: monitoring
+          jsonPointers:
+            - /spec/template/metadata/annotations/checksum~1clusteragent_token
+        - group: apps
+          kind: Deployment
+          name: datadog-cluster-agent
+          namespace: monitoring
+          jsonPointers:
+            - /spec/template/metadata/annotations/checksum~1clusteragent_token
+        - group: ""
+          kind: ConfigMap
+          name: datadog-kpi-telemetry-configmap
+          namespace: monitoring
+          jsonPointers:
+            - /data/install_id
+            - /data/install_time

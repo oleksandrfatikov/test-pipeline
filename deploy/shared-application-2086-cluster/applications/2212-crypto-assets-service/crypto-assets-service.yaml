@@ -1,0 +1,28 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: crypto-assets-service-prd
+  namespace: argocd
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2212"
+    organization: "consumer"
+    service: "crypto-assets-service"
+  annotations:
+    notifications.argoproj.io/subscribe.slack: "backend-b2c-private-cal"
+    argocd.ledger.fr/environment: "Production"
+spec:
+  project: crypto-assets-service
+  source:
+    repoURL: https://github.com/LedgerHQ/crypto-assets-service.git
+    targetRevision: master
+    path: argocd/prd
+    helm:
+      releaseName: crypto-assets-service
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2212-crypto-assets-service
+  syncPolicy:
+    automated: {}

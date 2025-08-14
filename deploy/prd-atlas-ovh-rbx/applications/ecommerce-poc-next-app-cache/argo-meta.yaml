@@ -1,0 +1,19 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: poc-next-app-cache
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: poc-next-app-cache project
+  sourceRepos:
+    - "https://github.com/LedgerHQ/ecommerce-poc-next-app-cache.git"
+    - "ghcr.io"
+  destinations:
+    - namespace: "poc-next-app-cache"
+      name: prd-atlas-ovh-bhs
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

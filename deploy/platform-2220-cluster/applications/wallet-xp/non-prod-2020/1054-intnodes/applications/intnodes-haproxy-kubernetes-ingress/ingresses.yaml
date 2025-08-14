@@ -1,0 +1,42 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: selfsigned
+    haproxy.org/whitelist: "52.50.31.80/32, 34.240.150.212/32, 195.68.107.68/32, 192.30.252.0/22, 185.199.108.0/22, 140.82.112.0/20, 143.55.64.0/20"
+  name: intnodes-haproxy-kubernetes-ingress-stat
+  namespace: 1054-intnodes
+spec:
+  ingressClassName: intnodes-haproxy
+  rules:
+    - http:
+        paths:
+          - backend:
+              service:
+                name: intnodes-haproxy-kubernetes-ingress
+                port:
+                  number: 8024
+            path: /stat
+            pathType: Prefix
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: selfsigned
+    haproxy.org/whitelist: "52.50.31.80/32, 34.240.150.212/32, 195.68.107.68/32, 192.30.252.0/22, 185.199.108.0/22, 140.82.112.0/20, 143.55.64.0/20"
+  name: intnodes-haproxy-kubernetes-ingress-metrics
+  namespace: 1054-intnodes
+spec:
+  ingressClassName: intnodes-haproxy
+  rules:
+    - http:
+        paths:
+          - backend:
+              service:
+                name: intnodes-haproxy-kubernetes-ingress
+                port:
+                  number: 8024
+            path: /metrics
+            pathType: Prefix

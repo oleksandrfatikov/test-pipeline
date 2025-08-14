@@ -1,0 +1,78 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: lama-ethereum-stg
+  namespace: argocd-central
+spec:
+  # Ignore argocd image updater change
+  ignoreApplicationDifferences:
+    - jsonPointers:
+        - /spec/source/helm/parameters
+  # Need this goTemplate to use templatePatch
+  goTemplate: true
+  templatePatch: |
+    metadata:
+      annotations:
+      {{- if eq .app "ethereum-account-reader" }}
+        argocd-image-updater.argoproj.io/image-list: ethereum-account-reader=ghcr.io/ledgerhq/ethereum-account-reader
+        argocd-image-updater.argoproj.io/ethereum-account-reader.update-strategy: semver
+        argocd-image-updater.argoproj.io/ethereum-account-reader.allow-tags: regexp:\d+\.\d+\.\d+(-(?i)(M|RC)\d+)?
+        argocd-image-updater.argoproj.io/ethereum-account-reader.helm.image-tag: ethereum-account-reader.image.tag
+      {{- else if eq .app "ethereum-account-synchronizer" }}
+        argocd-image-updater.argoproj.io/image-list: ethereum-account-synchronizer=ghcr.io/ledgerhq/ethereum-account-synchronizer
+        argocd-image-updater.argoproj.io/ethereum-account-synchronizer.update-strategy: semver
+        argocd-image-updater.argoproj.io/ethereum-account-synchronizer.allow-tags: regexp:\d+\.\d+\.\d+(-(?i)(M|RC)\d+)?
+        argocd-image-updater.argoproj.io/ethereum-account-synchronizer.helm.image-tag: ethereum-account-synchronizer.image.tag
+      {{- else if eq .app "ethereum-transaction-crafter" }}
+        argocd-image-updater.argoproj.io/image-list: ethereum-transaction-crafter=ghcr.io/ledgerhq/ethereum-transaction-crafter
+        argocd-image-updater.argoproj.io/ethereum-transaction-crafter.update-strategy: semver
+        argocd-image-updater.argoproj.io/ethereum-transaction-crafter.allow-tags: regexp:\d+\.\d+\.\d+(-(?i)(M|RC)\d+)?
+        argocd-image-updater.argoproj.io/ethereum-transaction-crafter.helm.image-tag: ethereum-transaction-crafter.image.tag
+      {{- end }}
+  generators:
+    - list:
+        elements:
+          # Staging 
+          - environment: stg
+            app: ethereum-account-reader
+            clusterName: shared-application-2021-cluster
+            project_id: "2063"
+            namespace: 2063-vault-stg
+          - environment: stg
+            app: ethereum-account-synchronizer
+            clusterName: shared-application-2021-cluster
+            project_id: "2063"
+            namespace: 2063-vault-stg
+          - environment: stg
+            app: ethereum-transaction-crafter
+            clusterName: shared-application-2021-cluster
+            project_id: "2063"
+            namespace: 2063-vault-stg
+  template:
+    metadata:
+      name: 'lama-{{.app}}-{{.environment}}'
+      namespace: argocd-central
+      labels:
+        environment: '{{.environment}}'
+        owner: team-infra-sre
+        project: '{{.project_id}}'
+        organization: 'wallet-services'
+        service: '{{.app}}'
+        service_family: "lama"
+        service_group: "lama-ethereum"
+    spec:
+      project: 1048-atlas
+      source:
+        repoURL: https://github.com/LedgerHQ/lama-ethereum.git
+        targetRevision: main
+        path: 'argocd/{{.app}}/{{.environment}}'
+        helm:
+          releaseName: '{{.app}}'
+      destination:
+        name: '{{.clusterName}}'
+        namespace: '{{.namespace}}'
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true

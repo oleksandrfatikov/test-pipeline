@@ -1,0 +1,36 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: scriptrunner=ghcr.io/ledgerhq/hsm-scriptrunner
+    argocd-image-updater.argoproj.io/scriptrunner.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/scriptrunner.allow-tags: regexp:\d+\.\d+\.\d+
+    argocd-image-updater.argoproj.io/scriptrunner.helm.image-name: image.repository
+    argocd-image-updater.argoproj.io/scriptrunner.helm.image-tag: image.tag
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: hsm-scriptrunner-stg
+  namespace: argocd-central
+  labels:
+    environment: "stg"
+    owner: "team-infra-sre"
+    project: "2037"
+    organization: "consumer"
+    service: "hsm-scriptrunner"
+spec:
+  project: hsm-scriptrunner-stg
+  source:
+    repoURL: https://github.com/LedgerHQ/hsm-scriptrunner.git
+    targetRevision: master
+    path: argocd/stg
+    helm:
+      releaseName: hsm-scriptrunner
+  destination:
+    name: shared-application-2021-cluster
+    namespace: 2037-scriptrunner
+  syncPolicy:
+    automated:
+      prune: true
+    syncOptions:
+      - CreateNamespace=true

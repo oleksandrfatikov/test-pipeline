@@ -1,0 +1,26 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: misc-nano-app-stg
+  namespace: argocd
+  labels:
+    environment: "stg"
+    owner: "team-infra-ms"
+    project: "2035"
+    organization: "consumer"
+    service: "misc-nano-app"
+spec:
+  project: misc-nano-app
+  source:
+    repoURL: https://github.com/LedgerHQ/infra-k8s-manifests.git
+    targetRevision: master
+    path: staging/misc-nano-app
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: 2035-misc-nano-app-stg
+  # syncPolicy to be uncommented after the migration
+  # syncPolicy:
+  #   automated: {}

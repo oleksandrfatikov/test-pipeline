@@ -1,0 +1,56 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: lama-scheduler-non-prod
+  namespace: argocd-central
+spec:
+  # Ignore argocd image updater change
+  ignoreApplicationDifferences:
+    - jsonPointers:
+        - /spec/source/helm/parameters
+  generators:
+    - list:
+        elements:
+          - environment: stg
+            app: lama-scheduler
+            clusterName: shared-application-2021-cluster
+            project_id: "2063"
+            namespace: 2063-vault-stg
+          - environment: ppr
+            app: lama-scheduler
+            clusterName: shared-application-2094-cluster
+            project_id: "2060"
+            namespace: 2060-vault-ppr
+  template:
+    metadata:
+      name: '{{app}}-{{environment}}'
+      namespace: argocd-central
+      annotations:
+        argocd-image-updater.argoproj.io/image-list: lama-scheduler=ghcr.io/ledgerhq/lama-scheduler
+        argocd-image-updater.argoproj.io/lama-scheduler.update-strategy: semver
+        argocd-image-updater.argoproj.io/lama-scheduler.allow-tags: regexp:^\d+\.\d+\.\d+$
+        argocd-image-updater.argoproj.io/lama-scheduler.helm.image-tag: lama-scheduler.image.tag
+      labels:
+        environment: '{{environment}}'
+        owner: team-infra-sre
+        project: '{{project_id}}'
+        organization: 'wallet-services'
+        service: '{{app}}'
+        service_family: "lama"
+        service_group: "lama-scheduler"
+    spec:
+      project: 1048-atlas
+      source:
+        repoURL: https://github.com/LedgerHQ/lama-core.git
+        targetRevision: main
+        path: 'argocd/{{environment}}'
+        helm:
+          releaseName: '{{app}}'
+      destination:
+        name: '{{clusterName}}'
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true

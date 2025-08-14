@@ -1,0 +1,60 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: 1082-intnodes-canton
+  namespace: argocd-central
+spec:
+  strategy:
+    type: RollingSync
+    rollingSync:
+      steps:
+        - matchExpressions:
+            - key: datacenter.ledger.com/intnodes
+              operator: In
+              values:
+                - "true"
+          maxUpdate: 30%
+  generators:
+    # - clusters:
+    #     selector:
+    #       matchLabels:
+    #         application.ledger.com/intnodes: "true"
+    #         environment.ledger.com/staging: "true"
+    #         datacenter.ledger.com/fsn1: "true"
+    #     values:
+    #       datacenter: stg-fsn
+    - clusters:
+        selector:
+          matchLabels:
+            application.ledger.com/intnodes: "true"
+            environment.ledger.com/staging: "true"
+            datacenter.ledger.com/sbg5: "true"
+        values:
+          datacenter: stg-sbg
+  template:
+    metadata:
+      name: "{{name}}-1082-intnodes-canton"
+      annotations:
+        argocd.ledger.fr/environment: "Staging"
+      labels:
+        service: "1082-intnodes-canton"
+        env: "staging"
+        coin: "canton"
+        type: "int-node"
+    spec:
+      project: 1054-intnodes
+      sources:
+        - repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+          targetRevision: INFRAPRJ-9748
+          path: 'deploy/staging/internal-blockchain-nodes/1082-intnodes-canton'
+          helm:
+            releaseName: canton
+      destination:
+        server: "{{server}}"
+        namespace: "1082-intnodes-canton"
+      syncPolicy:
+        automated:
+          prune: true
+        syncOptions:
+          - CreateNamespace=true

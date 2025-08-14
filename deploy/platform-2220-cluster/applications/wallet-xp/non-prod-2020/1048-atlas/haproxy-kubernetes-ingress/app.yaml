@@ -1,0 +1,33 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tools-haproxy-kubernetes-ingress
+  namespace: argocd-central
+spec:
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            application.ledger.com/atlas: "true"
+            environment.ledger.com/staging: "true"
+  template:
+    metadata:
+      name: "{{name}}-tools-haproxy-kubernetes-ingress"
+      labels:
+        environment: stg
+        owner: team-infra-sre
+        project: '1048'
+        organization: 'wallet-services'
+        service: 'haproxy'
+    spec:
+      project: 1048-atlas
+      source:
+        repoURL: https://github.com/LedgerHQ/sre-argocd.git
+        targetRevision: main
+        path: "deploy/platform-2220-cluster/applications/wallet-xp/non-prod-2020/1048-atlas/haproxy-kubernetes-ingress"
+      destination:
+        server: "{{server}}"
+        namespace: "1048-atlas"
+      syncPolicy:
+        automated: {}

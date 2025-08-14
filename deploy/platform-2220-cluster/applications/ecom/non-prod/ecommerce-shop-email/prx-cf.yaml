@@ -1,0 +1,58 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: ecommerce-shop-email-prx-cf
+  namespace: argocd-central
+spec:
+  # Ignore argocd image updater change
+  ignoreApplicationDifferences:
+    - jsonPointers:
+        - /spec/source/helm/parameters
+  generators:
+    - pullRequest:
+        requeueAfterSeconds: 1800
+        github:
+          owner: LedgerHQ
+          repo: ecommerce-shop-email
+          appSecretName: ledgerhq-repository
+          labels:
+            - argocd/preview-cf
+  template:
+    metadata:
+      name: "ecommerce-shop-email-pr-cf-{{ number }}"
+      namespace: argocd
+      annotations:
+        notifications.argoproj.io/subscribe.github: ""
+        argocd.ledger.fr/environment: "Preview"
+        argocd-image-updater.argoproj.io/image-list: ecommerce-shop-email=ghcr.io/ledgerhq/ecommerce-shop-email:pr-{{ number }}
+        argocd-image-updater.argoproj.io/update-strategy: digest
+        argocd-image-updater.argoproj.io/ecommerce-shop-email.helm.image-name: app-template.image.repository
+        argocd-image-updater.argoproj.io/ecommerce-shop-email.helm.image-tag: app-template.image.tag
+      labels:
+        environment: "prx"
+        owner: "team-infra-sre"
+        project: "2234"
+        organization: "consumer"
+        service: "ecommerce-shop-email"
+    spec:
+      project: ecommerce-shop-email
+      source:
+        repoURL: https://github.com/LedgerHQ/ecommerce-shop-email.git
+        targetRevision: "{{ branch }}"
+        path: argocd/prx
+        helm:
+          valuesObject:
+            app-template:
+              image:
+                tag: "pr-{{ number }}"
+              custom:
+                host: ecommerce-shop-email-pr-cf-{{ number }}.aws.stg.ldg-tech.com
+                hostAssets: ecommerce-shop-email-assets-pr{{ number }}.dev-stg.aws.ledger-test.com
+
+      destination:
+        name: shared-application-2021-cluster
+        namespace: ecommerce-shop-email-pr-cf-{{ number }}
+      syncPolicy:
+        automated:
+          prune: true

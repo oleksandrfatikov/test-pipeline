@@ -1,0 +1,33 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ecommerce-redeployment-manager-stg
+  namespace: argocd-central
+  annotations:
+    notifications.argoproj.io/subscribe.slack: "infra-ecommerce-cd"
+    notifications.argoproj.io/subscribe.github: ""
+    argocd.ledger.fr/environment: "Staging"
+    argocd-image-updater.argoproj.io/image-list: app=ghcr.io/ledgerhq/ecommerce-redeployment-manager:main
+    argocd-image-updater.argoproj.io/update-strategy: digest
+    argocd-image-updater.argoproj.io/app.helm.image-name: app-template.image.repository
+    argocd-image-updater.argoproj.io/app.helm.image-tag: app-template.image.tag
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    environment: "stg"
+    owner: "team-infra-sre"
+    organization: "consumer"
+    service: "ecommerce-redeployment-manager"
+spec:
+  project: ecommerce-redeployment-manager
+  source:
+    repoURL: https://github.com/LedgerHQ/ecommerce-redeployment-manager.git
+    targetRevision: main
+    path: argocd/stg
+  destination:
+    name: shared-application-2021-cluster
+    namespace: 2346-ecommerce-redeployment-manager
+  syncPolicy:
+    automated:
+      prune: true

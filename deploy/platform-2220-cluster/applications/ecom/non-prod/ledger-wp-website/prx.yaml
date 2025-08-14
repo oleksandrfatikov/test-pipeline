@@ -1,0 +1,57 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: ledger-wp-website-prx
+  namespace: argocd-central
+spec:
+  # Ignore argocd image updater change
+  ignoreApplicationDifferences:
+    - jsonPointers:
+        - /spec/source/helm/parameters
+  generators:
+    - pullRequest:
+        requeueAfterSeconds: 1800
+        github:
+          owner: LedgerHQ
+          repo: ledger-wordpress-website
+          appSecretName: ledgerhq-repository
+          labels:
+            - argocd/preview
+  template:
+    metadata:
+      name: "ledger-wp-website-pr{{ number }}"
+      namespace: argocd
+      annotations:
+        argocd-image-updater.argoproj.io/image-list: ledger-wp-website=ghcr.io/ledgerhq/ledger-wp-website:pr-{{ number }}
+        argocd-image-updater.argoproj.io/update-strategy: digest
+        argocd-image-updater.argoproj.io/ledger-wp-website.helm.image-name: app-template.image.repository
+        argocd-image-updater.argoproj.io/ledger-wp-website.helm.image-tag: app-template.image.tag
+        notifications.argoproj.io/subscribe.slack: "ledger-wp-website-cd"
+        notifications.argoproj.io/subscribe.github: ""
+        argocd.ledger.fr/environment: "dev"
+      labels:
+        environment: "prx"
+        owner: "team-infra-sre"
+        organization: "consumer"
+        service: "ledger-wp-website"
+    spec:
+      project: ledger-wp-website
+      source:
+        repoURL: https://github.com/LedgerHQ/ledger-wordpress-website.git
+        targetRevision: "{{ branch }}"
+        path: argocd/prx
+        helm:
+          releaseName: ledger-wp-website
+          valuesObject:
+            app-template:
+              image:
+                tag: "pr-{{ number }}"
+              custom:
+                host: ledger-wp-website-pr{{ number }}.aws.sbx.ldg-tech.com
+      destination:
+        name: sandbox-2042-cluster
+        namespace: "ledger-wp-website-pr{{ number }}"
+      syncPolicy:
+        automated:
+          prune: true

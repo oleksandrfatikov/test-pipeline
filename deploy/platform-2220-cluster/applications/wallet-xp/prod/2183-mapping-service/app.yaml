@@ -1,0 +1,35 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    notifications.argoproj.io/subscribe.slack: backend-b2c-private-map
+    argocd.ledger.fr/environment: "Production"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: mapping-service-prd
+  namespace: argocd-central
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2183"
+    organization: "wallet-services"
+    service: "mapping-service"
+spec:
+  project: mapping-service-prd
+  source:
+    repoURL: https://github.com/LedgerHQ/mapping-service.git
+    targetRevision: master
+    path: argocd/prd
+    helm:
+      releaseName: mapping-service
+      valueFiles:
+        - 'values.yaml'
+  destination:
+    name: shared-application-2086-cluster
+    namespace: 2183-mapping-service
+  syncPolicy:
+    automated:
+      prune: true
+    syncOptions:
+      - CreateNamespace=true

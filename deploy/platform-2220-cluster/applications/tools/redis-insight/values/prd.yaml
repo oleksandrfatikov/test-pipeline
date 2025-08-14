@@ -1,0 +1,22 @@
+---
+app-template:
+  valueBundles:
+    eksPrd:
+      enabled: true
+
+  ingress:
+    main:
+      enabled: true
+      ingressClassName: trusted
+      annotations:
+        external-dns.alpha.kubernetes.io/hostname: redis-insight-prd.aws.prd.ldg-tech.com
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+      hosts:
+        - host: redis-insight-prd.aws.prd.ldg-tech.com
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - secretName: '{{ include "ledger.commonlib.lib.chart.names.fullname" . }}-tls'
+          hosts:
+            - redis-insight-prd.aws.prd.ldg-tech.com

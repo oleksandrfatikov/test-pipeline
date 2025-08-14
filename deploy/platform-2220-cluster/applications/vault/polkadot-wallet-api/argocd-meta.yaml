@@ -1,0 +1,22 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: polkadot-wallet-api
+  namespace: argocd-central
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Polkadot wallet api
+  sourceRepos:
+    - "*"
+  destinations:
+    - namespace: 2063-vault-stg
+      name: shared-application-2021-cluster
+    - namespace: 2060-vault-ppr
+      name: shared-application-2094-cluster
+    - namespace: 2108-vault-prd
+      name: shared-application-2026-cluster
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

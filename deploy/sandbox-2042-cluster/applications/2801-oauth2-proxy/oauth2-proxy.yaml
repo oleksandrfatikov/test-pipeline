@@ -1,0 +1,25 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: oauth2-proxy
+  namespace: argocd
+  labels:
+    service: "oauth2-proxy"
+    env: "sbx"
+    owner: "team-infra-sre"
+    project: "2801"
+    organization: "infrastructure"
+spec:
+  project: internal
+  source:
+    repoURL: https://github.com/LedgerHQ/sre-argocd.git
+    targetRevision: main
+    path: deploy/sandbox-2042-cluster/applications/2801-oauth2-proxy
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

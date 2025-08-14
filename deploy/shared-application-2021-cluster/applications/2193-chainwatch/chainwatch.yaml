@@ -1,0 +1,55 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: chainwatch=ghcr.io/ledgerhq/chainwatch
+    argocd-image-updater.argoproj.io/write-back-method: argocd
+    argocd-image-updater.argoproj.io/chainwatch.update-strategy: latest
+    argocd-image-updater.argoproj.io/chainwatch.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: chainwatch-stg
+  namespace: argocd
+  labels:
+    environment: "stg"
+    owner: "team-infra-sre"
+    project: "2193"
+    organization: "consumer"
+    service: "chainwatch"
+spec:
+  project: chainwatch
+  source:
+    repoURL: https://github.com/LedgerHQ/chainwatch.git
+    targetRevision: main
+    path: argocd/stg/helm
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: 2193-chainwatch
+  syncPolicy:
+    automated: {}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: chainwatch-kustomize-stg
+  namespace: argocd
+  labels:
+    environment: "stg"
+    owner: "team-infra-sre"
+    project: "2193"
+    organization: "consumer"
+    service: "chainwatch"
+spec:
+  project: chainwatch
+  source:
+    repoURL: https://github.com/LedgerHQ/chainwatch.git
+    targetRevision: main
+    path: argocd/stg/kustomize
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2193-chainwatch
+  syncPolicy:
+    automated: {}

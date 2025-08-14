@@ -1,0 +1,20 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: app-of-apps-ecom
+  namespace: argocd-central
+  labels:
+    organization: "infrastructure"
+    service: "internal"
+spec:
+  project: internal
+  source:
+    repoURL: https://github.com/LedgerHQ/sre-argocd.git
+    targetRevision: main
+    path: deploy/platform-2220-cluster/applications/ecom/prod
+  destination:
+    name: in-cluster
+    namespace: argocd-central
+  syncPolicy:
+    automated: {}

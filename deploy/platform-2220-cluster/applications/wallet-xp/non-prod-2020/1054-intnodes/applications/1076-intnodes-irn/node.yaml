@@ -1,0 +1,71 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: 1076-intnodes-irn
+  namespace: argocd-central
+spec:
+  strategy:
+    type: RollingSync
+    rollingSync:
+      steps:
+        - matchExpressions:
+            - key: datacenter.ledger.com/intnodes
+              operator: In
+              values:
+                - "true"
+          maxUpdate: 30%
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            application.ledger.com/intnodes: "true"
+            environment.ledger.com/staging: "true"
+            datacenter.ledger.com/fsn1: "true"
+        values:
+          datacenter: stg-fsn
+          annotation_project_id: c-m-mqq5lrn6:p-qccf8
+          label_project_id: p-qccf8
+    - clusters:
+        selector:
+          matchLabels:
+            application.ledger.com/intnodes: "true"
+            environment.ledger.com/staging: "true"
+            datacenter.ledger.com/sbg5: "true"
+        values:
+          datacenter: stg-sbg
+          annotation_project_id: c-m-2tdhjscq:p-fhgrw
+          label_project_id: p-fhgrw
+  template:
+    metadata:
+      name: "{{name}}-1076-intnodes-irn"
+      annotations:
+        argocd.ledger.fr/environment: "Staging"
+      labels:
+        service: "1076-intnodes-irn"
+        env: "staging"
+        coin: "irn"
+        type: "int-node"
+    spec:
+      project: 1054-intnodes
+      sources:
+        - repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+          targetRevision: main
+          path: 'deploy/staging/internal-blockchain-nodes/1076-intnodes-irn'
+          helm:
+            releaseName: int-irn-testnet-node
+            values: |
+              intnodes:
+                custom:
+                  datacenter: "{{values.datacenter}}"
+      destination:
+        server: "{{server}}"
+        namespace: "1076-intnodes-irn"
+      syncPolicy:
+        managedNamespaceMetadata:
+          annotations:
+            field.cattle.io/projectId: "{{values.annotation_project_id}}"
+          labels:
+            field.cattle.io/projectId: "{{values.label_project_id}}"
+        syncOptions:
+          - CreateNamespace=true

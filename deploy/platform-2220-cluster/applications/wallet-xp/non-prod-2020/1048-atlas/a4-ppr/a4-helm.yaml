@@ -1,0 +1,71 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: a4-ppr-helm
+  namespace: argocd-central
+spec:
+  # Ignore argocd image updater change
+  ignoreApplicationDifferences:
+    - jsonPointers:
+        - /spec/source/helm/parameters
+  generators:
+    - matrix:
+        generators:
+          - list:
+              elements:
+                - app: a4-btc-mainnet
+                  image: a4-bitcoin
+                - app: a4-btc-testnet
+                  image: a4-bitcoin
+                - app: a4-ltc-mainnet
+                  image: a4-bitcoin
+                - app: a4-bch-mainnet
+                  image: a4-bitcoin
+                - app: a4-btg-mainnet
+                  image: a4-bitcoin
+                - app: a4-dgb-mainnet
+                  image: a4-bitcoin
+                - app: a4-dash-mainnet
+                  image: a4-bitcoin
+                - app: a4-doge-mainnet
+                  image: a4-bitcoin
+          - list:
+              elements:
+                - clusterName: stg-atlas-ovh-sbg
+                  datacenter: sbg
+                - clusterName: stg-atlas-htz-fsn
+                  datacenter: fsn
+  template:
+    metadata:
+      name: '{{clusterName}}-{{app}}-ppr-helm'
+      namespace: argocd-central
+      labels:
+        environment: ppr
+        owner: team-infra-sre
+        project: '1048'
+        organization: 'wallet-services'
+        service: '{{app}}'
+    spec:
+      project: &app 1048-atlas
+      source:
+        repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+        targetRevision: main
+        path: 'deploy/staging/a4-ppr/helm/{{app}}'
+        helm:
+          releaseName: '{{app}}-ppr'
+          valuesObject:
+            a4:
+              imagePullSecrets:
+                - name: container-registries
+              custom:
+                datacenter: "{{datacenter}}"
+              databases:
+                datacenter: "{{datacenter}}"
+      destination:
+        name: '{{clusterName}}'
+        namespace: *app
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true

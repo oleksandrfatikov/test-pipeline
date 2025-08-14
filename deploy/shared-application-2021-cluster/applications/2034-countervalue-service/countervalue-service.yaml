@@ -1,0 +1,32 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: cvs=ghcr.io/ledgerhq/countervalue-service
+    argocd-image-updater.argoproj.io/write-back-method: argocd
+    argocd-image-updater.argoproj.io/cvs.update-strategy: latest
+    argocd-image-updater.argoproj.io/cvs.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+    notifications.argoproj.io/subscribe.slack: "backend-b2c-private-cvs"
+    argocd.ledger.fr/environment: "Staging"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: countervalue-service-stg
+  namespace: argocd
+  labels:
+    environment: "stg"
+    owner: "backend-core"
+    project: "2034"
+    organization: "wallet-services"
+    service: "countervalue-service"
+spec:
+  project: countervalue-service
+  source:
+    repoURL: https://github.com/LedgerHQ/countervalue-service.git
+    targetRevision: master
+    path: argocd/stg
+    helm:
+      releaseName: countervalue-service
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2034-countervalue

@@ -1,0 +1,1405 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["appset"],
+  "$defs": {
+    "basicService": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repoUrl", "useAppTemplate", "targetRevision"],
+      "properties": {
+        "repoUrl": { "type": "string" },
+        "useAppTemplate": { "type": "boolean" },
+        "targetRevision": { "type": "string" },
+        "inlineValues": { "type": "object" }
+      }
+    },
+    "lamService": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repoUrl", "useAppTemplate", "inlineValues"],
+      "properties": {
+        "repoUrl": { "type": "string" },
+        "useAppTemplate": { "type": "boolean" },
+        "inlineValues": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["image", "env", "custom", "resources"],
+          "properties": {
+            "image": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["repository", "tag"],
+              "properties": {
+                "repository": { "type": "string" },
+                "tag": { "type": "string" }
+              }
+            },
+            "env": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "GUNICORN_TIMEOUT",
+                "TIMEOUT_API_CALL",
+                "API_AUTHENTICATION_KEY",
+                "WORKSPACE"
+              ],
+              "properties": {
+                "GUNICORN_TIMEOUT": { "type": "integer" },
+                "TIMEOUT_API_CALL": { "type": "integer" },
+                "API_AUTHENTICATION_KEY": { "type": "string" },
+                "WORKSPACE": { "type": "string" }
+              }
+            },
+            "custom": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["lamDomain"],
+              "properties": {
+                "lamDomain": { "type": "string" }
+              }
+            },
+            "resources": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["limits", "requests"],
+              "properties": {
+                "limits": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["cpu", "memory"],
+                  "properties": {
+                    "cpu": { "type": "string" },
+                    "memory": { "type": "string" }
+                  }
+                },
+                "requests": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["cpu", "memory"],
+                  "properties": {
+                    "cpu": { "type": "string" },
+                    "memory": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "properties": {
+    "appset": {
+      "type": "object",
+      "required": ["projectValues", "categoryValues"],
+      "additionalProperties": false,
+      "properties": {
+        "categoryValues": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "upstream",
+            "default",
+            "all",
+            "gates-base",
+            "gates-previous",
+            "gates-current",
+            "gates-override",
+            "gates-mix-preset",
+            "gates",
+            "hsmdrivers",
+            "wds"
+          ],
+          "properties": {
+            "upstream": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["disableDefaultTagRevision", "path"],
+              "properties": {
+                "disableDefaultTagRevision": { "type": "boolean" },
+                "path": { "type": "string" }
+              }
+            },
+            "default": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["syncPolicyMode", "inlineValues"],
+              "properties": {
+                "syncPolicyMode": { "type": "string" },
+                "inlineValues": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["valueBundles", "datadog", "custom"],
+                  "properties": {
+                    "valueBundles": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["eksPrd"],
+                      "properties": {
+                        "eksPrd": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["enabled"],
+                          "properties": {
+                            "enabled": { "type": "boolean" }
+                          }
+                        }
+                      }
+                    },
+                    "datadog": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["env"],
+                      "properties": {
+                        "env": { "type": "string" }
+                      }
+                    },
+                    "custom": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "awsEnv",
+                        "env",
+                        "vaultProjectId",
+                        "lamaNamespace",
+                        "wdProjectId",
+                        "wdDBNamespace",
+                        "ledgerVaultDomain"
+                      ],
+                      "properties": {
+                        "awsEnv": { "type": "string" },
+                        "env": { "type": "string" },
+                        "vaultProjectId": { "type": "string" },
+                        "lamaNamespace": { "type": "string" },
+                        "wdProjectId": { "type": "string" },
+                        "wdDBNamespace": { "type": "string" },
+                        "eksClusterId": { "type": "string" },
+                        "ledgerVaultDomain": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "all": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["path"],
+              "properties": { "path": { "type": "string" } }
+            },
+            "gates-base": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["repoUrl", "path"],
+              "properties": {
+                "repoUrl": { "type": "string" },
+                "path": { "type": "string" }
+              }
+            },
+            "gates-previous": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["targetRevision"],
+              "properties": {
+                "targetRevision": { "type": "string" }
+              }
+            },
+            "gates-current": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["targetRevision"],
+              "properties": {
+                "targetRevision": { "type": "string" }
+              }
+            },
+            "gates-override": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["inlineValues"],
+              "properties": {
+                "inlineValues": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["custom", "env", "serviceAccount", "app", "worker"],
+                  "properties": {
+                    "custom": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["calVersion"],
+                      "properties": {
+                        "calVersion": { "type": "string" }
+                      }
+                    },
+                    "serviceAccount": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["annotations"],
+                      "properties": {
+                        "annotations": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["eks.amazonaws.com/role-arn"],
+                          "properties": {
+                            "eks.amazonaws.com/role-arn": { "type": "string" }
+                          }
+                        }
+                      }
+                    },
+                    "env": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "VAULT_ATTESTATION_ID",
+                        "VAULT_PRICING_PLAN_NAME",
+                        "VAULT_PROCESS_TIMEOUT",
+                        "VAULT_TIMEOUT_API_CALL",
+                        "VAULT_ENABLE_HSM_RULE_SET_V2"
+                      ],
+                      "properties": {
+                        "VAULT_ATTESTATION_ID": { "type": "integer" },
+                        "VAULT_PRICING_PLAN_NAME": { "type": "string" },
+                        "VAULT_PROCESS_TIMEOUT": { "type": "integer" },
+                        "VAULT_TIMEOUT_API_CALL": { "type": "integer" },
+                        "VAULT_ENABLE_HSM_RULE_SET_V2": { "type": "string" }
+                      }
+                    },
+                    "app": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "resources": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "requests": {
+                              "type": "object",
+                              "required": ["cpu", "memory"],
+                              "additionalProperties": false,
+                              "properties": {
+                                "cpu": {
+                                  "type": "string"
+                                },
+                                "memory": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "limits": {
+                              "type": "object",
+                              "required": ["cpu", "memory"],
+                              "additionalProperties": false,
+                              "properties": {
+                                "cpu": {
+                                  "type": "string"
+                                },
+                                "memory": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "worker": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "resources": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "requests": {
+                              "type": "object",
+                              "required": ["cpu", "memory"],
+                              "additionalProperties": false,
+                              "properties": {
+                                "cpu": {
+                                  "type": "string"
+                                },
+                                "memory": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "limits": {
+                              "type": "object",
+                              "required": ["cpu", "memory"],
+                              "additionalProperties": false,
+                              "properties": {
+                                "cpu": {
+                                  "type": "string"
+                                },
+                                "memory": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "gates-mix-preset": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["extendCategories"],
+              "properties": {
+                "extendCategories": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              }
+            },
+            "gates": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["extendCategories"],
+              "properties": {
+                "extendCategories": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              }
+            },
+            "hsmdrivers": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["inlineValues"],
+              "properties": {
+                "inlineValues": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["env"],
+                  "properties": {
+                    "custom": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["hsmEnv", "postgresPasswordSecret", "postgresDB"],
+                      "properties": {
+                        "hsmEnv": { "type": "string" },
+                        "postgresPasswordSecret": { "type": "string" },
+                        "postgresDB": { "type": "string" }
+                      }
+                    },
+                    "env": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "VAULT_HSM_ENDPOINT", "VAULT_HSM_BACKOFF_DELAY", "VAULT_HSM_GATEWAY_URL", "USERS_DB_USER"
+                      ],
+                      "properties": {
+                        "VAULT_HSM_ENDPOINT": { "type": "string" },
+                        "VAULT_HSM_BACKOFF_DELAY": { "type": "string" },
+                        "VAULT_HSM_GATEWAY_URL": { "type": "string" },
+                        "USERS_DB_USER": { "type": "string" }
+                      }
+                    },
+                    "certexporter": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["image"],
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["tag"],
+                          "properties": {
+                            "tag": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "hsmproxys": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["inlineValues"],
+              "properties": {
+                "inlineValues": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["custom"],
+                  "properties": {
+                    "custom": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["hsmEnv", "postgresDB", "regionSecret"],
+                      "properties": {
+                        "hsmEnv": { "type": "string" },
+                        "postgresDB": { "type": "string" },
+                        "regionSecret": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "hsmproxysequencers": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["inlineValues"],
+              "properties": {
+                "inlineValues": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["custom"],
+                  "properties": {
+                    "custom": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["hsmEnv", "postgresDB", "regionSecret"],
+                      "properties": {
+                        "hsmEnv": { "type": "string" },
+                        "postgresDB": { "type": "string" },
+                        "regionSecret": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "wds": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["repoUrl", "path", "targetRevision", "useAppTemplate", "inlineValues"],
+              "properties": {
+                "repoUrl": { "type": "string" },
+                "path": { "type": "string" },
+                "targetRevision": { "type": "string" },
+                "useAppTemplate": { "type": "boolean" },
+                "inlineValues": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["image", "custom"],
+                  "properties": {
+                    "image": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["tag"],
+                      "properties": {
+                        "tag": { "type": "string" }
+                      }
+                    },
+                    "custom": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["vaultProjectId", "env"],
+                      "properties": {
+                        "vaultProjectId": { "type": "integer" },
+                        "env": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "projectValues": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "upstream",
+            "all",
+            "gates",
+            "gates-mix-preset",
+            "hsmdrivers",
+            "hsmproxys",
+            "hsmproxysequencers",
+            "wds"
+          ],
+          "properties": {
+            "upstream": {
+              "type": "object",
+              "additionalProperties": true,
+              "required": ["common-secrets", "vault-rabbitmq", "keycloak"],
+              "properties": {
+                "common-secrets": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "chartName", "targetRevision", "inlineValues"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "chartName": { "type": "string" },
+                    "targetRevision": { "type": "string" },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["controller", "service", "valueBundles", "externalSecret"],
+                      "properties": {
+                        "controller": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["enabled"],
+                          "properties": {
+                            "enabled": { "type": "boolean" }
+                          }
+                        },
+                        "service": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["main"],
+                          "properties": {
+                            "main": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": ["enabled"],
+                              "properties": {
+                                "enabled": { "type": "boolean" }
+                              }
+                            }
+                          }
+                        },
+                        "valueBundles": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["eksPrd"],
+                          "properties": {
+                            "eksPrd": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": ["enabled"],
+                              "properties": {
+                                "enabled": { "type": "boolean" }
+                              }
+                            }
+                          }
+                        },
+                        "externalSecret": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["postgresql", "rabbitmq", "keycloak"],
+                          "properties": {
+                            "postgresql": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": ["enabled", "dataFrom"],
+                              "properties": {
+                                "enabled": { "type": "boolean" },
+                                "dataFrom": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "required": ["extract"],
+                                    "properties": {
+                                      "extract": {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": ["key"],
+                                        "properties": {
+                                          "key": { "type": "string" }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "rabbitmq": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": ["enabled", "dataFrom"],
+                              "properties": {
+                                "enabled": { "type": "boolean" },
+                                "dataFrom": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "required": ["extract"],
+                                    "properties": {
+                                      "extract": {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": ["key"],
+                                        "properties": {
+                                          "key": { "type": "string" }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "keycloak": {
+                              "type": "object",
+                              "additionalProperties": true,
+                              "required": ["enabled", "dataFrom"],
+                              "properties": {
+                                "enabled": { "type": "boolean" },
+                                "dataFrom": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "additionalProperties": false,
+                                    "required": ["extract"],
+                                    "properties": {
+                                      "extract": {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": ["key"],
+                                        "properties": {
+                                          "key": { "type": "string" }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "vault-rabbitmq": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "chartName", "targetRevision", "valueFiles", "inlineValues"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "chartName": { "type": "string" },
+                    "targetRevision": { "type": "string" },
+                    "valueFiles": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                    },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["clustering", "image", "ingress"],
+                      "properties": {
+                        "clustering": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["forceBoot"],
+                          "properties": {
+                            "forceBoot": { "type": "boolean" }
+                          }
+                        },
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["repository", "registry"],
+                          "properties": {
+                            "repository": { "type": "string" },
+                            "registry": { "type": "string" },
+                            "pullSecrets": {
+                              "type": "array",
+                              "items": { "name": "string" }
+                            }
+                          }
+                        },
+                        "ingress": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["enabled", "hostname"],
+                          "properties": {
+                            "enabled": { "type": "boolean" },
+                            "hostname": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "keycloak": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "required": ["inlineValues"],
+                  "properties": {
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": true,
+                      "required": [
+                        "image",
+                        "ingress",
+                        "externalDatabase",
+                        "metrics",
+                        "podAnnotations"
+                      ],
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "required": ["repository", "registry"],
+                          "properties": {
+                            "repository": { "type": "string" },
+                            "registry": { "type": "string" },
+                            "pullSecrets": {
+                              "type": "array",
+                              "items": { "name": "string" }
+                            }
+                          }
+                        },
+                        "ingress": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "required": ["hostname"],
+                          "properties": {
+                            "hostname": { "type": "string" }
+                          }
+                        },
+                        "externalDatabase": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "required": ["host"],
+                          "properties": {
+                            "host": { "type": "string" }
+                          }
+                        },
+                        "metrics": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "required": ["enabled"],
+                          "properties": {
+                            "enabled": { "type": "boolean" }
+                          }
+                        },
+                        "podAnnotations": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "required": ["ad.datadoghq.com/keycloak.checks"],
+                          "properties": {
+                            "ad.datadoghq.com/keycloak.checks": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "all": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "api-keys",
+                "apdu-connector",
+                "api-gateway",
+                "aum-api",
+                "authentication-service",
+                "aus",
+                "coin-gateway",
+                "device-registry",
+                "front",
+                "nfts-api",
+                "notification-center",
+                "notifier",
+                "platform-manager",
+                "revault-api",
+                "revault-onboarding",
+                "tradelink",
+                "tx-scheduler",
+                "web3checks-vault",
+                "web3-handler-api"
+              ],
+              "properties": {
+                "api-keys": { "$ref": "#/$defs/basicService" },
+                "apdu-connector": {
+                  "allOf": [
+                    { "$ref": "#/$defs/basicService" },
+                    {
+                      "type": "object",
+                      "required": ["inlineValues"],
+                      "properties": {
+                        "inlineValues": {
+                          "type": "object",
+                          "required": ["image"],
+                          "properties": {
+                            "image": {
+                              "type": "object",
+                              "required": ["tag"],
+                              "properties": {
+                                "tag": { "type": "string" }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "api-gateway": { "$ref": "#/$defs/basicService" },
+                "aum-api": {
+                  "allOf": [
+                    { "$ref": "#/$defs/basicService" },
+                    {
+                      "type": "object",
+                      "required": ["inlineValues"],
+                      "properties": {
+                        "inlineValues": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["image"],
+                          "properties": {
+                            "image": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": ["repository", "tag"],
+                              "properties": {
+                                "repository": { "type": "string" },
+                                "tag": { "type": "string" }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "authentication-service": { "$ref": "#/$defs/basicService" },
+                "aus": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "targetRevision"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "targetRevision": { "type": "string" }
+                  }
+                },
+                "coin-gateway": {
+                  "allOf": [
+                    { "$ref": "#/$defs/basicService" },
+                    {
+                      "type": "object",
+                      "required": ["inlineValues"],
+                      "properties": {
+                        "inlineValues": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["env"],
+                          "properties": {
+                            "env": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "CATAPLASM_WORKSPACES"
+                              ],
+                              "properties": {
+                                "CATAPLASM_WORKSPACES": { "type": "string" }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "device-registry": { "$ref": "#/$defs/basicService" },
+                "front": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "targetRevision"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "targetRevision": { "type": "string" }
+                  }
+                },
+                "nfts-api": { "$ref": "#/$defs/basicService" },
+                "notification-center": { "$ref": "#/$defs/basicService" },
+                "notifier": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "targetRevision"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "targetRevision": { "type": "string" }
+                  }
+                },
+                "organizations-api": { "$ref": "#/$defs/basicService" },
+                "platform-manager": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["repoUrl", "targetRevision", "inlineValues"],
+                  "properties": {
+                    "repoUrl": { "type": "string" },
+                    "targetRevision": { "type": "string" },
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["image"],
+                      "properties": {
+                        "image": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["tag"],
+                          "properties": {
+                            "tag": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "revault-api": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["inlineValues"],
+                  "properties": {
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalItems": false,
+                      "required": ["env"],
+                      "properties": {
+                        "env": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "HSM_DRIVER_URL",
+                            "ENABLE_DEBUG_PROCEDURES",
+                            "REVAULT_DEBUG_AUTH_TOKEN",
+                            "REVAULT_ROOT_AUTH_TOKEN"
+                          ],
+                          "properties": {
+                            "HSM_DRIVER_URL": { "type": "string" },
+                            "ENABLE_DEBUG_PROCEDURES": { "type": "string" },
+                            "REVAULT_DEBUG_AUTH_TOKEN": { "type": "string" },
+                            "REVAULT_ROOT_AUTH_TOKEN": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "revault-onboarding": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["inlineValues"],
+                  "properties": {
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["custom"],
+                      "properties": {
+                        "custom": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "blueAppVersion",
+                            "staxAppVersion",
+                            "staxFirmwareVersion"
+                          ],
+                          "properties": {
+                            "blueAppVersion": { "type": "string" },
+                            "staxAppVersion": { "type": "string" },
+                            "staxFirmwareVersion": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "revault-notifier": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["targetRevision"],
+                  "properties": {
+                    "targetRevision": { "type": "string" }
+                  }
+                },
+                "tradelink": {
+                  "allOf": [
+                    { "$ref": "#/$defs/basicService" },
+                    {
+                      "type": "object",
+                      "required": ["inlineValues"],
+                      "properties": {
+                        "inlineValues": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["image"],
+                          "properties": {
+                            "image": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": ["tag"],
+                              "properties": {
+                                "tag": { "type": "string" }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "tx-scheduler": { "$ref": "#/$defs/basicService" },
+                "web3checks-vault": { "$ref": "#/$defs/basicService" },
+                "web3-handler-api": { "$ref": "#/$defs/basicService" },
+                "lam-qapublicapi": { "$ref": "#/$defs/lamService" },
+                "lam-qapublicapilama": { "$ref": "#/$defs/lamService" },
+                "lam-qaabgate": { "$ref": "#/$defs/lamService" },
+                "lam-qasaltqa": { "$ref": "#/$defs/lamService" },
+                "lam-selfsapi": { "$ref": "#/$defs/lamService" },
+                "lam-selfsui": { "$ref": "#/$defs/lamService" },
+                "lam-selfsmigration": { "$ref": "#/$defs/lamService" },
+                "lam-newobd2402": { "$ref": "#/$defs/lamService" },
+                "lam-manualtest0403": { "$ref": "#/$defs/lamService" },
+                "lam-enclaveffs4": { "$ref": "#/$defs/lamService" },
+                "lam-mixpreset1": { "$ref": "#/$defs/lamService" },
+                "lam-mixpreset2": { "$ref": "#/$defs/lamService" }
+              }
+            },
+
+            "gates": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [],
+              "patternProperties": {
+                "^gate-.*$": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["inlineValues"],
+                  "properties": {
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["custom", "env", "app"],
+                      "properties": {
+                        "custom": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["gateSecretSuffix"],
+                          "properties": {
+                            "gateSecretSuffix": { "type": "string" }
+                          }
+                        },
+                        "env": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["VAULT_COMPARTMENT_ID", "VAULT_HSM_DRIVER_NAME", "VAULT_WALLET_DAEMON_NAME"],
+                          "properties": {
+                            "VAULT_HSM_SCRIPTS_VERSION": { "type": "string" },
+                            "VAULT_USE_HSM_TEST_SIGNATURES": { "type": "boolean" },
+                            "VAULT_COMPARTMENT_ID": { "type": "integer" },
+                            "VAULT_HSM_DRIVER_NAME": { "type": "string" },
+                            "VAULT_WALLET_DAEMON_NAME": { "type": "string" }
+                          }
+                        },
+                        "app": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["controller"],
+                          "properties": {
+                            "controller": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": ["labels"],
+                              "properties": {
+                                "labels": {
+                                  "type": "object",
+                                  "additionalProperties": false,
+                                  "required": ["owner"],
+                                  "properties": {
+                                    "owner": { "type": "string" }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "gates-mix-preset": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [],
+              "properties": {
+                "gate-mixpreset3": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["inlineValues"],
+                  "properties": {
+                    "inlineValues": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["custom", "env"],
+                      "properties": {
+                        "custom": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": ["gateSecretSuffix"],
+                          "properties": {
+                            "gateSecretSuffix": { "type": "string" }
+                          }
+                        },
+                        "env": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "required": ["VAULT_COMPARTMENT_ID"],
+                          "properties": {
+                            "VAULT_COMPARTMENT_ID": { "type": "integer" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "wds": {
+              "type": "object"
+            },
+            "hsmdrivers": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "hsm-driver-default" : {
+                  "type": "object"
+                },
+                "hsm-driver-secrets-concurrent-2": {
+                  "type": "object"
+                },
+                "hsm-driver-hsmlabs": {
+                  "type": "object",
+                  "required": ["targetRevision","inlineValues"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "targetRevision": { "type": "string" },
+                    "inlineValues": {
+                      "type": "object",
+                      "required": ["env"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "custom": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "postgresDB": {
+                              "type": "string"
+                            },
+                            "region": {
+                              "type": "string"
+                            },
+                            "hsmEnv": {
+                              "type": "string",
+                              "enum": ["simu", "cluster-dev", "prod"]
+                            }
+                          }
+                        },
+                        "env": {
+                          "type": "object",
+                          "required": ["VAULT_HSM_ENDPOINT"],
+                          "additionalProperties": true,
+                          "properties": {
+                            "VAULT_HSM_GATEWAY_URL": {
+                              "type": "string",
+                              "format": "uri"
+                            },
+                            "VAULT_HSM_ENDPOINT": {
+                              "type": "string",
+                              "format": "uri"
+                            }
+                          }
+                        },
+                        "driver": {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "properties": {
+                            "initContainers": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "patternProperties": {
+                                "^[a-z0-9-]+$": {
+                                  "type": "object",
+                                  "additionalProperties": true,
+                                  "properties": {
+                                    "env": {
+                                      "type": "object",
+                                      "additionalProperties": true,
+                                      "properties": {
+                                        "POSTGRES_FORCE_ALTER_PASSWORD": {
+                                          "type": "boolean"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "hsmproxys": {
+              "type": "object",
+              "required": [],
+              "additionalProperties": false,
+              "properties": {
+                "hsm-proxy-default": {
+                  "type": "object",
+                  "required": [],
+                  "additionalProperties": false,
+                  "properties": {
+                    "inlineValues": {
+                      "type": "object",
+                      "required": [],
+                      "additionalProperties": false,
+                      "properties": {
+                        "custom": {
+                          "type": "object",
+                          "required": [],
+                          "additionalProperties": false,
+                          "properties": {
+                            "s3Env": { "type": "string" }
+                          }
+                        },
+                        "env": {
+                          "type": "object",
+                          "required": [],
+                          "additionalProperties": false,
+                          "properties": {
+                            "VAULT_HSM_ENDPOINT": { "type": "string" },
+                            "VAULT_HSM_GATEWAY_CALROOTURL": { "type": "string" },
+                            "VAULT_HSM_SELFS_APPGROUPS3BUCKET": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "hsm-proxy-lab": {
+                  "type": "object",
+                  "required": [],
+                  "additionalProperties": false,
+                  "properties": {
+                    "inlineValues": {
+                      "type": "object",
+                      "required": [],
+                      "additionalProperties": false,
+                      "properties": {
+                        "custom": {
+                          "type": "object",
+                          "required": [],
+                          "additionalProperties": false,
+                          "properties": {
+                            "s3Env": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "env": {
+                          "type": "object",
+                          "required": [],
+                          "additionalProperties": false,
+                          "properties": {
+                            "VAULT_HSM_ENDPOINT": { "type": "string" },
+                            "HSM_GATEWAY_IS_PHYSICAL_HSM": {"type": "string"},
+                            "HSM_GATEWAY_TEST_DISABLE_APP_GROUP_CONFIGURATION": { "type": "string" },
+                            "HSM_GATEWAY_ENV": { "type": "string"},
+                            "VAULT_HSM_SELFS_APPGROUPS3BUCKET": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "hsmproxysequencers": {
+              "type": "object",
+              "required": ["hsm-proxy-sequencer-default", "hsm-proxy-sequencer-lab"],
+              "properties": {
+                "hsm-proxy-sequencer-testnew": {
+                  "type": "object",
+                  "required": [],
+                  "additionalProperties": false,
+                  "properties": {
+                    "inlineValues": {
+                      "type": "object",
+                      "required": [],
+                      "additionalProperties": false,
+                      "properties": {
+                        "custom": {
+                          "type": "object",
+                          "required": [],
+                          "additionalProperties": false,
+                          "properties": {
+                            "postgresDB": {
+                              "type": "string"
+                            },
+                            "region": {
+                              "type": "string"
+                            },
+                            "hsmEnv": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "env": {
+                          "type": "object",
+                          "required": [],
+                          "additionalProperties": false,
+                          "properties": {
+                            "VAULT_HSM_ENDPOINT": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "hsm-proxy-sequencer-enclave": {
+                  "type": "object",
+                  "required": [],
+                  "additionalProperties": false,
+                  "properties": {
+                    "inlineValues": {
+                      "type": "object",
+                      "required": [],
+                      "additionalProperties": false,
+                      "properties": {
+                        "custom": {
+                          "type": "object",
+                          "required": [],
+                          "additionalProperties": false,
+                          "properties": {
+                            "hsmEnv": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "env": {
+                          "type": "object",
+                          "required": [],
+                          "additionalProperties": false,
+                          "properties": {
+                            "VAULT_HSM_ENDPOINT": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

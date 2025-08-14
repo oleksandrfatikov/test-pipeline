@@ -1,0 +1,20 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: web-nft-token-gating
+  namespace: argocd-central
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: web-nft-token-gating project
+  sourceRepos:
+    - "https://github.com/LedgerHQ/web-nft-token-gating.git"
+    - "ghcr.io"
+    - "ghcr.io/ledgerhq/charts"
+  destinations:
+    - namespace: 2158-web-nft-token-gating
+      name: shared-application-2086-cluster
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

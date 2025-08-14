@@ -1,0 +1,13 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./argo-meta.yaml
+  - ./1057-intnodes-near
+  - ./1059-intnodes-algo
+  - ./1061-intnodes-atom
+  - ./1063-intnodes-xtz
+  - ./1067-intnodes-eth
+  - ./intnodes-haproxy-kubernetes-ingress/app.yaml
+  - ./1072-intnodes-ada
+  - ./1074-intnodes-dydx

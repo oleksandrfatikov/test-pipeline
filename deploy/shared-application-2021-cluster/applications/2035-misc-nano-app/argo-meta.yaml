@@ -1,0 +1,23 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: 2035-misc-nano-app-stg
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: misc-nano-app
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: misc-nano-app-stg project
+  sourceRepos:
+    - 'https://github.com/LedgerHQ/infra-k8s-manifests.git'
+  destinations:
+    - namespace: 2035-misc-nano-app-stg
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

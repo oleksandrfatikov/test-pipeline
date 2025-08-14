@@ -1,0 +1,36 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault-remote-ppr
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.ledger.fr/environment: "Production"
+  labels: &labels
+    environment: ppr
+    owner: team-infra-sre
+    organization: enterprise
+    service: vault-remote
+spec:
+  project: vault-remote-argocd
+  sources:
+    - repoURL: https://github.com/LedgerHQ/sre-argocd.git
+      targetRevision: "main"
+      ref: values
+    - repoURL: https://github.com/LedgerHQ/vault-remote.git
+      path: "argocd/base"
+      targetRevision: "1.2.0"
+      helm:
+        passCredentials: true
+        valueFiles:
+          - "$values/deploy/platform-2220-cluster/applications/vault/vault-remote/ppr/demo.yaml"
+  destination:
+    name: shared-application-2094-cluster
+    namespace: vault-remote-ppr-argocd
+  syncPolicy:
+    automated:
+      selfHeal: true
+    syncOptions:
+      - Validate=true
+      - CreateNamespace=true

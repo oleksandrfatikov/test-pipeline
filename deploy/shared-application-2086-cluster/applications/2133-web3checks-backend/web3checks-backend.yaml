@@ -1,0 +1,28 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: web3checks-backend-prd
+  namespace: argocd
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2133"
+    organization: "consumer"
+    service: "web3checks-backend"
+  annotations:
+    notifications.argoproj.io/subscribe.slack: "backend-b2c-private-w3c"
+    argocd.ledger.fr/environment: "Production"
+spec:
+  project: web3checks-backend
+  source:
+    repoURL: https://github.com/LedgerHQ/web3checks-backend.git
+    targetRevision: master
+    path: argocd/prd
+    helm:
+      releaseName: web3checks-backend
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2133-web3checks-backend-prd
+  syncPolicy:
+    automated: {}

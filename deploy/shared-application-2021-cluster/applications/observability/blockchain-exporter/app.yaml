@@ -1,0 +1,25 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: observability-blockchain-exporter
+  namespace: argocd
+  labels:
+    service: "blockchain-exporter"
+    owner: "team-infra-ms-obs"
+    environment: "stg"
+spec:
+  project: internal
+  source:
+    repoURL: https://github.com/LedgerHQ/ms-tools.git
+    targetRevision: master
+    path: monitoring/ledger-explorer-exporter/staging/shared-application-2021-cluster/kustomize
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: "observability"
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,23 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: aum-spark
+  namespace: argocd
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2040"
+    organization: "backend-blockchain"
+    service: "aum"
+spec:
+  project: aum
+  source:
+    repoURL: https://github.com/LedgerHQ/aum.git
+    targetRevision: main
+    path: argocd/prd
+    helm:
+      releaseName: aum-spark
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2040-aum

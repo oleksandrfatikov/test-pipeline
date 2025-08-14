@@ -1,0 +1,40 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: atlas-rabbitmq
+  namespace: argocd-central
+spec:
+  goTemplate: true
+  generators:
+    - list:
+        elements:
+          - clusterName: stg-atlas-ovh-sbg
+            datacenter: sbg
+            hostname: rabbitmq.htz.ovh.ldg-tech.com
+          - clusterName: stg-atlas-htz-fsn
+            datacenter: fsn
+            hostname: rabbitmq.htz.htz.ldg-tech.com
+  template:
+    metadata:
+      name: '{{.clusterName}}-rabbitmq'
+      namespace: argocd-central
+      labels:
+        environment: stg
+        owner: team-infra-sre
+        project: "1048"
+        organization: wallet-services
+        service: rabbitmq
+    spec:
+      project: &app 1048-atlas
+      source:
+        repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+        targetRevision: main
+        path: 'deploy/staging/rabbitmq'
+      destination:
+        name: '{{.clusterName}}'
+        namespace: *app
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true

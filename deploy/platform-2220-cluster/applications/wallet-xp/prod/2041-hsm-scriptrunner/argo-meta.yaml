@@ -1,0 +1,19 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: hsm-scriptrunner-prd
+  namespace: argocd-central
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: hsm-scriptrunner project
+  sourceRepos:
+    - 'https://github.com/LedgerHQ/hsm-scriptrunner.git'
+    - 'ghcr.io'
+  destinations:
+    - namespace: '*'
+      server: '*'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

@@ -1,0 +1,27 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: category-bot
+  namespace: argocd
+  labels:
+    environment: "stg"
+    owner: "team-ms"
+    project: "2209"
+    organization: "consumer"
+    service: "category-bot"
+spec:
+  project: category-bot
+  source:
+    repoURL: https://github.com/LedgerHQ/category_bot.git
+    targetRevision: main
+    path: argocd/stg
+    helm:
+      releaseName: category-bot
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2209-category-bot-stg
+  syncPolicy:
+    automated: {}

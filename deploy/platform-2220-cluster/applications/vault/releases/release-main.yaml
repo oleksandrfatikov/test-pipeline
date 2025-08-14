@@ -1,0 +1,428 @@
+---
+appset:
+  categoryValues:
+    default:
+      path: argocd/base
+      targetRevision: main
+      inlineValues:
+        custom:
+          hsmEnv: "simu"
+    all:
+      path: argocd/base
+    upstream:
+      disableDefaultTagRevision: true
+      path: ""
+    hsmdrivers:
+      repoUrl: https://github.com/LedgerHQ/ledger-vault-hsm-driver
+      targetRevision: main
+      imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/ledger-vault-hsm-driver:main
+      inlineValues:
+        custom:
+          hsmEnv: "simu"
+        env:
+          VAULT_HSM_ENDPOINT: https://ci.hsmsaas3-ci.ledger-stg.com/releases/process
+          VAULT_HSM_ENABLE_MESSAGE_SIGNING: "true"
+          VAULT_HSM_DRIVER_ENABLE_APPLICATION_GROUP_FIRST_PHASE: "true"
+          VAULT_HSM_DRIVER_ENABLE_APPLICATION_GROUP_SECOND_PHASE: "true"
+          VAULT_HSM_DRIVER_ENABLE_HSM_V12_INTERFACES: "true"
+          VAULT_HSM_DRIVER_ENABLE_RULE_SET_V2: "true"
+          VAULT_HSM_ENV: "DEV"
+          VAULT_HSM_DRIVER_ENABLE_MERGE_WALLET_ACCOUNT: "true"
+          VAULT_HSM_GATEWAY_URL: "http://hsm-proxy"
+    hsmproxys:
+      repoUrl: https://github.com/LedgerHQ/hsm-proxy
+      path: argocd/hsm-proxy
+      targetRevision: main
+      useAppTemplate: true
+      imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/hsm-proxy:main
+      inlineValues:
+        env:
+          VAULT_HSM_ENDPOINT: https://ci.hsmsaas3-ci.ledger-stg.com/releases
+          AWS_DEFAULT_REGION: "eu-west-1"
+    hsmproxysequencers:
+      repoUrl: https://github.com/LedgerHQ/hsm-proxy
+      path: argocd/hsm-proxy-sequencer
+      targetRevision: main
+      useAppTemplate: true
+      imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/hsm-proxy-sequencer:main
+      inlineValues:
+        env:
+          VAULT_HSM_ENDPOINT: https://ci.hsmsaas3-ci.ledger-stg.com/releases
+          AWS_DEFAULT_REGION: "eu-west-1"
+    gates-base:
+      repoUrl: https://github.com/LedgerHQ/ledger-vault-api
+      targetRevision: main
+      imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/ledger-vault-api:main
+      inlineValues:
+        custom:
+          calVersion: 2025.40.2645
+        env:
+          VAULT_HSM_SCRIPTS_VERSION: 17.0.3-dave+c3edd558
+          VAULT_ATTESTATION_ID: 1
+          VAULT_USE_VAULT_INTERNALS: true
+          VAULT_USE_HSM_TEST_SIGNATURES: true
+          VAULT_WALLET_DAEMON_NAME: default
+          VAULT_HSM_DRIVER_NAME: default
+          VAULT_PRICING_PLAN_NAME: enterprise
+          VAULT_REVAULT_STREAM_MAX_LENGTH: "200000"
+    wds:
+      repoUrl: https://github.com/LedgerHQ/ledger-wallet-daemon
+      targetRevision: main
+      useAppTemplate: true
+      imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/ledger-wallet-daemon:main
+
+  projectValues:
+    upstream:
+      common-secrets:
+        repoUrl: ghcr.io/ledgerhq/charts
+        chartName: app-template
+        targetRevision: 4.10.4
+        inlineValues:
+          controller:
+            enabled: false
+          service:
+            main:
+              enabled: false
+      vault-rabbitmq:
+        repoUrl: https://charts.bitnami.com/bitnami
+        chartName: rabbitmq
+        targetRevision: 12.15.0
+        valueFiles:
+          - $git-ledgerhq-sreargocd/deploy/platform-2220-cluster/applications/vault/common/values-rabbitmq.yaml
+        inlineValues:
+          image:
+            registry: jfrog.ledgerlabs.net
+            repository: ossproxy-oci-proxy-dockerio/bitnami/rabbitmq
+            pullSecrets:
+              - name: container-registries
+          ingress:
+            enabled: true
+            hostname: vault-rabbitmq-main.aws.stg.ldg-tech.com
+          podAnnotations:
+            ad.datadoghq.com/rabbitmq.instances: |
+              [
+                {
+                  "rabbitmq_api_url":"http://%%host%%:15672/api/",
+                  "username":"datadog",
+                  "password":"%%env_DD_RABBITMQ_PASSWORD_STG_VAULT_MAIN%%"
+                }
+              ]
+      keycloak:
+        repoUrl: registry-1.docker.io/bitnamicharts
+        chartName: keycloak
+        valueFiles:
+          - $git-ledgerhq-sreargocd/deploy/platform-2220-cluster/applications/vault/common/values-keycloak.yaml
+        inlineValues:
+          global:
+            security:
+              allowInsecureImages: true
+          image:
+            registry: jfrog.ledgerlabs.net
+            repository: ossproxy-oci-proxy-dockerio/bitnami/keycloak
+            pullSecrets:
+              - name: container-registries
+          adminIngress:
+            hostname: vault-keycloak-main.aws.stg.ldg-tech.com
+          externalDatabase:
+            host: pg-main.2063-vault-main.aws.ldg-stg.net
+
+    all:
+      # for the love of MS/SRE sanity, please keep the apps in alphabetical order
+      apdu-connector:
+        repoUrl: https://github.com/LedgerHQ/vault-apdu-connector
+        targetRevision: add-cf-ingress
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/vault-apdu-connector:main
+        inlineValues:
+          image:
+            tag: main
+      api-gateway:
+        repoUrl: https://github.com/LedgerHQ/vault-api-gateway
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/vault-api-gateway:main
+      api-keys:
+        repoUrl: https://github.com/LedgerHQ/vault-api-keys
+        useAppTemplate: true
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/vault-api-keys:main
+      aum-api:
+        repoUrl: https://github.com/LedgerHQ/vault-aum-api
+        useAppTemplate: true
+        imageUpdater: ghcr.io/ledgerhq/vault-aum-api:main
+      aus:
+        repoUrl: https://github.com/LedgerHQ/vault-aus-api
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/vault-aus-api:main
+        inlineValues:
+          env:
+            AUS_REDIS__PATH: 10
+      authentication-service:
+        repoUrl: https://github.com/LedgerHQ/vault-authentication-service
+        useAppTemplate: true
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/vault-authentication-service:main
+      coin-gateway:
+        repoUrl: https://github.com/LedgerHQ/coin-gateway
+        useAppTemplate: true
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/coin-gateway:main
+      device-api:
+        repoUrl: https://github.com/LedgerHQ/vault-device-api
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/vault-device-api:main
+        inlineValues:
+          custom:
+            cloudflareHost: "device-api-main.ledger-test.com"
+          env:
+            BLUE_APP_BINDING_VERSION: 1
+      device-registry:
+        repoUrl: https://github.com/LedgerHQ/vault-device-registry
+        targetRevision: INFRAPRJ-9207
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/vault-device-registry:main
+      front:
+        repoUrl: https://github.com/LedgerHQ/ledger-vault-front
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/ledger-vault-front:main
+        inlineValues:
+          custom:
+            enableSoftware: true
+            onlyWeblue: false
+            weblueUrl: "wss://weblue2.aws.prd.ldg-tech.com/speculos-weblue"
+            speculosUrl: "https://weblue2.aws.prd.ldg-tech.com/weblue"
+            deviceRegistryUrl: "https://device-registry-main.ledger-test.com"
+            deviceApiUrl: "https://device-api-main.ledger-test.com"
+      lam:
+        repoUrl: https://github.com/LedgerHQ/vault-lam
+        useAppTemplate: true
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/vault-lam:main
+        inlineValues:
+          env:
+            API_AUTHENTICATION_KEY: "EzWcHvdRHfqUmuhTtSNgQsdZzHccrqjowPrqHaAOGMdjGUotOnWYbwdQusUCiCpw"
+            API_GATEWAY_BASE_URL: "https://api-main.ledger-test.com"
+            WORKSPACE: "mainpublicapi"
+      # ==================================================================
+      # lam-qaautoci3 - Used by e2e-auto-tests for new onboarding testing
+      # ==================================================================
+      lam-qaautoci3:
+        repoUrl: https://github.com/LedgerHQ/vault-lam
+        useAppTemplate: true
+        inlineValues:
+          image:
+            repository: ghcr.io/ledgerhq/vault-lam
+            tag: 1.19.2
+          env:
+            GUNICORN_TIMEOUT: 300
+            TIMEOUT_API_CALL: 150
+            API_AUTHENTICATION_KEY: "EzWcHvdRHfqUmuhTtSNgQsdZzHccrqjowPrqHaAOGMdjGUotOnWYbwdQusUCiCpw"
+            WORKSPACE: "qaautoci3"
+            API_GATEWAY_BASE_URL: "https://api-main.ledger-test.com"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+            requests:
+              cpu: "250m"
+              memory: "1Gi"
+      lam-apisalt2:
+        repoUrl: https://github.com/LedgerHQ/vault-lam
+        useAppTemplate: true
+        inlineValues:
+          image:
+            repository: ghcr.io/ledgerhq/vault-lam
+            tag: 1.19.3@sha256:5b2f65df6c4841d70efd836e35aa7f194ff09cbb147f72c2ae285b12862fd64a
+          env:
+            API_AUTHENTICATION_KEY: "EzWcHvdRHfqUmuhTtSNgQsdZzHccrqjowPrqHaAOGMdjGUotOnWYbwdQusUCiCpw"
+            WORKSPACE: "apisalt2"
+            GUNICORN_TIMEOUT: 300
+            TIMEOUT_API_CALL: 150
+            API_GATEWAY_BASE_URL: "https://api-main.ledger-test.com"
+          custom:
+            lamDomain: vault-lam-apisalt2.aws.stg.ldg-tech.com
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+            requests:
+              cpu: "250m"
+              memory: "1Gi"
+      lam-onboarding4:
+        repoUrl: https://github.com/LedgerHQ/vault-lam
+        useAppTemplate: true
+        inlineValues:
+          image:
+            repository: ghcr.io/ledgerhq/vault-lam
+            tag: 1.19.3@sha256:5b2f65df6c4841d70efd836e35aa7f194ff09cbb147f72c2ae285b12862fd64a
+          env:
+            API_AUTHENTICATION_KEY: "EzWcHvdRHfqUmuhTtSNgQsdZzHccrqjowPrqHaAOGMdjGUotOnWYbwdQusUCiCpw"
+            WORKSPACE: "onboarding4"
+            GUNICORN_TIMEOUT: 300
+            TIMEOUT_API_CALL: 150
+            API_GATEWAY_BASE_URL: "https://api-main.ledger-test.com"
+          custom:
+            lamDomain: vault-lam-onboarding4.aws.stg.ldg-tech.com
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+            requests:
+              cpu: "250m"
+              memory: "1Gi"
+      lam-autoci3salt:
+        repoUrl: https://github.com/LedgerHQ/vault-lam
+        useAppTemplate: true
+        inlineValues:
+          image:
+            repository: ghcr.io/ledgerhq/vault-lam
+            tag: 1.19.3@sha256:5b2f65df6c4841d70efd836e35aa7f194ff09cbb147f72c2ae285b12862fd64a
+          env:
+            API_AUTHENTICATION_KEY: "EzWcHvdRHfqUmuhTtSNgQsdZzHccrqjowPrqHaAOGMdjGUotOnWYbwdQusUCiCpw"
+            WORKSPACE: "autoci3salt"
+            GUNICORN_TIMEOUT: 300
+            TIMEOUT_API_CALL: 150
+            API_GATEWAY_BASE_URL: "https://api-main.ledger-test.com"
+          custom:
+            lamDomain: vault-lam-autoci3salt.aws.stg.ldg-tech.com
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+            requests:
+              cpu: "250m"
+              memory: "1Gi"
+      nfts-api:
+        repoUrl: https://github.com/LedgerHQ/vault-nfts-api
+        useAppTemplate: true
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/vault-nfts-api:main
+      notifier:
+        repoUrl: https://github.com/LedgerHQ/vault-notifier
+        targetRevision: INFRAPRJ-9207
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/vault-notifier:main
+      notification-server:
+        repoUrl: https://github.com/LedgerHQ/notification-server
+        useAppTemplate: true
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/notification-server:main
+      notification-center:
+        repoUrl: https://github.com/LedgerHQ/vault-notification-center
+        useAppTemplate: true
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/vault-notification-center:main
+      organizations-api:
+        repoUrl: https://github.com/LedgerHQ/vault-organizations-api
+        useAppTemplate: true
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/vault-organizations-api:main
+      platform-manager:
+        repoUrl: https://github.com/LedgerHQ/vault-platform-manager
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/vault-platform-manager:main
+        inlineValues:
+          custom:
+            env: stg
+            redisHost: redis.2063-vault-main.aws.ldg-stg.net
+          env:
+            POSTGRES_DB: vault_platform_manager_main
+            USE_EXCHANGE_MOCKS: "true"
+
+      revault-api:
+        repoUrl: https://github.com/LedgerHQ/revault
+        path: argocd/api
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/revault-api:main
+        inlineValues:
+          image:
+            tag: main
+
+      revault-onboarding:
+        repoUrl: https://github.com/LedgerHQ/revault
+        path: argocd/onboarding
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/revault-onboarding:main
+        inlineValues:
+          image:
+            tag: main
+
+      revault-backoffice:
+        repoUrl: https://github.com/LedgerHQ/revault
+        path: argocd/backoffice
+        useAppTemplate: true
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/revault-backoffice:main
+        inlineValues:
+          image:
+            tag: main
+
+      revault-web:
+        repoUrl: https://github.com/LedgerHQ/revault
+        path: argocd/web
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/revault-web:main
+        inlineValues:
+          image:
+            tag: main
+
+      revault-notifier:
+        repoUrl: https://github.com/LedgerHQ/revault
+        path: argocd/notifier
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/revault-notifier:main
+        inlineValues:
+          image:
+            tag: main
+
+      tradelink:
+        repoUrl: https://github.com/LedgerHQ/vault-tradelink
+        useAppTemplate: true
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/vault-tradelink:main
+        inlineValues:
+          image:
+            tag: main
+
+      tx-scheduler:
+        repoUrl: https://github.com/LedgerHQ/vault-tx-scheduler
+        useAppTemplate: true
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/vault-tx-scheduler:main
+        inlineValues:
+          custom:
+            secretEnv: stg
+      web3checks-vault:
+        repoUrl: https://github.com/LedgerHQ/web3checks-vault
+        useAppTemplate: true
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/web3checks-vault:main
+      web3-handler-api:
+        repoUrl: https://github.com/LedgerHQ/web3-handler-api
+        useAppTemplate: true
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/web3-handler-api:main
+        inlineValues:
+          custom:
+            secretEnv: stg
+
+    hsmdrivers:
+      hsm-driver-default:
+        # stg1 was using the same db for all the hsm drivers
+        inlineValues:
+          custom:
+            postgresDB: hsm_driver
+            region: "hsm-driver-default" # do not add it for new hsm-driver, default chart values should apply
+          env:
+            USERS_DB_USER: hsm_driver
+      hsm-driver-tradelink-dev:
+        inlineValues:
+          custom:
+            postgresDB: hsm_driver
+            region: "hsm-driver-tradelink-dev" # do not add it for new hsm-driver, default chart values should apply
+          env:
+            USERS_DB_USER: hsm_driver
+      hsm-driver-enclave:
+        inlineValues:
+          custom:
+            postgresDB: hsm_driver
+            hsmEnv: "cluster-dev"
+          env:
+            USERS_DB_USER: hsm_driver
+            VAULT_HSM_ENDPOINT: "https://vault-cluster.hsm.pa6.ldg-stg.net/process"
+            VAULT_HSM_GATEWAY_URL: "http://hsm-proxy-enclave"
+    hsmproxys:
+      hsm-proxy:
+        inlineValues:
+          custom:
+            postgresDB: hsm_driver
+            region: "hsm-gateway" # do not add it for new hsm-proxy, default chart values should apply
+      hsm-proxy-enclave:
+        inlineValues:
+          custom:
+            postgresDB: hsm_driver
+            hsmEnv: "cluster-dev"
+          env:
+            VAULT_HSM_ENDPOINT: "https://vault-cluster.hsm.pa6.ldg-stg.net"
+    hsmproxysequencers:
+      hsm-proxy-sequencer:
+        inlineValues:
+          custom:
+            postgresDB: hsm_driver
+            region: "hsm-gateway" # do not add it for new hsm-gateway, default chart values should apply
+    wds:
+      wd-default: {}

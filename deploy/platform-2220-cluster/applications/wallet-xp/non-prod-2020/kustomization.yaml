@@ -1,0 +1,18 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ./1048-atlas
+  - ./1054-intnodes/applications
+  - ./1054-intnodes/argo-meta.yaml
+  - ./1078-blockchains-lb
+  - ./2037-scriptrunner
+  - ./2109-prober-service-stg
+  - ./2155-ledger-data-team
+  - ./2300-lama-adapter-stg
+  - ./2301-lama-adapter-ppr
+  - ./2336-rabbitmq
+  - ./backend-core-services
+  - ./2351-canton-gateway
+  - ./lama

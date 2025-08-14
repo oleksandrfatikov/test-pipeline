@@ -1,0 +1,20 @@
+---
+appset:
+  categoryValues:
+    default:
+      inlineValues:
+        valueBundles:
+          eksStg:
+            enabled: true
+        custom:
+          env: stg
+  projectValues:
+    all:
+      ledger-ai-agents:
+        repoUrl: https://github.com/LedgerHQ/ledger-ai-agents
+        path: argocd/base
+        useAppTemplate: true
+        inlineValues:
+          ingress:
+            main:
+              ingressClassName: trusted

@@ -1,0 +1,67 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: lama-cardano-stg
+  namespace: argocd-central
+spec:
+  # Ignore argocd image updater change
+  ignoreApplicationDifferences:
+    - jsonPointers:
+        - /spec/source/helm/parameters
+  # Need this goTemplate to use templatePatch
+  goTemplate: true
+  templatePatch: |
+    metadata:
+      annotations:
+      {{- if eq .app "cardano-account-reader" }}
+        argocd-image-updater.argoproj.io/image-list: cardano-account-reader=ghcr.io/ledgerhq/cardano-account-reader
+        argocd-image-updater.argoproj.io/cardano-account-reader.update-strategy: semver
+        argocd-image-updater.argoproj.io/cardano-account-reader.allow-tags: regexp:^\d+\.\d+\.\d+$
+        argocd-image-updater.argoproj.io/cardano-account-reader.helm.image-tag: cardano-account-reader.image.tag
+      {{- else if eq .app "cardano-transaction-crafter" }}
+        argocd-image-updater.argoproj.io/image-list: cardano-transaction-crafter=ghcr.io/ledgerhq/cardano-transaction-crafter
+        argocd-image-updater.argoproj.io/cardano-transaction-crafter.update-strategy: semver
+        argocd-image-updater.argoproj.io/cardano-transaction-crafter.allow-tags: regexp:^\d+\.\d+\.\d+$
+        argocd-image-updater.argoproj.io/cardano-transaction-crafter.helm.image-tag: cardano-transaction-crafter.image.tag
+      {{- end }}
+  generators:
+    - list:
+        elements:
+          - app: cardano-account-reader
+            environment: stg
+            clusterName: shared-application-2021-cluster
+            project_id: "2063"
+            namespace: 2063-vault-stg
+          - app: cardano-transaction-crafter
+            environment: stg
+            clusterName: shared-application-2021-cluster
+            project_id: "2063"
+            namespace: 2063-vault-stg
+  template:
+    metadata:
+      name: 'lama-{{.app}}-{{.environment}}'
+      namespace: argocd-central
+      labels:
+        environment: '{{.environment}}'
+        owner: team-infra-sre
+        project: '{{.project_id}}'
+        organization: 'wallet-services'
+        service: '{{.app}}'
+        service_family: "lama"
+        service_group: "lama-cardano"
+    spec:
+      project: 1048-atlas
+      source:
+        repoURL: https://github.com/LedgerHQ/lama-cardano.git
+        targetRevision: main
+        path: 'argocd/{{.app}}/{{.environment}}'
+        helm:
+          releaseName: '{{.app}}'
+      destination:
+        name: '{{.clusterName}}'
+        namespace: '{{.namespace}}'
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true

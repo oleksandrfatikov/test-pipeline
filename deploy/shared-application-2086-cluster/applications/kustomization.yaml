@@ -1,0 +1,32 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./argo
+  - ./2023-countervalue-service
+  - ./2025-app-store-api
+  - ./2025-app-store-front
+  - ./2036-misc-nano-app
+  - ./2040-aum
+  - ./2082-knowledge-bot-prd
+  - ./2084-slack-bot-stg
+  - ./2105-nft-metadata-service
+  - ./2133-web3checks-backend
+  - ./2150-nft-fatstacks-api
+  - ./2157-b2c-keycloak-back/app.yaml
+  - ./2157-b2c-keycloak-front
+  - ./2167-nft-burning-service
+  # - ./2183-mapping-service
+  - ./2190-cloud-sync
+  - ./2192-trustchain
+  - ./2194-chainwatch
+  - ./2248-coinradar
+  - ./2210-category-bot
+  - ./2212-crypto-assets-service
+  - ./2231-retail-bot
+  - ./2804-oauth2-proxy
+  - ./app-of-apps.yaml
+  - ./ms-oncall-notifier
+  - ./ms-opsgenie-edge-connector
+  - ./observability
+  - ./vault

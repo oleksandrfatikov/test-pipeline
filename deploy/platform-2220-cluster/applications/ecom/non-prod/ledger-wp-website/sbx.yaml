@@ -1,0 +1,33 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ledger-wp-website-sbx
+  namespace: argocd-central
+  annotations:
+    notifications.argoproj.io/subscribe.slack: "ledger-wp-website-cd"
+    notifications.argoproj.io/subscribe.github: ""
+    argocd.ledger.fr/environment: "dev"
+    argocd-image-updater.argoproj.io/image-list: ledger-wp-website=ghcr.io/ledgerhq/ledger-wp-website:master
+    argocd-image-updater.argoproj.io/update-strategy: digest
+    argocd-image-updater.argoproj.io/ledger-wp-website.helm.image-name: app-template.image.repository
+    argocd-image-updater.argoproj.io/ledger-wp-website.helm.image-tag: app-template.image.tag
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    environment: "sbx"
+    owner: "team-infra-sre"
+    organization: "consumer"
+    service: "ledger-wp-website"
+spec:
+  project: ledger-wp-website
+  source:
+    repoURL: https://github.com/LedgerHQ/ledger-wordpress-website.git
+    targetRevision: "master"
+    path: argocd/sbx
+  destination:
+    name: sandbox-2042-cluster
+    namespace: ledger-wp-website-sbx
+  syncPolicy:
+    automated:
+      prune: true

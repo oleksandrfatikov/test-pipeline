@@ -1,0 +1,59 @@
+---
+apiVersion: fluentbit.fluent.io/v1alpha2
+kind: ClusterInput
+metadata:
+  annotations:
+  labels:
+    fluentbit.fluent.io/component: logging
+    fluentbit.fluent.io/enabled: 'true'
+  name: aum-tail-access-logs
+spec:
+  tail:
+    db: /fluent-bit/tail/aum-tail-access-logs.db
+    dbSync: Normal
+    memBufLimit: 500MB
+    parser: cri
+    path: /var/log/containers/haproxy*.log
+    readFromHead: false
+    refreshIntervalSeconds: 10
+    skipLongLines: true
+    storageType: memory
+    tag: haproxy.*
+---
+apiVersion: fluentbit.fluent.io/v1alpha2
+kind: ClusterFilter
+metadata:
+  name: aum-tail-access-logs
+  labels:
+    fluentbit.fluent.io/enabled: "true"
+    fluentbit.fluent.io/mode: "k8s"
+spec:
+  match: haproxy.*
+  filters:
+  - grep:
+      regex: message (\/blockchain\/v4\/(\w+)\/address\/|solana-post-body)
+  - modify:
+      rules:
+      - remove: stream
+      - remove: logtag
+---
+apiVersion: fluentbit.fluent.io/v1alpha2
+kind: ClusterOutput
+metadata:
+  name: aum-tail-access-logs
+  labels:
+    fluentbit.fluent.io/enabled: "true"
+    fluentbit.fluent.io/mode: "k8s"
+spec:
+  matchRegex: (?:haproxy)\.(.*)
+  s3:
+    Region: eu-west-1
+    Bucket: aum-logexport-haproxy-production
+    UploadTimeout: 360m
+    # TotalFileSize : before compression
+    TotalFileSize: 300M
+    StoreDir: /fluent-bit/tail/s3
+    Compression: gzip
+    ContentType: text/plain
+    S3KeyFormat: /%Y-%m-%d/$TAG[0]-$INDEX-$UUID.gz
+    UsePutObject: true

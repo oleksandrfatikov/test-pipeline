@@ -1,0 +1,43 @@
+---
+controller:
+  workflowNamespaces:
+    - test-argo-rbac
+
+workflow:
+  serviceAccount:
+    create: true
+    name: "argo-workflows"
+  rbac:
+    create: true
+
+server:
+  authModes:
+    - sso
+
+  sso:
+    enabled: true
+    issuer: https://accounts.google.com
+    clientId:
+      name: argocd-helm-values
+      key: dex.googlegroups.clientID
+    clientSecret:
+      name: argocd-helm-values
+      key: dex.googlegroups.clientSecret
+    redirectUrl: https://argo-workflows.aws.sbx.ldg-tech.com/oauth2/callback
+    rbac:
+      enabled: true
+
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    ingressClassName: "trusted"
+    hosts:
+      - &host argo-workflows.aws.sbx.ldg-tech.com
+    paths:
+      - /
+    pathType: Prefix
+    tls:
+      - hosts:
+          - *host
+        secretName: argo-workflows-tls

@@ -1,0 +1,33 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: lama-adapter-ppr
+  namespace: argocd-central
+  labels:
+    environment: "ppr"
+    owner: "team-infra-sre"
+    project: "2301"
+    organization: "wallet-services"
+    service: "lama-adapter"
+    service_family: "lama"
+    service_group: "lama-adapter"
+spec:
+  project: lama-adapter-ppr
+  source:
+    repoURL: https://github.com/LedgerHQ/lama-adapter.git
+    targetRevision: main
+    path: argocd/ppr
+    helm:
+      releaseName: lama-adapter
+      valueFiles:
+        - 'values.yaml'
+  destination:
+    name: shared-application-2094-cluster
+    namespace: 2301-lama-adapter-ppr
+  syncPolicy:
+    automated: {}
+    syncOptions:
+      - CreateNamespace=true

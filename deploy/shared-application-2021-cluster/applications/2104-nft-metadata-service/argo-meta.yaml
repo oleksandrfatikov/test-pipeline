@@ -1,0 +1,25 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: 2104-nft-metadata-stg
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: nft-metadata-service
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: nft-metadata-service project
+  sourceRepos:
+    - 'https://github.com/LedgerHQ/nft-metadata-service.git'
+    - 'ghcr.io'
+  destinations:
+    - namespace: 2104-nft-metadata-stg
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+

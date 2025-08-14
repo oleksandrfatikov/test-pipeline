@@ -1,0 +1,27 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: nft-fatstacks-api-stg
+  namespace: argocd
+  labels:
+    environment: "stg"
+    owner: "team-infra-sre"
+    project: "2149"
+    organization: "consumer"
+    service: "nft-fatstacks-api"
+spec:
+  project: nft-fatstacks-api
+  source:
+    repoURL: https://github.com/LedgerHQ/fts-api.git
+    targetRevision: main
+    path: argocd/stg
+    helm:
+      releaseName: nft-fatstacks-api
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: 2149-nft-fatstacks-api-stg
+  syncPolicy:
+    automated: {}

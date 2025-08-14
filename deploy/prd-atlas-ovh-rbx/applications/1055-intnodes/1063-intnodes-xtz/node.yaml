@@ -1,0 +1,77 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: 1063-intnodes-xtz
+  namespace: argocd
+spec:
+  strategy:
+    type: RollingSync
+    rollingSync:
+      steps:
+        - matchExpressions:
+            - key: datacenter.ledger.com/intnodes
+              operator: In
+              values:
+                - "true"
+          maxUpdate: 30%
+  generators:
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/intnodes: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/bhs8: "true"
+      values:
+        maintenance: "false"
+        datacenter: bhs
+        dbAddress: 10.99.8.55
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/intnodes: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/rbx8: "true"
+      values:
+        maintenance: "false"
+        datacenter: rbx
+        dbAddress: 10.99.2.57
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/intnodes: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/fsn1: "true"
+      values:
+        maintenance: "false"
+        datacenter: fsn
+        dbAddress: 10.99.7.61
+  template:
+    metadata:
+      name: "{{name}}-1063-intnodes-xtz-node"
+      annotations:
+        argocd.ledger.fr/environment: "Production"
+      labels:
+        service: "1063-intnodes-xtz"
+        env: "production"
+        coin: "xtz"
+        type: "int-node"
+    spec:
+      project: 1055-intnodes
+      sources:
+        - repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+          targetRevision: main
+          path: 'deploy/production/internal-blockchain-nodes/1063-intnodes-xtz'
+          helm:
+            releaseName: int-xtz-mainnet
+            values: |
+              intnodes-xtz:
+                maintenance: "{{values.maintenance}}"
+                datacenter: "{{values.datacenter}}"
+                dbAddress: "{{values.dbAddress}}"
+      destination:
+        server: "{{server}}"
+        namespace: "1063-intnodes-xtz"
+      syncPolicy:
+        syncOptions:
+        - CreateNamespace=true

@@ -1,0 +1,52 @@
+---
+controller:
+  workflowNamespaces:
+    - 2167-mapping-service
+    - 2191-trustchain-backend
+    - 2034-countervalue-service
+    - 2039-app-store-api
+    - 2104-nft-metadata-service
+    - 2127-web3checks-backend
+    - 2189-cloud-sync-backend
+    - 2199-coinradar
+    - 2211-crypto-assets-service
+
+workflow:
+  serviceAccount:
+    create: true
+    name: "argo-workflows"
+  rbac:
+    create: true
+
+server:
+  authModes:
+    - sso
+    - client
+
+  sso:
+    enabled: true
+    issuer: https://accounts.google.com
+    clientId:
+      name: argocd-helm-values
+      key: dex.googlegroups.clientID
+    clientSecret:
+      name: argocd-helm-values
+      key: dex.googlegroups.clientSecret
+    redirectUrl: https://argo-workflows.aws.stg.ldg-tech.com/oauth2/callback
+    rbac:
+      enabled: false
+
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    ingressClassName: "trusted"
+    hosts:
+      - &host argo-workflows.aws.stg.ldg-tech.com
+    paths:
+      - /
+    pathType: Prefix
+    tls:
+      - hosts:
+          - *host
+        secretName: argo-workflows-tls

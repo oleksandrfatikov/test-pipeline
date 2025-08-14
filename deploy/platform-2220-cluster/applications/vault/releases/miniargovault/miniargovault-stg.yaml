@@ -1,0 +1,136 @@
+---
+appset:
+  categoryValues:
+    default:
+      targetRevision: main
+      inlineValues:
+        valueBundles:
+          eksStg:
+            enabled: true
+        custom:
+          lamaNamespace: 2063-vault-stg
+          dnsTechEnv: stg
+    all:
+      targetRevision: main
+      inlineValues:
+        image:
+          tag: main
+    wds:
+      targetRevision: main
+
+    hsmproxys:
+      inlineValues:
+        env:
+          VAULT_HSM_ENDPOINT: https://vault-qa.hsmsaas3.ledger-stg.com/next
+        valueBundles:
+          miniargovault:
+            values:
+              externalSecret:
+                aws-secrets:
+                  secretStoreRef:
+                    name: miniargovault
+                    kind: SecretStore
+    hsmproxysequencers:
+      inlineValues:
+        env:
+          VAULT_HSM_ENDPOINT: https://vault-qa.hsmsaas3.ledger-stg.com/next
+        valueBundles:
+          miniargovault:
+            values:
+              externalSecret:
+                aws-secrets:
+                  secretStoreRef:
+                    name: miniargovault
+                    kind: SecretStore
+
+    hsmgateways:
+      targetRevision: main
+      inlineValues:
+        custom:
+          hsmEnv: "simu"
+        env:
+          VAULT_HSM_ENDPOINT: https://vault-qa.hsmsaas3.ledger-stg.com/next
+        valueBundles:
+          miniargovault:
+            values:
+              externalSecret:
+                aws-secrets:
+                  secretStoreRef:
+                    name: miniargovault
+                    kind: SecretStore
+    hsmdrivers:
+      targetRevision: main
+      inlineValues:
+        custom:
+          hsmEnv: "simu"
+        env:
+          VAULT_HSM_ENDPOINT: https://vault-qa.hsmsaas3.ledger-stg.com/next/process
+          VAULT_HSM_ENV: "DEV"
+
+    gates-current:
+      extendCategories: [gates-base]
+      targetRevision: main
+      repoUrl: https://github.com/LedgerHQ/ledger-vault-api
+      imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/ledger-vault-api:main
+      path: argocd/base
+      inlineValues:
+        env:
+          VAULT_BITCOIN_FAMILY_SERVICE_URL: "http://bitcoin-family-service.2063-vault-stg.svc.cluster.local"
+          VAULT_HSM_SCRIPTS_VERSION: 17.2.2-dave+4ec23da8
+
+  projectValues:
+    all:
+      miniargovault:
+        inlineValues:
+          env:
+            VAULT_HSM_ENDPOINT: https://vault-qa.hsmsaas3.ledger-stg.com/next
+
+      apdu-connector:
+        targetRevision: main
+        inlineValues:
+          image:
+            repository: ghcr.io/ledgerhq/vault-apdu-connector
+
+      api-gateway:
+        targetRevision: main
+
+      aum-api:
+        targetRevision: main
+
+      coin-gateway:
+        targetRevision: main
+
+      platform-manager:
+        targetRevision: main
+        inlineValues:
+          custom:
+            env: stg
+            eksClusterId: 2087
+            vaultProjectId: 2087
+
+      tx-scheduler:
+        targetRevision: main
+        inlineValues:
+          custom:
+            secretEnv: stg
+
+      web3checks-vault:
+        targetRevision: main
+
+      web3-handler-api:
+        targetRevision: main
+        inlineValues:
+          custom:
+            secretEnv: stg
+
+      revault-api:
+        inlineValues:
+          env:
+            # override the debug auth token pulled from secret
+            # convenient for automation
+            REVAULT_DEBUG_AUTH_TOKEN: "stg-debug-auth-token"
+
+            # override the root auth token pulled from secret
+            # convenient for automation
+            REVAULT_ROOT_AUTH_TOKEN: "stg-root-auth-token"
+

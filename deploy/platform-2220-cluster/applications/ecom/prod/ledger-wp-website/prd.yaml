@@ -1,0 +1,28 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ledger-wp-website-prd
+  namespace: argocd-central
+  annotations:
+    notifications.argoproj.io/subscribe.slack: "infra-ecommerce-cd"
+    notifications.argoproj.io/subscribe.github: ""
+    argocd.ledger.fr/environment: "prd"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    organization: "consumer"
+    service: "ledger-wp-website"
+spec:
+  project: ledger-wp-website
+  source:
+    repoURL: https://github.com/LedgerHQ/ledger-wordpress-website.git
+    targetRevision: master
+    path: argocd/prd
+  destination:
+    name: shared-application-2086-cluster
+    namespace: 2007-ledger-wp-website
+  syncPolicy:
+    automated: {}

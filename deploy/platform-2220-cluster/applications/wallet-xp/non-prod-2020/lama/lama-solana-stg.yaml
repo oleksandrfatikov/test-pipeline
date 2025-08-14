@@ -1,0 +1,87 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: lama-solana-stg
+  namespace: argocd-central
+spec:
+  # Ignore argocd image updater change
+  ignoreApplicationDifferences:
+    - jsonPointers:
+        - /spec/source/helm/parameters
+  # Need this goTemplate to use templatePatch
+  goTemplate: true
+  templatePatch: |
+    metadata:
+      annotations:
+      {{- if eq .app "solana-account-reader" }}
+        argocd-image-updater.argoproj.io/image-list: solana-account-reader=ghcr.io/ledgerhq/solana-account-reader
+        argocd-image-updater.argoproj.io/solana-account-reader.update-strategy: semver
+        argocd-image-updater.argoproj.io/solana-account-reader.allow-tags: regexp:^\d+\.\d+\.\d+$
+        argocd-image-updater.argoproj.io/solana-account-reader.helm.image-tag: solana-account-reader.image.tag
+      {{- else if eq .app "solana-account-synchronizer" }}
+        argocd-image-updater.argoproj.io/image-list: solana-account-synchronizer=ghcr.io/ledgerhq/solana-account-synchronizer
+        argocd-image-updater.argoproj.io/solana-account-synchronizer.update-strategy: semver
+        argocd-image-updater.argoproj.io/solana-account-synchronizer.allow-tags: regexp:^\d+\.\d+\.\d+$
+        argocd-image-updater.argoproj.io/solana-account-synchronizer.helm.image-tag: solana-account-synchronizer.image.tag
+      {{- else if eq .app "solana-transaction-crafter" }}
+        argocd-image-updater.argoproj.io/image-list: solana-transaction-crafter=ghcr.io/ledgerhq/solana-transaction-crafter
+        argocd-image-updater.argoproj.io/solana-transaction-crafter.update-strategy: semver
+        argocd-image-updater.argoproj.io/solana-transaction-crafter.allow-tags: regexp:^\d+\.\d+\.\d+$
+        argocd-image-updater.argoproj.io/solana-transaction-crafter.helm.image-tag: solana-transaction-crafter.image.tag
+      {{- else if eq .app "solana-sdk" }}
+        argocd-image-updater.argoproj.io/image-list: solana-sdk=ghcr.io/ledgerhq/solana-sdk
+        argocd-image-updater.argoproj.io/solana-sdk.update-strategy: semver
+        argocd-image-updater.argoproj.io/solana-sdk.allow-tags: regexp:^\d+\.\d+\.\d+$
+        argocd-image-updater.argoproj.io/solana-sdk.helm.image-tag: solana-sdk.image.tag
+      {{- end }}
+  generators:
+    - list:
+        elements:
+          - app: solana-account-reader
+            environment: stg
+            clusterName: shared-application-2021-cluster
+            project_id: "2063"
+            namespace: 2063-vault-stg
+          - app: solana-account-synchronizer
+            environment: stg
+            clusterName: shared-application-2021-cluster
+            project_id: "2063"
+            namespace: 2063-vault-stg
+          - app: solana-sdk
+            environment: stg
+            clusterName: shared-application-2021-cluster
+            project_id: "2063"
+            namespace: 2063-vault-stg
+          - app: solana-transaction-crafter
+            environment: stg
+            clusterName: shared-application-2021-cluster
+            project_id: "2063"
+            namespace: 2063-vault-stg
+  template:
+    metadata:
+      name: 'lama-{{.app}}-{{.environment}}'
+      namespace: argocd-central
+      labels:
+        environment: '{{.environment}}'
+        owner: team-infra-sre
+        project: '{{.project_id}}'
+        organization: 'wallet-services'
+        service: '{{.app}}'
+        service_family: "lama"
+        service_group: "lama-solana"
+    spec:
+      project: 1048-atlas
+      source:
+        repoURL: https://github.com/LedgerHQ/lama-solana.git
+        targetRevision: main
+        path: 'argocd/{{.app}}/{{.environment}}'
+        helm:
+          releaseName: '{{.app}}'
+      destination:
+        name: '{{.clusterName}}'
+        namespace: '{{.namespace}}'
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true

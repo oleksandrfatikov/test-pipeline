@@ -1,0 +1,18 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - argocd-meta.yaml
+  - main.yaml
+  - qa.yaml
+  - next.yaml
+  - ppr.yaml
+  - ppr2.yaml
+  - prd.yaml
+  - miniargovault-r59.yaml
+  - miniargovault-r57.yaml
+  - ./vault-remote
+  - ./multisig
+  - ./polkadot-wallet-api
+  - ./ledger-ai-agents

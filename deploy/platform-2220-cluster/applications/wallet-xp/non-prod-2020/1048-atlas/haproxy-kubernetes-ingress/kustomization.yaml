@@ -1,0 +1,19 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: 1048-atlas
+
+helmCharts:
+  - name: kubernetes-ingress
+    releaseName: haproxy-kubernetes-ingress
+    namespace: 1048-atlas
+    repo: https://haproxytech.github.io/helm-charts
+    version: 1.44.5
+    valuesFile: values.yaml
+
+resources:
+  - clusterissuer.yaml
+  - ingresses.yaml
+  - services-external.yaml
+  - services-internal.yaml
+  - haproxy-restrict-ingress.yaml

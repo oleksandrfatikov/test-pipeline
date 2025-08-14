@@ -1,0 +1,39 @@
+---
+appset:
+  categoryValues:
+    default:
+      inlineValues:
+        valueBundles:
+          eksSbx:
+            enabled: true
+        custom:
+          env: sbx
+  projectValues:
+    all:
+      multisig-web:
+        repoUrl: https://github.com/LedgerHQ/les-multisig-web
+        path: argocd/base
+        useAppTemplate: true
+        targetRevision: main
+        inlineValues:
+          image:
+            repository: ghcr.io/ledgerhq/les-multisig-web
+            tag: main
+          ingress:
+            main:
+              ingressClassName: trusted
+          env:
+            # If set to "1", will enable the dev tools & panel (useful in dev)
+            ENABLE_DEV_TOOLS: "1"
+
+            # If set to "1", will use the public Safe backend services
+            USE_SAFE_BACKEND: "1"
+
+            # URL for Safe Gateway service
+            SAFE_CLIENT_GATEWAY_URL: ""
+
+            # URL for Safe "Base" network transaction service
+            SAFE_TRANSACTION_SERVICE_BASE_URL: ""
+
+            # URL for Safe "Sepolia" network transaction service
+            SAFE_TRANSACTION_SERVICE_SEPOLIA_URL: ""

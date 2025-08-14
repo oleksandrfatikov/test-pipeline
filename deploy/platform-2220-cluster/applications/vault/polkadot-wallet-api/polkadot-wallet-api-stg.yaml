@@ -1,0 +1,39 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: polkadot-wallet-api-stg
+  annotations:
+    argocd.ledger.fr/environment: "Staging"
+    argocd-image-updater.argoproj.io/image-list: main=ghcr.io/ledgerhq/polkadot-wallet-api,migrations=ghcr.io/ledgerhq/polkadot-wallet-api
+    argocd-image-updater.argoproj.io/main.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/main.allow-tags: regexp:^\d+\.\d+\.\d+$
+    argocd-image-updater.argoproj.io/main.helm.image-name: polkadot-wallet-api.image.repository
+    argocd-image-updater.argoproj.io/main.helm.image-tag: polkadot-wallet-api.image.tag
+    argocd-image-updater.argoproj.io/migrations.allow-tags: regexp:^\d+\.\d+\.\d+$
+    argocd-image-updater.argoproj.io/migrations.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/migrations.helm.image-spec: polkadot-wallet-api.initContainers.migrations.image
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    environment: stg
+    owner: team-infra-sre
+    organization: enterprise
+    service: polkadot-wallet-api
+spec:
+  project: polkadot-wallet-api
+  sources:
+    - repoURL: https://github.com/LedgerHQ/polkadot-wallet-api.git
+      path: "argocd/stg"
+      targetRevision: main
+      helm:
+        releaseName: polkadot-wallet-api
+  destination:
+    name: shared-application-2021-cluster
+    namespace: 2063-vault-stg
+  syncPolicy:
+    automated:
+      selfHeal: true
+    syncOptions:
+      - Validate=true
+      - CreateNamespace=true

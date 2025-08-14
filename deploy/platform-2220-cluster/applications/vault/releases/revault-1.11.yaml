@@ -1,0 +1,38 @@
+---
+appset:
+  projectValues:
+    all:
+      revault-api:
+        repoUrl: https://github.com/LedgerHQ/revault
+        path: argocd/api
+        targetRevision: api@1.29.3
+        inlineValues:
+          image:
+            tag: 1.29.3
+
+      revault-backoffice:
+        repoUrl: https://github.com/LedgerHQ/revault
+        path: argocd/backoffice
+        useAppTemplate: true
+        targetRevision: backoffice@0.6.30
+        inlineValues:
+          image:
+            tag: 0.6.30
+
+      revault-onboarding:
+        useAppTemplate: true
+        repoUrl: https://github.com/LedgerHQ/revault
+        path: argocd/onboarding
+        targetRevision: onboarding@1.11.11
+        inlineValues:
+          image:
+            tag: 1.11.11
+
+      revault-notifier:
+        useAppTemplate: true
+        repoUrl: https://github.com/LedgerHQ/revault
+        path: argocd/notifier
+        targetRevision: notifier@1.2.4
+        inlineValues:
+          image:
+            tag: 1.2.4

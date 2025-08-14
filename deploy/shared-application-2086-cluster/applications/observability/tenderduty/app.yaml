@@ -1,0 +1,26 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: observability-tenderduty
+  namespace: argocd
+  labels:
+    service: "tenderduty"
+    owner: "team-infra-ms-obs"
+    environment: "prd"
+    project: "2225"
+spec:
+  project: internal
+  source:
+    repoURL: https://github.com/LedgerHQ/ms-tools.git
+    targetRevision: master
+    path: monitoring/tenderduty/shared-application-2086-cluster/kustomize
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: "observability"
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

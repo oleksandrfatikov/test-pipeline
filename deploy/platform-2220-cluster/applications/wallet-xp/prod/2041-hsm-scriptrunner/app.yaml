@@ -1,0 +1,28 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: hsm-scriptrunner-prd
+  namespace: argocd-central
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2041"
+    organization: "consumer"
+    service: "hsm-scriptrunner"
+spec:
+  project: hsm-scriptrunner-prd
+  source:
+    repoURL: https://github.com/LedgerHQ/hsm-scriptrunner.git
+    targetRevision: master
+    path: argocd/prd
+    helm:
+      releaseName: hsm-scriptrunner
+  destination:
+    name: shared-application-2086-cluster
+    namespace: 2041-scriptrunner
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true

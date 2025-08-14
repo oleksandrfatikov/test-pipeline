@@ -1,0 +1,63 @@
+---
+datadog:
+  apiKeyExistingSecret: datadog-secrets
+  appKeyExistingSecret: datadog-secrets
+  clusterName: platform-2220-cluster
+  site: datadoghq.eu
+  nodeLabelsAsTags:
+    topology.kubernetes.io/zone: availability-zone
+    group: group
+    node.kubernetes.io/instance-type: instance-type
+  podLabelsAsTags:
+    app: application
+  logs:
+    enabled: true
+    containerCollectAll: true
+  apm:
+    enabled: true
+    instrumentation:
+      skipKPITelemetry: true
+  otlp:
+    receiver:
+      protocols:
+        grpc:
+          enabled: true
+  env:
+    - name: DD_CONTAINER_EXCLUDE_LOGS
+      value: "kube_namespace:.*"
+    - name: DD_CONTAINER_EXCLUDE_METRICS
+      value: "kube_namespace:.*"
+    # TODO: enable logs for ArgoCD Central but only after fixing the 6k error per minutes on argocd-application-controller
+    - name: DD_CONTAINER_INCLUDE_LOGS
+      value: >-
+        kube_namespace:argocd-central
+    - name: DD_CONTAINER_INCLUDE_METRICS
+      value: "kube_namespace:argocd-central"
+    - name: DD_LOGS_CONFIG_OPEN_FILES_LIMIT
+      value: "300"
+    - name: DD_PROFILING_ENABLED
+      value: "false"
+  processAgent:
+    processCollection: true
+  remoteConfiguration:
+    enabled: false
+clusterAgent:
+  rbac:
+    flareAdditionalPermissions: false
+  metricsProvider:
+    enabled: true
+  admissionController:
+    mutateUnlabelled: true
+agents:
+  containers:
+    traceAgent:
+      env:
+        - name: DD_APM_FILTER_TAGS_REJECT
+          value: "no_trace:no_trace"
+  customAgentConfig:
+    apm_config:
+      enabled: true
+      apm_non_local_traffic: true
+    jmx_use_container_support: true
+remoteConfiguration:
+  enabled: false

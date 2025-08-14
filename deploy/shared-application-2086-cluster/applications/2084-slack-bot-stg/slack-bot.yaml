@@ -1,0 +1,31 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: slack_bot=ghcr.io/ledgerhq/slack_bot
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/slack-bot.allow-tags: regexp:\d+\.\d+(\.\d+)?-?(?i)(M|RC)?\d*
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: slack-bot
+  namespace: argocd
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2084"
+    organization: "consumer"
+    service: "slack-bot"
+spec:
+  project: slack-bot
+  source:
+    repoURL: https://github.com/LedgerHQ/slack_bot.git
+    targetRevision: main
+    path: argocd/prd
+    helm:
+      releaseName: slack-bot
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2084-slack-bot-prd
+  syncPolicy:
+    automated: {}

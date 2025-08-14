@@ -1,0 +1,30 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: nft-metadata-service-prd
+  namespace: argocd
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2105"
+    organization: "consumer"
+    service: "nft-metadata-service"
+  annotations:
+    notifications.argoproj.io/subscribe.slack: "backend-b2c-private-nms"
+    argocd.ledger.fr/environment: "Production"
+spec:
+  project: nft-metadata-service
+  source:
+    repoURL: https://github.com/LedgerHQ/nft-metadata-service.git
+    targetRevision: main
+    path: argocd/prd
+    helm:
+      releaseName: nft-metadata-service
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2105-nft-metadata
+  syncPolicy:
+    automated: {}

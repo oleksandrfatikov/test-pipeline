@@ -1,0 +1,32 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: crypto-assets-service=ghcr.io/ledgerhq/crypto-assets-service
+    argocd-image-updater.argoproj.io/write-back-method: argocd
+    argocd-image-updater.argoproj.io/crypto-assets-service.update-strategy: latest
+    argocd-image-updater.argoproj.io/crypto-assets-service.allow-tags: regexp:\d+\.\d+\.\d+-(?i)(M|RC)\d+
+    notifications.argoproj.io/subscribe.slack: "backend-b2c-private-cal"
+    argocd.ledger.fr/environment: "Staging"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: crypto-assets-service-stg
+  namespace: argocd
+  labels:
+    environment: "stg"
+    owner: "backend-core"
+    project: "2211"
+    organization: "wallet-services"
+    service: "crypto-assets-service"
+spec:
+  project: crypto-assets-service
+  source:
+    repoURL: https://github.com/LedgerHQ/crypto-assets-service.git
+    targetRevision: master
+    path: argocd/stg
+    helm:
+      releaseName: crypto-assets-service
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2211-crypto-assets-service

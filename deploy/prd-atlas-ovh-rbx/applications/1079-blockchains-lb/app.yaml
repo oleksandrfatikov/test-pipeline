@@ -1,0 +1,107 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: 1079-blockchains-lb
+  namespace: argocd
+spec:
+  generators:
+    - matrix:
+        generators:
+          - git:
+              repoURL: https://github.com/LedgerHQ/tf-ledgerips-module.git
+              revision: HEAD
+              files:
+                - path: ledgerips.yaml
+          - clusters:
+              selector:
+                matchLabels:
+                  application.ledger.com/intnodes: "true"
+                  environment.ledger.com/production: "true"
+                  datacenter.ledger.com/bhs8: "true"
+              values:
+                annotation_project_id: c-m-45dzwsbb:p-jbrtc
+                label_project_id: p-jbrtc
+                datacenter: prd-bhs
+    - matrix:
+        generators:
+          - git:
+              repoURL: https://github.com/LedgerHQ/tf-ledgerips-module.git
+              revision: HEAD
+              files:
+                - path: ledgerips.yaml
+          - clusters:
+              selector:
+                matchLabels:
+                  application.ledger.com/intnodes: "true"
+                  environment.ledger.com/production: "true"
+                  datacenter.ledger.com/rbx8: "true"
+              values:
+                annotation_project_id: c-m-zj7fr4mx:p-srsq2
+                label_project_id: p-srsq2
+                datacenter: prd-rbx
+    - matrix:
+        generators:
+          - git:
+              repoURL: https://github.com/LedgerHQ/tf-ledgerips-module.git
+              revision: HEAD
+              files:
+                - path: ledgerips.yaml
+          - clusters:
+              selector:
+                matchLabels:
+                  application.ledger.com/intnodes: "true"
+                  environment.ledger.com/production: "true"
+                  datacenter.ledger.com/fsn1: "true"
+              values:
+                annotation_project_id: c-m-qgdsd885:p-6tnqf
+                label_project_id: p-6tnqf
+                datacenter: prd-fsn
+  goTemplate: true
+  template:
+    metadata:
+      name: "{{ .name }}-1079-blockchains-lb"
+      annotations:
+        argocd.ledger.fr/environment: "production"
+        notifications.argoproj.io/subscribe.on-sync-running-pr-comment.github: ""
+        notifications.argoproj.io/subscribe.on-sync-failed-pr-comment.github: ""
+        notifications.argoproj.io/subscribe.on-sync-succeeded-pr-comment.github: ""
+        notifications.argoproj.io/subscribe.on-deployed-always-pr-comment.github: ""
+        notifications.argoproj.io/subscribe.on-health-degraded-pr-comment.github: ""
+      labels:
+        service: "1079-blockchains-lb"
+        env: "production"
+    spec:
+      project: 1079-blockchains-lb
+      sources:
+        - repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+          targetRevision: main
+          path: 'deploy/production/1079-blockchains-lb/blockchains-lb'
+          helm:
+            releaseName: blockchains-lb
+            values: |
+              haproxy:
+                datacenter: "{{ .values.datacenter }}"
+                whitelisted_ips: '{{ .trusted_locations }},{{ .infra_vpn }}'
+        - repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+          targetRevision: main
+          path: 'deploy/production/1079-blockchains-lb/extnodes-lb'
+          helm:
+            releaseName: extnodes-lb
+        - repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+          targetRevision: main
+          path: 'deploy/production/1079-blockchains-lb/api-lb'
+          helm:
+            releaseName: api-lb
+      destination:
+        server: "{{ .server }}"
+        namespace: "1079-blockchains-lb"
+      syncPolicy:
+        automated: {}
+        managedNamespaceMetadata:
+          annotations:
+            field.cattle.io/projectId: "{{ .values.annotation_project_id }}"
+          labels:
+            field.cattle.io/projectId: "{{ .values.label_project_id }}"
+        syncOptions:
+          - CreateNamespace=true

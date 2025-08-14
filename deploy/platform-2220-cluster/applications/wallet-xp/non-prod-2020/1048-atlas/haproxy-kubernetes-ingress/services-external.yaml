@@ -1,0 +1,163 @@
+---
+# Declare all haproxy instance linked to the hostname of the machine where the haproxy is running
+apiVersion: v1
+kind: Service
+metadata:
+  name: stg-fsn1-atlas-1048-worker-01-external
+  namespace: 1048-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: static.180.97.235.167.clients.your-server.de
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stg-fsn1-atlas-1048-worker-02-external
+  namespace: 1048-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: static.24.131.55.162.clients.your-server.de
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stg-fsn1-atlas-1048-worker-03-external
+  namespace: 1048-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: static.177.66.88.23.clients.your-server.de
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stg-sbg5-atlas-1048-worker-01-external
+  namespace: 1048-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: ns31560637.ip-162-19-84.eu
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stg-sbg5-atlas-1048-worker-02-external
+  namespace: 1048-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: ns3226031.ip-57-128-47.eu
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stg-sbg5-atlas-1048-worker-03-external
+  namespace: 1048-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: ns31560620.ip-162-19-84.eu
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stg-fsn1-atlas-1048-ingress-01-external
+  namespace: 1048-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: static.197.239.130.94.clients.your-server.de
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stg-fsn1-atlas-1048-ingress-02-external
+  namespace: 1048-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: static.196.239.130.94.clients.your-server.de
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stg-sbg5-atlas-1048-ingress-01-external
+  namespace: 1048-atlas
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 80
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
+  type: ExternalName
+  externalName: ns31768444.ip-91-134-40.eu

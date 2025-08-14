@@ -1,0 +1,51 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: chainwatch=ghcr.io/ledgerhq/chainwatch
+    argocd-image-updater.argoproj.io/write-back-method: argocd
+    argocd-image-updater.argoproj.io/chainwatch.update-strategy: latest
+    argocd-image-updater.argoproj.io/chainwatch.allow-tags: regexp:\d+\.\d+\.\d+$
+  name: chainwatch-prd
+  namespace: argocd
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2194"
+    organization: "consumer"
+    service: "chainwatch"
+spec:
+  project: chainwatch
+  source:
+    repoURL: https://github.com/LedgerHQ/chainwatch.git
+    targetRevision: main
+    path: argocd/prd/helm
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: 2194-chainwatch
+  syncPolicy:
+    automated: {}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: chainwatch-kustomize-prd
+  namespace: argocd
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2194"
+    organization: "consumer"
+    service: "chainwatch"
+spec:
+  project: chainwatch
+  source:
+    repoURL: https://github.com/LedgerHQ/chainwatch.git
+    targetRevision: main
+    path: argocd/prd/kustomize
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2194-chainwatch
+  syncPolicy:
+    automated: {}

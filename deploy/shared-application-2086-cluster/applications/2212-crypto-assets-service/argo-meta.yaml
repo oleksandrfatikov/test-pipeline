@@ -1,0 +1,24 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: 2212-crypto-assets-service
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: crypto-assets-service
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: crypto-assets-service project
+  sourceRepos:
+    - 'https://github.com/LedgerHQ/crypto-assets-service.git'
+    - 'ghcr.io'
+  destinations:
+    - namespace: 2212-crypto-assets-service
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

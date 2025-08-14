@@ -1,0 +1,12 @@
+---
+image:
+  pullPolicy: IfNotPresent
+
+config:
+  registries:
+    - name: Github Container Registry
+      prefix: ghcr.io
+      api_url: https://ghcr.io
+      ping: no
+      credentials: pullsecret:argocd/ghcr-ledgerhq
+      default: true

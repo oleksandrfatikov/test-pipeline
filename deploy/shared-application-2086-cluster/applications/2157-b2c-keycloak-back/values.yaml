@@ -1,0 +1,41 @@
+---
+statefulsetAnnotations:
+  reloader.stakater.com/search: "true"
+
+fullnameOverride: "backend-services-keycloak"
+
+ingress:
+  enabled: true
+  ingressClassName: trusted
+  hostname: "keycloak.api.backend-services.aws.prd.ldg-tech.com" # fill this on specific env value
+  tls: true
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: 128k
+
+resourcesPreset: "large"
+
+auth:
+  adminUser: keycloak
+
+proxyHeaders: xforwarded
+
+production: true
+
+extraEnvVars:
+  - name: KC_HOSTNAME
+    value: "https://{{ .Values.ingress.hostname }}"
+
+postgresql:
+  enabled: false # Disable builtin postgres
+
+externalDatabase:
+  host: "pg.backend-services-keycloak-2157-prd.aws.prd.ldg-tech.com"
+  user: postgres
+  database: postgres
+  existingSecret: "backend-services-keycloak-front-aws-secrets"
+  existingSecretPasswordKey: "KC_DB_PASSWORD"
+
+logging:
+  output: json

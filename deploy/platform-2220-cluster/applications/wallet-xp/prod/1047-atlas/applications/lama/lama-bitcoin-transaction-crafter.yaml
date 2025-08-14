@@ -1,0 +1,46 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: lama-bitcoin-transaction-crafter-prod
+  namespace: argocd-central
+spec:
+  # Ignore argocd image updater change
+  ignoreApplicationDifferences:
+    - jsonPointers:
+        - /spec/source/helm/parameters
+  generators:
+    - list:
+        elements:
+          - environment: prd
+            app: bitcoin-transaction-crafter
+            clusterName: shared-application-2026-cluster
+            project_id: "2108"
+            namespace: 2108-vault-prd
+  template:
+    metadata:
+      name: 'lama-{{app}}-{{environment}}'
+      namespace: argocd-central
+      labels:
+        environment: '{{environment}}'
+        owner: team-infra-sre
+        project: '{{project_id}}'
+        organization: 'wallet-services'
+        service: '{{app}}'
+        service_family: "lama"
+        service_group: "lama-bitcoin"
+    spec:
+      project: 1047-atlas
+      source:
+        repoURL: https://github.com/LedgerHQ/lama-bitcoin-crafter.git
+        targetRevision: main
+        path: 'argocd/{{environment}}'
+        helm:
+          releaseName: '{{app}}'
+      destination:
+        name: '{{clusterName}}'
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated: {}
+        syncOptions:
+          - CreateNamespace=true

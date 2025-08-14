@@ -1,0 +1,45 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault-ppr
+  annotations:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels: &labels
+    environment: ppr
+    owner: team-infra-sre
+    project: "2060"
+    organization: enterprise
+    service: vault
+spec:
+  project: vault-argocd
+  sources:
+    - repoURL: https://github.com/LedgerHQ/sre-argocd.git
+      targetRevision: main
+      ref: values
+    - repoURL: ghcr.io/ledgerhq/charts
+      chart: argocd-appset-env
+      targetRevision: "0.10.3"
+      helm:
+        passCredentials: true
+        valueFiles:
+          - "$values/deploy/platform-2220-cluster/applications/vault/releases/release-5.10.0.yaml"
+          - "$values/deploy/platform-2220-cluster/applications/vault/releases/custody-4.0.yaml"
+          - "$values/deploy/platform-2220-cluster/applications/vault/releases/api-gateway-1.35.yaml"
+          - "$values/deploy/platform-2220-cluster/applications/vault/releases/revault-1.13.yaml"
+          - "$values/deploy/platform-2220-cluster/applications/vault/ppr/values.yaml"
+        valuesObject:
+          labels: *labels
+          destination:
+            name: shared-application-2094-cluster
+            namespace: 2060-vault-ppr-argocd
+  destination:
+    name: in-cluster
+    namespace: argocd-central
+  syncPolicy:
+    automated:
+      selfHeal: true
+    syncOptions:
+      - Validate=true
+      - ServerSideApply=true

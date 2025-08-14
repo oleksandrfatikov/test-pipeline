@@ -1,0 +1,27 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: retail-bot
+  namespace: argocd
+  labels:
+    environment: "stg"
+    owner: "team-ms"
+    project: "2230"
+    organization: "consumer"
+    service: "retail-bot"
+spec:
+  project: retail-bot
+  source:
+    repoURL: https://github.com/LedgerHQ/retail_bot.git
+    targetRevision: master
+    path: argocd/stg
+    helm:
+      releaseName: retail-bot
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2230-retail-bot-stg
+  syncPolicy:
+    automated: {}

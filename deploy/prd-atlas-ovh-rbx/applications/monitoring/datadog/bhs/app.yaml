@@ -1,0 +1,57 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: monitoring-datadog-bhs
+  namespace: argocd
+spec:
+  generators:
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/atlas: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/bhs8: "true"
+  template:
+    metadata:
+      name: "{{name}}-monitoring-datadog"
+      labels:
+        service: "monitoring"
+        env: "production"
+    spec:
+      project: internal
+      source:
+        repoURL: https://github.com/LedgerHQ/sre-argocd.git
+        targetRevision: main
+        path: "deploy/prd-atlas-ovh-rbx/applications/monitoring/datadog/bhs"
+      destination:
+        server: "{{server}}"
+        namespace: "monitoring"
+      ignoreDifferences:
+        - group: ""
+          kind: Secret
+          name: datadog-cluster-agent
+          namespace: monitoring
+          jsonPointers:
+            - /data/token
+        - group: apps
+          kind: DaemonSet
+          name: datadog
+          namespace: monitoring
+          jsonPointers:
+            - /spec/template/metadata/annotations/checksum~1clusteragent_token
+        - group: apps
+          kind: Deployment
+          name: datadog-cluster-agent
+          namespace: monitoring
+          jsonPointers:
+            - /spec/template/metadata/annotations/checksum~1clusteragent_token
+        - group: ""
+          kind: ConfigMap
+          name: datadog-kpi-telemetry-configmap
+          namespace: monitoring
+          jsonPointers:
+            - /data/install_id
+            - /data/install_time
+      # syncPolicy:
+      #   automated: {}

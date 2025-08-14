@@ -1,0 +1,159 @@
+---
+image:
+  tag: 1.6.0
+imagePullSecrets:
+  - name: container-registries
+serviceAccount:
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::737219370090:role/eks-irsa-data-team-bento
+envFrom:
+  - secretRef:
+      name: bento
+resources:
+  requests:
+    cpu: 100m
+    memory: 50Mi
+  limits:
+    memory: 2Gi
+
+config:
+  # All config fields, showing default values
+  input:
+    label: "rabbit"
+    amqp_0_9:
+      urls:
+        - amqp://bento:${BENTO_RABBITMQ_PASS}@rabbitmq.2337-rabbitmq.svc.cluster.local:5672/web3checks
+      queue: web3checks-queue
+      queue_declare:
+        enabled: false
+      consumer_tag: "Bento S3 Persistence"
+      prefetch_count: 7000
+
+  # All config fields, showing default values
+  output:
+    label: "s3"
+    aws_s3:
+      bucket: ledger-data-team-datalake-prod
+      path: raw/web3_check/date=${! metadata("date") }/${! uuid_v4() }.snappy.parquet
+      region: eu-west-1
+      content_type: application/vnd.apache.parquet
+      storage_class: STANDARD
+      force_path_style_urls: false
+      max_in_flight: 64
+      timeout: 600s
+      batching:
+        # Expected rate of calls: 2 messages/seconds, 20KB each
+        count: 7000 # With 20KB messages, makes around 128MB parquet file
+        byte_size: 134217728 # 128MB
+        period: 1h
+        processors:
+          - label: mapper
+            mapping: |
+              root = json()
+              meta date = root.timestamp.ts_strftime("%Y-%m-%d", "UTC")
+          - label: "group_by"
+            group_by_value:
+              value: $!{ metadata("date") }
+          - label: "parquet"
+            parquet_encode:
+              schema:
+                - name: api_version
+                  type: UTF8
+                - name: timestamp
+                  type: UTF8
+                - name: http_status_code
+                  type: INT32
+                - name: response_time_ms
+                  type: INT64
+                - name: request
+                  fields:
+                    - name: network_family
+                      type: UTF8
+                    - name: chain_id
+                      optional: true
+                      type: INT64
+                    - name: domain
+                      optional: true
+                      type: UTF8
+                    - name: from
+                      type: UTF8
+                    - name: raw
+                      fields:
+                        - name: type
+                          type: UTF8
+                        - name: tx
+                          type: UTF8
+                          optional: true
+                        - name: eip712
+                          type: UTF8
+                          optional: true
+                - name: responses
+                  type: LIST
+                  fields:
+                    - name: element
+                      fields:
+                        - name: provider
+                          type: UTF8
+                        - name: selected
+                          type: BOOLEAN
+                        - name: status
+                          type: UTF8
+                        - name: descriptor
+                          optional: true
+                          fields:
+                            - name: structureType
+                              type: INT32
+                            - name: version
+                              type: INT32
+                            - name: chainId
+                              optional: true
+                              type: INT64
+                            - name: address
+                              type: UTF8
+                            - name: txHash
+                              type: UTF8
+                            - name: domainHash
+                              optional: true
+                              type: UTF8
+                            - name: risk
+                              type: INT32
+                            - name: category
+                              type: INT32
+                            - name: providerMessage
+                              optional: true
+                              type: UTF8
+                            - name: tinyUrl
+                              type: UTF8
+                            - name: simulationType
+                              type: INT32
+                            - name: derSignature
+                              type: UTF8
+                        - name: error
+                          optional: true
+                          fields:
+                            - name: type
+                              type: UTF8
+                            - name: message
+                              type: UTF8
+                        - name: block_height
+                          optional: true
+                          type: INT32
+                        - name: response_time_ms
+                          type: INT64
+                - name: simulations
+                  fields:
+                    - name: blockaid
+                      optional: true
+                      type: UTF8
+                    - name: tenderly
+                      optional: true
+                      type: UTF8
+                    - name: cyvers
+                      optional: true
+                      type: UTF8
+              default_compression: snappy
+              default_encoding: DELTA_LENGTH_BYTE_ARRAY
+          - label: "log"
+            log:
+              level: INFO
+              message: date=${! metadata("date") }

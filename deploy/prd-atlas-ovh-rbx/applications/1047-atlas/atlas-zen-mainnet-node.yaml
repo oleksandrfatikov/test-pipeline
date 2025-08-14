@@ -1,0 +1,58 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: atlas-zen-mainnet-node
+  namespace: argocd
+spec:
+  generators:
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/atlas: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/bhs8: "true"
+      values:
+        datacenter: bhs
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/atlas: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/rbx8: "true"
+      values:
+        datacenter: rbx
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/atlas: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/fsn1: "true"
+      values:
+        datacenter: fsn
+  template:
+    metadata:
+      name: "{{name}}-atlas-zen-mainnet-node"
+      annotations:
+        notifications.argoproj.io/subscribe.slack: "atlas-notifications"
+        argocd.ledger.fr/environment: "Production"
+      labels:
+        service: "1047-atlas"
+        env: "production"
+        coin: "zen"
+        type: "node"
+    spec:
+      project: 1047-atlas
+      source:
+        repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+        targetRevision: main
+        path: "deploy/production/nodes/atlas-zen-mainnet-node"
+        helm:
+          releaseName: atlas-zen-mainnet-node
+          values: |
+            blockchain-nodes:
+              custom:
+                datacenter: "{{values.datacenter}}"
+      destination:
+        server: "{{server}}"
+        namespace: "1047-atlas"

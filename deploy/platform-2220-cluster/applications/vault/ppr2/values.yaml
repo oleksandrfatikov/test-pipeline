@@ -1,0 +1,532 @@
+---
+# yaml-language-server: $schema=ppr2-schema.json
+appset:
+  categoryValues:
+    upstream:
+      disableDefaultTagRevision: true
+      path: ""
+    default:
+      syncPolicyMode: prd
+      inlineValues:
+        valueBundles:
+          eksPrd:
+            enabled: true
+        datadog:
+          env: ppr2
+        custom:
+          awsEnv: ppr
+          env: ppr2
+          vaultProjectId: "2090"
+          lamaNamespace: 2060-vault-ppr
+          wdProjectId: "2090"
+          wdDBNamespace: 2090-vault-ppr2
+          ledgerVaultDomain: vault-2090.ledger-ppr.com
+
+    all:
+      path: argocd/base
+
+    gates-base:
+      repoUrl: https://github.com/LedgerHQ/ledger-vault-api
+      path: argocd/base
+
+    gates-previous:
+      targetRevision: 8.9.15
+
+    gates-current:
+      targetRevision: 8.11.8
+
+    gates-override:
+      inlineValues:
+        custom:
+          calVersion: 2025.40.2643
+        serviceAccount:
+          annotations:
+            eks.amazonaws.com/role-arn: arn:aws:iam::{{ .Values.custom.awsAccountId }}:role/gate-app-role-ppr
+        env:
+          VAULT_ATTESTATION_ID: 1
+          VAULT_PRICING_PLAN_NAME: enterprise
+          VAULT_PROCESS_TIMEOUT: 1000
+          VAULT_TIMEOUT_API_CALL: 500
+          VAULT_ENABLE_HSM_RULE_SET_V2: "true" #not in gate chart
+        app:
+          resources:
+            requests:
+              cpu: "2"
+              memory: "2Gi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+        worker:
+          resources:
+            requests:
+              cpu: "2"
+              memory: "2Gi"
+
+    gates-mix-preset:
+      extendCategories: [gates-base, gates-previous, gates-self-version, gates-override]
+    gates:
+      extendCategories: [gates-base, gates-self-version, gates-current, gates-override]
+
+    hsmdrivers:
+      inlineValues:
+        custom:
+          hsmEnv: "cluster-preprod"
+          postgresPasswordSecret: "tf-hsm-driver"
+          postgresDB: "hsm_driver"
+        env:
+          VAULT_HSM_ENDPOINT: https://vault-cluster-ppr.hsm.pa6.ldg-prd.net/process
+          VAULT_HSM_BACKOFF_DELAY: "2000"
+          VAULT_HSM_GATEWAY_URL: "http://hsm-proxy-default"
+          USERS_DB_USER: hsm_driver
+        certexporter:
+          image:
+            tag: "1.0.0"
+
+    hsmproxys:
+      inlineValues:
+        custom:
+          hsmEnv: "cluster-preprod"
+          postgresDB: "hsm_driver"
+          regionSecret: ""
+
+    hsmproxysequencers:
+      inlineValues:
+        custom:
+          hsmEnv: "cluster-preprod"
+          postgresDB: "hsm_driver"
+          regionSecret: ""
+
+    wds:
+      repoUrl: https://github.com/LedgerHQ/ledger-wallet-daemon
+      path: argocd/base
+      targetRevision: 75395d6b000dd8fbc0fd95067ff12929d654350b
+      useAppTemplate: true
+      inlineValues:
+        image:
+          tag: 2.18.3
+        custom:
+          vaultProjectId: 2090
+          env: "ppr2"
+
+  projectValues:
+    upstream:
+      common-secrets:
+        repoUrl: ghcr.io/ledgerhq/charts
+        chartName: app-template
+        targetRevision: 4.10.4
+        inlineValues:
+          controller:
+            enabled: false
+          service:
+            main:
+              enabled: false
+          valueBundles:
+            eksPrd:
+              enabled: true
+          externalSecret:
+            postgresql:
+              enabled: true
+              dataFrom:
+                - extract:
+                    key: 2090/tf-postgresql
+            rabbitmq:
+              enabled: true
+              dataFrom:
+                - extract:
+                    key: 2090/tf-rabbitmq
+            keycloak:
+              enabled: true
+              dataFrom:
+                - extract:
+                    key: keycloak-ppr2/tf-keycloak
+      vault-rabbitmq:
+        repoUrl: https://charts.bitnami.com/bitnami
+        chartName: rabbitmq
+        targetRevision: 12.15.0
+        valueFiles:
+          - $git-ledgerhq-sreargocd/deploy/platform-2220-cluster/applications/vault/common/values-rabbitmq.yaml
+        inlineValues:
+          clustering:
+            forceBoot: true
+          image:
+            registry: jfrog.ledgerlabs.net
+            repository: ossproxy-oci-proxy-dockerio/bitnami/rabbitmq
+            pullSecrets:
+              - name: container-registries
+          ingress:
+            enabled: true
+            hostname: vault-rabbitmq-ppr2.aws.ppr.ldg-tech.com
+      keycloak:
+        repoUrl: registry-1.docker.io/bitnamicharts
+        chartName: keycloak
+        targetRevision: 24.6.3
+        valueFiles:
+          - $git-ledgerhq-sreargocd/deploy/platform-2220-cluster/applications/vault/common/values-keycloak.yaml
+        inlineValues:
+          extraEnvVars: []
+          image:
+            registry: jfrog.ledgerlabs.net
+            repository: ossproxy-oci-proxy-dockerio/bitnami/keycloak
+            pullSecrets:
+              - name: container-registries
+          global:
+            security:
+              allowInsecureImages: true
+          production: true
+          ingress:
+            enabled: true
+            hostname: vault-keycloak-ppr2.aws.ppr.ldg-tech.com
+            hostnameStrict: true
+            tls: true
+            ingressClassName: trusted
+            annotations:
+              cert-manager.io/cluster-issuer: letsencrypt-prod
+          adminIngress:
+            enabled: false
+          tls:
+            enabled: true
+            autoGenerated: true
+          externalDatabase:
+            host: pg-main.2090-vault-ppr2.aws.ldg-prd.net
+          metrics:
+            enabled: true
+          podAnnotations:
+            ad.datadoghq.com/keycloak.checks: |
+              {
+                "openmetrics": {
+                  "init_config": {},
+                  "instances": [
+                    {
+                      "openmetrics_endpoint": "http://%%host%%:8080/realms/master/metrics",
+                      "namespace": "keycloak",
+                      "metrics": [
+                        "jvm_memory_bytes_used",
+                        "jvm_memory_bytes_max",
+                        "jvm_memory_bytes_committed",
+                        "keycloak_logins*",
+                        "keycloak_response*",
+                        "keycloak_client_logins*",
+                        "keycloak_failed_login_attempts*",
+                        "keycloak_request_duration*"
+                      ],
+                      "tag_by_endpoint": false,
+                      "collect_histogram_buckets": true,
+                      "histogram_buckets_as_distributions": true,
+                      "collect_counters_with_distributions": true
+                    }
+                  ]
+                }
+              }
+    wds:
+      wd-prod: {}
+    hsmdrivers:
+      hsm-driver-default: {}
+      hsm-driver-secrets-concurrent-2: {}
+      hsm-driver-hsmlabs:
+        targetRevision: 9.9.1
+        inlineValues:
+          env:
+            VAULT_HSM_ENDPOINT: "https://vault-cluster-labs-ppr.hsm.pa6.ldg-prd.net/process"
+            VAULT_HSM_GATEWAY_URL: "http://hsm-proxy-lab"
+            VAULT_HSM_DRIVER_REGION: "hsmlabs"
+
+    hsmproxys:
+      hsm-proxy-default:
+        inlineValues:
+          custom:
+            s3Env: "prd"
+          env:
+            VAULT_HSM_ENDPOINT: "https://vault-cluster-ppr.hsm.pa6.ldg-prd.net"
+            VAULT_HSM_GATEWAY_CALROOTURL: "https://ledger-crypto-assets.s3.eu-west-1.amazonaws.com/atps"
+            VAULT_HSM_SELFS_APPGROUPS3BUCKET: "vault-hsm-gateway-schema-prd"
+      hsm-proxy-lab:
+        inlineValues:
+          custom:
+            s3Env: "stg"
+          env:
+            VAULT_HSM_ENDPOINT: "https://vault-cluster-labs-ppr.hsm.pa6.ldg-prd.net"
+            HSM_GATEWAY_IS_PHYSICAL_HSM: "true"
+            HSM_GATEWAY_TEST_DISABLE_APP_GROUP_CONFIGURATION: "false"
+            HSM_GATEWAY_ENV: "DEV"
+            VAULT_HSM_SELFS_APPGROUPS3BUCKET: "vault-hsm-gateway-schema-stg"
+
+    hsmproxysequencers:
+      hsm-proxy-sequencer-default:
+        inlineValues:
+          custom:
+            s3Env: "prd"
+          env:
+            VAULT_HSM_ENDPOINT: "https://vault-cluster-ppr.hsm.pa6.ldg-prd.net"
+      hsm-proxy-sequencer-lab:
+        inlineValues:
+          custom:
+            s3Env: "stg"
+          env:
+            VAULT_HSM_ENDPOINT: "https://vault-cluster-labs-ppr.hsm.pa6.ldg-prd.net"
+
+    all:
+      apdu-connector:
+        repoUrl: https://github.com/LedgerHQ/vault-apdu-connector
+        useAppTemplate: true
+        targetRevision: c70f608bfba5773a9edc51c82faafecdb2746baf
+        inlineValues:
+          image:
+            tag: 1.1.3
+
+      api-gateway:
+        repoUrl: https://github.com/LedgerHQ/vault-api-gateway
+        useAppTemplate: true
+        targetRevision: 1.35.2
+        inlineValues:
+          env:
+            GUNICORN_WORKERS: 2 # 1 worker can handle up to 1000 requests
+            # if 1 request on the worker timeout, the worker (and all requests) is killed
+            # so let workers enough time to handle long requests
+            GUNICORN_TIMEOUT: 600
+            TIMEOUT_API_CALL: 180
+            DEBUG: True
+
+      api-keys:
+        repoUrl: https://github.com/LedgerHQ/vault-api-keys
+        useAppTemplate: true
+        targetRevision: 1.0.6
+
+      aum-api:
+        repoUrl: https://github.com/LedgerHQ/vault-aum-api
+        useAppTemplate: true
+        targetRevision: ad486e1490aed44a46a04188d70e937b4cc86ffc
+        inlineValues:
+          image:
+            repository: ghcr.io/ledgerhq/vault-aum-api
+            tag: 5.9.3
+
+      aus:
+        repoUrl: https://github.com/LedgerHQ/vault-aus-api
+        targetRevision: 0.9.0
+
+      authentication-service:
+        repoUrl: https://github.com/LedgerHQ/vault-authentication-service
+        useAppTemplate: true
+        targetRevision: 1.1.1
+
+      coin-gateway:
+        repoUrl: https://github.com/LedgerHQ/coin-gateway
+        useAppTemplate: true
+        targetRevision: 1.34.0
+        inlineValues:
+          env:
+            CATAPLASM_WORKSPACES: '{"qa1": {"url": "http://wd-prod", "schema": "libcore_prod_qa1"}, "qa2stax": {"url": "http://wd-prod", "schema": "libcore_prod_qa2stax"}, "qa3publicapi": {"url": "http://wd-prod", "schema": "libcore_prod_qa3publicapi"}, "qa6publicapi": {"url": "http://wd-prod", "schema": "libcore_prod_qa6publicapi"}, "tradelink": {"url": "http://wd-prod", "schema": "libcore_prod_tradelink"}, "lab106": {"url": "http://wd-prod", "schema": "libcore_prod_lab106"}}'
+
+      device-registry:
+        repoUrl: https://github.com/LedgerHQ/vault-device-registry
+        useAppTemplate: true
+        targetRevision: 2.2.5
+
+      front:
+        repoUrl: https://github.com/LedgerHQ/ledger-vault-front
+        targetRevision: 8.11.1
+
+      nfts-api:
+        repoUrl: https://github.com/LedgerHQ/vault-nfts-api
+        useAppTemplate: true
+        targetRevision: 1.4.7
+        inlineValues:
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "1Gi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+
+      notification-center:
+        repoUrl: https://github.com/LedgerHQ/vault-notification-center
+        useAppTemplate: true
+        targetRevision: 1.2.0
+
+      notifier:
+        repoUrl: https://github.com/LedgerHQ/vault-notifier
+        targetRevision: 1.5.12
+
+      organizations-api:
+        repoUrl: https://github.com/LedgerHQ/vault-organizations-api
+        useAppTemplate: true
+        targetRevision: 4.2.4
+
+      platform-manager:
+        repoUrl: https://github.com/LedgerHQ/vault-platform-manager
+        targetRevision: 4e5734b726981309baf2b806219e39246d2adb07
+        inlineValues:
+          image:
+            tag: 2.4.0
+
+      revault-api:
+        inlineValues:
+          env:
+            # this URL will be used as default if revault-api is not able
+            # to grab the information from org-api (it happens when testing
+            # only the onboarding, without deploying a Gate)
+            HSM_DRIVER_URL: "http://hsm-driver-default"
+            # this enable /debug router that contains some useful endpoints
+            # for debugging (e.g: list all workspaces, users, ...)
+            ENABLE_DEBUG_PROCEDURES: "1"
+
+            # override the debug auth token pulled from secret
+            # convenient for automation
+            REVAULT_DEBUG_AUTH_TOKEN: "ppr2-debug-auth-token"
+
+            # override the root auth token pulled from secret
+            # convenient for automation
+            REVAULT_ROOT_AUTH_TOKEN: "ppr2-root-auth-token"
+
+      revault-onboarding:
+        inlineValues:
+          custom:
+            blueAppVersion: "6.2.0"
+            staxAppVersion: "2.0.2"
+            staxFirmwareVersion: "1.8.0"
+
+      revault-notifier:
+        targetRevision: 68ab12abb4546ed8c3517d4cf99c193fdf190f7a
+
+      tradelink:
+        repoUrl: https://github.com/LedgerHQ/vault-tradelink
+        targetRevision: faa1b2f535ef90b061f1399b28c79105889d74ad
+        useAppTemplate: true
+        inlineValues:
+          image:
+            tag: 1.2.2
+
+      tx-scheduler:
+        repoUrl: https://github.com/LedgerHQ/vault-tx-scheduler
+        useAppTemplate: true
+        targetRevision: 1.3.4
+
+      web3checks-vault:
+        repoUrl: https://github.com/LedgerHQ/web3checks-vault
+        useAppTemplate: true
+        targetRevision: 1.1.2
+        inlineValues:
+          env:
+            WEB3CHECKS_VAULT_BACKEND_URL: "https://web3checks-backend.api.aws.stg.ldg-tech.com"
+
+      web3-handler-api:
+        repoUrl: https://github.com/LedgerHQ/web3-handler-api
+        useAppTemplate: true
+        targetRevision: 1.5.0
+
+    # Compartment range per HSM Cluster:
+    # 1    -> 20    SEC     vault-cluster-sec.hsm.pa4.ldg-prd.net
+    # 100  -> 200   LAB     vault-cluster-labs-ppr.hsm.pa6.ldg-prd.net
+    # 1000 -> 1100  DEFAULT vault-cluster-ppr.hsm.pa6.ldg-prd.net: range is reserved by the PSD Attestation
+    #   - https://sftp.orange.ledgerlabs.net/artifacts/hsm/bolos-configs/psd_attestation/ppr/ppr-psd_attestation-latest.yml
+    #   - Also check PPR1 workspace usage since the HSM Cluster is shared between PPR1/PPR2
+
+    gates:
+      gate-qa1:
+        inlineValues:
+          custom:
+            gateSecretSuffix: gate-hsmlab1
+          env:
+            VAULT_COMPARTMENT_ID: 1000
+            VAULT_HSM_DRIVER_NAME: default
+            VAULT_WALLET_DAEMON_NAME: prod
+          app:
+            controller:
+              labels:
+                owner: "qa"
+
+      gate-qa2stax:
+        inlineValues:
+          custom:
+            gateSecretSuffix: gate-hsmlab1
+          env:
+            VAULT_COMPARTMENT_ID: 1001
+            VAULT_HSM_DRIVER_NAME: default
+            VAULT_WALLET_DAEMON_NAME: prod
+          app:
+            controller:
+              labels:
+                owner: "qa"
+
+      gate-qa3publicapi:
+        inlineValues:
+          custom:
+            gateSecretSuffix: gate-hsmlab1
+          env:
+            VAULT_COMPARTMENT_ID: 1002
+            VAULT_HSM_DRIVER_NAME: default
+            VAULT_WALLET_DAEMON_NAME: prod
+          app:
+            controller:
+              labels:
+                owner: "qa"
+
+      gate-qa6publicapi:
+        inlineValues:
+          custom:
+            gateSecretSuffix: gate-hsmlab1
+          env:
+            VAULT_COMPARTMENT_ID: 1006
+            VAULT_HSM_DRIVER_NAME: default
+            VAULT_WALLET_DAEMON_NAME: prod
+          app:
+            controller:
+              labels:
+                owner: "qa"
+
+      gate-tradelink:
+        inlineValues:
+          custom:
+            gateSecretSuffix: gate-hsmlab1
+          env:
+            VAULT_COMPARTMENT_ID: 1003
+            VAULT_HSM_DRIVER_NAME: default
+            VAULT_WALLET_DAEMON_NAME: prod
+          app:
+            controller:
+              labels:
+                owner: "qa"
+
+      gate-lab105:
+        inlineValues:
+          custom:
+            gateSecretSuffix: gate-hsmlab1
+          env:
+            VAULT_COMPARTMENT_ID: 105
+            VAULT_HSM_SCRIPTS_VERSION: "16.4.2-dave+22dc0e5d"
+            VAULT_HSM_DRIVER_NAME: hsmlabs
+            VAULT_WALLET_DAEMON_NAME: prod
+            VAULT_USE_HSM_TEST_SIGNATURES: true
+          app:
+            controller:
+              labels:
+                owner: "enclave"
+
+      gate-lab106:
+        inlineValues:
+          custom:
+            gateSecretSuffix: gate-hsmlab1
+          env:
+            VAULT_COMPARTMENT_ID: 106
+            VAULT_HSM_SCRIPTS_VERSION: "17.0.6-dave+a2d52ef4"
+            VAULT_HSM_DRIVER_NAME: hsmlabs
+            VAULT_WALLET_DAEMON_NAME: prod
+            VAULT_USE_HSM_TEST_SIGNATURES: true
+          app:
+            controller:
+              labels:
+                owner: "enclave"
+
+    gates-mix-preset:
+      # ===========================================================
+      # 4.5 - Smoke Tests on old gate version (stax)
+      # ===========================================================
+      gate-mixpreset3:
+        inlineValues:
+          custom:
+            gateSecretSuffix: gate-hsmlab1
+          env:
+            VAULT_COMPARTMENT_ID: 1020
+            VAULT_WALLET_DAEMON_NAME: prod
+            VAULT_HSM_DRIVER_NAME: default

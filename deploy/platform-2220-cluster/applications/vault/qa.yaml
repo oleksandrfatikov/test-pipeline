@@ -1,0 +1,56 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault-qa
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels: &labels
+    environment: qa
+    owner: team-infra-sre
+    project: "2087"
+    organization: enterprise
+    service: vault
+spec:
+  project: vault-argocd
+  sources:
+    - repoURL: https://github.com/LedgerHQ/sre-argocd.git
+      targetRevision: main
+      ref: values
+    - repoURL: ghcr.io/ledgerhq/charts
+      chart: argocd-appset-env
+      targetRevision: "0.10.2"
+      helm:
+        passCredentials: true
+        valueFiles:
+          - "$values/deploy/platform-2220-cluster/applications/vault/releases/custody-4.0.yaml"
+          - "$values/deploy/platform-2220-cluster/applications/vault/releases/revault-1.13.yaml"
+          - "$values/deploy/platform-2220-cluster/applications/vault/qa/values.yaml"
+        valuesObject:
+          appproject:
+            roles:
+              - name: admin-vault-stg
+                description: Add admin permission to stg envs
+                policies:
+                  - p, proj:vault-qa:admin-vault-stg, exec, create, vault-qa/*, allow
+                  - p, proj:vault-qa:admin-vault-stg, applications, update, vault-qa/*, allow
+                  - p, proj:vault-qa:admin-vault-stg, applications, delete, vault-qa/*, allow
+                  - p, proj:vault-qa:admin-vault-stg, applications, override, vault-qa/*, allow
+                  - p, proj:vault-qa:admin-vault-stg, applications, action/*, vault-qa/*, allow
+                  - p, proj:vault-qa:admin-vault-stg, exec, create, vault-qa/*, allow
+                groups:
+                  - infra-app-green-rundeck-vault-user-stg
+                  - infra-group-vault-tech-leads
+          labels: *labels
+          destination:
+            name: shared-application-2021-cluster
+            namespace: 2087-vault-qa
+  destination:
+    name: in-cluster
+    namespace: argocd-central
+  syncPolicy:
+    automated:
+      selfHeal: true
+    syncOptions:
+      - Validate=true
+      - ServerSideApply=true

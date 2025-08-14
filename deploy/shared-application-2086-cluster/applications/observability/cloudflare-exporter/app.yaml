@@ -1,0 +1,26 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: observability-cloudflare-exporter
+  namespace: argocd
+  labels:
+    service: "cloudflare-exporter"
+    owner: "team-infra-ms-obs"
+    environment: "prd"
+    project: "2225"
+spec:
+  project: internal
+  source:
+    repoURL: https://github.com/LedgerHQ/ms-tools.git
+    targetRevision: master
+    path: monitoring/cloudflare-exporter/shared-application-2086-cluster/kustomize
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: "observability"
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

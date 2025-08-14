@@ -1,0 +1,70 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: 1057-intnodes-near
+  namespace: argocd
+spec:
+  strategy:
+    type: RollingSync
+    rollingSync:
+      steps:
+        - matchExpressions:
+            - key: datacenter.ledger.com/intnodes
+              operator: In
+              values:
+                - "true"
+          maxUpdate: 30%
+  generators:
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/intnodes: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/bhs8: "true"
+      values:
+        datacenter: bhs
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/intnodes: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/rbx8: "true"
+      values:
+        datacenter: rbx
+  - clusters:
+      selector:
+        matchLabels:
+          application.ledger.com/intnodes: "true"
+          environment.ledger.com/production: "true"
+          datacenter.ledger.com/fsn1: "true"
+      values:
+        datacenter: fsn
+  template:
+    metadata:
+      name: "{{name}}-1057-intnodes-near"
+      annotations:
+        argocd.ledger.fr/environment: "Production"
+      labels:
+        service: "1057-intnodes-near"
+        env: "production"
+        coin: "near"
+        type: "int-node"
+    spec:
+      project: 1055-intnodes
+      sources:
+        - repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+          targetRevision: main
+          path: 'deploy/production/internal-blockchain-nodes/1057-intnodes-near'
+          helm:
+            releaseName: int-near-mainnet-node
+            values: |
+              intnodes:
+                custom:
+                  datacenter: "{{values.datacenter}}"
+      destination:
+        server: "{{server}}"
+        namespace: "1057-intnodes-near"
+      syncPolicy:
+        syncOptions:
+        - CreateNamespace=true

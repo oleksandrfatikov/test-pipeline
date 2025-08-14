@@ -1,0 +1,28 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: countervalue-service-prd
+  namespace: argocd
+  labels:
+    environment: "prd"
+    owner: "team-infra-sre"
+    project: "2023"
+    organization: "consumer"
+    service: "countervalue-service"
+  annotations:
+    notifications.argoproj.io/subscribe.slack: "backend-b2c-private-cvs"
+    argocd.ledger.fr/environment: "Production"
+spec:
+  project: countervalue-service
+  source:
+    repoURL: https://github.com/LedgerHQ/countervalue-service.git
+    targetRevision: master
+    path: argocd/prd
+    helm:
+      releaseName: countervalue-service
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: 2023-countervalue
+  syncPolicy:
+    automated: {}

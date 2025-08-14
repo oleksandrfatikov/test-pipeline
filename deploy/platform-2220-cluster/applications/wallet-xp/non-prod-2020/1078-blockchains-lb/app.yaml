@@ -1,0 +1,90 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: 1078-blockchains-lb
+  namespace: argocd-central
+spec:
+  generators:
+    - matrix:
+        generators:
+          - git:
+              repoURL: https://github.com/LedgerHQ/tf-ledgerips-module.git
+              revision: HEAD
+              files:
+                - path: ledgerips.yaml
+          - clusters:
+              selector:
+                matchLabels:
+                  application.ledger.com/intnodes: "true"
+                  environment.ledger.com/staging: "true"
+                  datacenter.ledger.com/fsn1: "true"
+              values:
+                datacenter: stg-fsn
+                annotation_project_id: c-m-mqq5lrn6:p-qccf8
+                label_project_id: p-qccf8
+    - matrix:
+        generators:
+          - git:
+              repoURL: https://github.com/LedgerHQ/tf-ledgerips-module.git
+              revision: HEAD
+              files:
+                - path: ledgerips.yaml
+          - clusters:
+              selector:
+                matchLabels:
+                  application.ledger.com/intnodes: "true"
+                  environment.ledger.com/staging: "true"
+                  datacenter.ledger.com/sbg5: "true"
+              values:
+                datacenter: stg-sbg
+                annotation_project_id: c-m-2tdhjscq:p-6r9kc
+                label_project_id: p-6r9kc
+  goTemplate: true
+  template:
+    metadata:
+      name: "{{ .name }}-1078-blockchains-lb"
+      annotations:
+        argocd.ledger.fr/environment: "staging"
+        notifications.argoproj.io/subscribe.on-sync-running-pr-comment.github: ""
+        notifications.argoproj.io/subscribe.on-sync-failed-pr-comment.github: ""
+        notifications.argoproj.io/subscribe.on-sync-succeeded-pr-comment.github: ""
+        notifications.argoproj.io/subscribe.on-deployed-always-pr-comment.github: ""
+        notifications.argoproj.io/subscribe.on-health-degraded-pr-comment.github: ""
+      labels:
+        service: "1078-blockchains-lb"
+        env: "staging"
+    spec:
+      project: 1078-blockchains-lb
+      sources:
+        - repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+          targetRevision: main
+          path: 'deploy/staging/1078-blockchains-lb/blockchains-lb'
+          helm:
+            releaseName: blockchains-lb
+            values: |
+              haproxy:
+                datacenter: "{{ .values.datacenter }}"
+                whitelisted_ips: '{{ .trusted_locations }},{{ .infra_vpn }}'
+        - repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+          targetRevision: main
+          path: 'deploy/staging/1078-blockchains-lb/extnodes-lb'
+          helm:
+            releaseName: extnodes-lb
+        - repoURL: https://github.com/LedgerHQ/backend-blockchain-services.git
+          targetRevision: main
+          path: 'deploy/staging/1078-blockchains-lb/api-lb'
+          helm:
+            releaseName: api-lb
+      destination:
+        server: "{{ .server }}"
+        namespace: "1078-blockchains-lb"
+      syncPolicy:
+        automated: {}
+        managedNamespaceMetadata:
+          annotations:
+            field.cattle.io/projectId: "{{ .values.annotation_project_id }}"
+          labels:
+            field.cattle.io/projectId: "{{ .values.label_project_id }}"
+        syncOptions:
+          - CreateNamespace=true

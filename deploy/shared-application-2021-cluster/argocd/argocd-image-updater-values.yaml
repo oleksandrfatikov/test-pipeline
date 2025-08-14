@@ -1,0 +1,18 @@
+---
+image:
+  pullPolicy: IfNotPresent
+
+config:
+  registries:
+    - name: Github Container Registry
+      prefix: ghcr.io
+      api_url: https://ghcr.io
+      ping: no
+      credentials: pullsecret:argocd/container-registries
+      default: true
+    - name: Jfrog Artifactory
+      prefix: jfrog.ledgerlabs.net
+      api_url: https://jfrog.ledgerlabs.net
+      ping: no
+      credentials: pullsecret:argocd/container-registries
+      default: false

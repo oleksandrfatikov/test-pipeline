@@ -1,0 +1,22 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: vault-remote-argocd
+  namespace: argocd-central
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Vault Remote (One Click Vault)
+  sourceRepos:
+    - "*"
+  destinations:
+    - namespace: vault-remote-stg-argocd
+      name: shared-application-2021-cluster
+    - namespace: vault-remote-ppr-argocd
+      name: shared-application-2094-cluster
+    - namespace: vault-remote-sbx-argocd
+      name: sandbox-2042-cluster
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

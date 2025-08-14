@@ -1,0 +1,234 @@
+---
+appset:
+  categoryValues:
+    default:
+      syncPolicyMode: stg
+      inlineValues:
+        valueBundles:
+          miniargovault:
+            enabled: true
+          initDBPostgres:
+            values:
+              initContainers:
+                init-db-postgres:
+                  image: "jfrog.ledgerlabs.net/vault-oci-prod-green/postgres-initdb:v14.13@sha256:d8ad7f9d989e7198491747605142531fcdf31ecda34b294afc8d821d46e51b1c"
+        datadog:
+          env: REPLACEME
+        custom:
+          env: REPLACEME
+          vaultProjectId: miniargovault
+          postgresHost: postgresql
+          postgresWDHost: postgresql
+          postgresPlatformManagerHost: postgresql-platform-manager
+          redisHost: redis-valkey-master
+
+    all:
+      path: argocd/base
+
+    hsmdrivers:
+      inlineValues:
+        env:
+          VAULT_HSM_GATEWAY_URL: "http://hsm-proxy-miniargovault"
+          VAULT_HSM_ENABLE_MESSAGE_SIGNING: "true"
+          VAULT_HSM_DRIVER_ENABLE_MERGE_WALLET_ACCOUNT: "true"
+
+    gates-base:
+      inlineValues:
+        env:
+          VAULT_ATTESTATION_ID: 1
+          VAULT_USE_VAULT_INTERNALS: true
+          VAULT_USE_HSM_TEST_SIGNATURES: true
+          VAULT_WALLET_DAEMON_NAME: default-miniargovault
+          VAULT_HSM_DRIVER_NAME: miniargovault
+          VAULT_PRICING_PLAN_NAME: enterprise
+          VAULT_REVAULT_STREAM_MAX_LENGTH: "200000"
+          VAULT_ENABLE_APPLICATION_GROUP: true
+          VAULT_COMPARTMENT_ID: REPLACEME
+
+    wds:
+      inlineValues:
+        commonlib:
+          valueBundles:
+            miniargovault:
+              enabled: true
+              values:
+                externalSecret:
+                  aws-secrets-init-db:
+                    secretStoreRef:
+                      name: miniargovault
+                      kind: SecretStore
+                  aws-secrets:
+                    secretStoreRef:
+                      name: miniargovault
+                      kind: SecretStore
+
+  projectValues:
+    upstream:
+      common-secrets:
+        inlineValues:
+          valueBundles:
+            eksStg:
+              enabled: true
+          defaultExternalSecretStoreRef:
+            name: miniargovault
+            kind: SecretStore
+          externalSecret:
+            postgresql:
+              enabled: true
+              dataFrom:
+                - extract:
+                    key: miniargovault/tf-postgresql
+            rabbitmq:
+              enabled: true
+              dataFrom:
+                - extract:
+                    key: miniargovault/tf-rabbitmq
+            keycloak:
+              enabled: true
+              dataFrom:
+                - extract:
+                    key: keycloak-miniargovault/tf-keycloak
+            postgresql-platform-manager:
+              enabled: true
+              dataFrom:
+                - extract:
+                    key: vault-platform-manager-app-miniargovault/tf-postgresql
+      vault-rabbitmq:
+        inlineValues:
+          ingress:
+            enabled: true
+            hostname: vault-rabbitmq-miniargovault-REPLACEME.aws.stg.ldg-tech.com
+      keycloak:
+        inlineValues:
+          adminIngress:
+            hostname: vault-keycloak-miniargovault-REPLACEME.aws.stg.ldg-tech.com
+          externalDatabase:
+            host: postgresql
+      postgresql:
+        repoUrl: registry-1.docker.io/bitnamicharts
+        chartName: postgresql
+        targetRevision: 15.5.31
+        inlineValues:
+          primary:
+            extraEnvVars:
+              - name: POSTGRESQL_MAX_CONNECTIONS
+                value: "1000"
+            persistentVolumeClaimRetentionPolicy:
+              enabled: true
+              whenDeleted: Delete
+            resourcesPreset: "small"
+          auth:
+            existingSecret: common-secrets-postgresql
+            secretKeys:
+              adminPasswordKey: main
+      postgresql-platform-manager:
+        repoUrl: registry-1.docker.io/bitnamicharts
+        chartName: postgresql
+        targetRevision: 15.5.31
+        inlineValues:
+          primary:
+            persistentVolumeClaimRetentionPolicy:
+              enabled: true
+              whenDeleted: Delete
+          auth:
+            existingSecret: common-secrets-postgresql-platform-manager
+            secretKeys:
+              adminPasswordKey: pgAdminPwd
+      redis:
+        repoUrl: registry-1.docker.io/bitnamicharts
+        chartName: valkey
+        targetRevision: 0.3.17
+        inlineValues:
+          architecture: standalone
+          persistentVolumeClaimRetentionPolicy:
+            enabled: true
+            whenDeleted: Delete
+          auth:
+            enabled: false
+          replica:
+            replicaCount: 0
+
+    hsmdrivers:
+      hsm-driver-miniargovault: {}
+
+    wds:
+      wd-default-miniargovault: {}
+
+    hsmgateways:
+      hsm-gateway-miniargovault: {}
+
+    hsmproxys:
+      hsm-proxy-miniargovault:
+        inlineValues:
+          custom:
+            hsmEnv: "simu"
+
+    hsmproxysequencers:
+      hsm-proxy-sequencer-miniargovault:
+        inlineValues:
+          custom:
+            hsmEnv: "simu"
+
+    all:
+      miniargovault:
+        repoUrl: https://github.com/LedgerHQ/miniargovault
+        inlineValues:
+          image:
+            tag: main@sha256:7d1c428bbac7daf3236bd251b854cec743c768a6eb5c4fa57be8ca6da76c23be
+
+      device-api:
+        repoUrl: https://github.com/LedgerHQ/vault-device-api
+        useAppTemplate: true
+        imageUpdater: jfrog.ledgerlabs.net/vault-oci-prod-green/vault-device-api:main
+        inlineValues:
+          env:
+            BLUE_APP_BINDING_VERSION: 1
+
+      device-registry:
+        useAppTemplate: false
+        targetRevision: 4d737fbd048291a3109bd6c0fffedeb5d262c28e
+        inlineValues:
+          image:
+            tag: main
+
+      coin-gateway:
+        inlineValues:
+          env:
+            CATAPLASM_WORKSPACES: "{}"
+
+      revault-api:
+        inlineValues:
+          env:
+            # TODO: make this default values in revault-api repo so
+            # we don't have to always specify it
+            #
+            # this define how to construct gate service endpoint based on workspace
+            GATE_URL_TEMPLATE: "http://gate-{workspace}/{workspace}"
+
+            # this URL will be used as default if revault-api is not able
+            # to grab the information from org-api (it happens when testing
+            # only the onboarding, without deploying a Gate)
+            HSM_DRIVER_URL: "http://hsm-driver-miniargovault"
+
+            # this enable /debug router that contains some useful endpoints
+            # for debugging (e.g: list all workspaces, users, ...)
+            ENABLE_DEBUG_PROCEDURES: "1"
+
+      revault-onboarding:
+        inlineValues:
+          custom:
+            blueAppVersion: "6.2.0-dev"
+            staxAppVersion: "2.0.2-dev"
+            staxFirmwareVersion: "1.8.0"
+            showDeviceSelector: true
+
+      front:
+        inlineValues:
+          custom:
+            enableSoftware: true
+            onlyWeblue: false
+            weblueUrl: "wss://weblue2.aws.prd.ldg-tech.com/speculos-weblue"
+            speculosUrl: "https://weblue2.aws.prd.ldg-tech.com/weblue"
+
+      tradelink:
+        targetRevision: main

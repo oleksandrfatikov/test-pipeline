@@ -1,0 +1,27 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  name: atlas-benchmark-stg
+  namespace: argocd-central
+  labels:
+    environment: "stg"
+    owner: "team-infra-sre"
+    project: "1048"
+    organization: "wallet-services"
+    service: "atlas-benchmark"
+spec:
+  project: 1048-atlas
+  source:
+    repoURL: https://github.com/LedgerHQ/backend-blockchain-benchmarks.git
+    targetRevision: main
+    path: argocd/stg
+  destination:
+    name: shared-application-2021-cluster
+    namespace: 1048-atlas
+  syncPolicy:
+    automated: {}
+    syncOptions:
+      - CreateNamespace=true
