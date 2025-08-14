@@ -52,7 +52,7 @@ jobs:
             then
               echo "::error: calVersion is not properly defined"
               exit 1
-            fu 
+            fi
 
 
             echo "versions: $versions"
