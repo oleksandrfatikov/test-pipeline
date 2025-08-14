@@ -40,7 +40,6 @@ jobs:
 
           git fetch origin ${{ github.head_ref }}
           COMMIT_CONTENT=$(git show origin/${{ github.head_ref }})
-          echo "The latest commit message is: $COMMIT_CONTENT"
 
           # Check if 'calVersion' exists
           if echo "$COMMIT_CONTENT" | grep -q "calVersion"; then
@@ -49,7 +48,6 @@ jobs:
             versions=$(echo "$COMMIT_CONTENT" | egrep calVersion: | awk -F ': ' '{print $2};')
             versions=$(echo "$versions" | tr '\n' ' ')
             echo "versions: $versions"
-            echo "Content $COMMIT_CONTENT"
 
             for v in $(echo $versions) ;
             do
