@@ -42,7 +42,7 @@ jobs:
           COMMIT_CONTENT=$(git show origin/${{ github.head_ref }})
 
           # Check if 'calVersion' exists
-          if echo "$COMMIT_CONTENT" | grep -q "calVersion"; then
+          if echo "$COMMIT_CONTENT" | grep -q "calVersion:"; then
             echo "calVersion found"
 
             versions=$(echo "$COMMIT_CONTENT" | egrep calVersion: | awk -F ': ' '{print $2};')
