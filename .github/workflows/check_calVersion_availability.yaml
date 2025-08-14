@@ -39,7 +39,7 @@ jobs:
         run: |
 
           git fetch origin ${{ github.head_ref }}
-          COMMIT_CONTENT=$(git show HEAD~1)
+          COMMIT_CONTENT=$(git show origin/${{ github.head_ref }})
           echo "The latest commit message is: $COMMIT_CONTENT"
 
           # Check if 'calVersion' exists
