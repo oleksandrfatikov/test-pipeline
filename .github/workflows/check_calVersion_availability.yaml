@@ -37,9 +37,6 @@ jobs:
       - name: Check last commit diff for "calVersion"
         id: check_calversion
         run: |
-          # COMMIT_CONTENT="$(git show ${{ github.sha }})"
-          # echo "::debug::Full commit content for ${{ github.sha }}:"
-          # echo "$COMMIT_CONTENT" | while read -r line; do echo "::debug::$line"; done
 
           git fetch origin ${{ github.head_ref }}
           COMMIT_CONTENT=$(git log -1 --pretty=format:"%s" origin/${{ github.head_ref }})
