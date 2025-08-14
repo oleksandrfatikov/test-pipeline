@@ -24,7 +24,7 @@ appset:
       targetRevision: 8.2.13
       inlineValues:
         custom:
-          calVersion: 2024.31.2562
+          calVersion: 2024.31.25621
         env:
           VAULT_HSM_SCRIPTS_VERSION: 15.0.3
 
