@@ -54,9 +54,6 @@ jobs:
               exit 1
             fi
 
-
-            echo "versions: $versions"
-
             for v in $(echo $versions) ;
             do
                 v=$(echo $v | sed 's/\n//g')
@@ -70,11 +67,9 @@ jobs:
                    echo "::error::File $url not found or inaccessible for calVersion: $v."
                    exit 1
                 fi
-                  echo "$stat";
             done
 
           else
             echo "No 'calVersion' found in the last commit content. Exiting successfully."
-            echo "check_result=0" >> "$GITHUB_OUTPUT"
           fi
 
