@@ -49,6 +49,7 @@ jobs:
             versions=$(echo $COMMIT_CONTENT | egrep calVersion: | awk -F ': ' '{print $2};')
             versions=$(echo $versions | tr '\n' ' ')
             echo "versions: $versions"
+            echo "Content $COMMIT_CONTENT"
 
             for v in $(echo $versions) ;
             do
