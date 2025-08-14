@@ -46,8 +46,8 @@ jobs:
           if echo "$COMMIT_CONTENT" | grep -q "calVersion"; then
             echo "calVersion found"
 
-            versions=$(echo $COMMIT_CONTENT | egrep calVersion: | awk -F ': ' '{print $2};')
-            versions=$(echo $versions | tr '\n' ' ')
+            versions=$(echo "$COMMIT_CONTENT" | egrep calVersion: | awk -F ': ' '{print $2};')
+            versions=$(echo "$versions" | tr '\n' ' ')
             echo "versions: $versions"
             echo "Content $COMMIT_CONTENT"
 
