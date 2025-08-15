@@ -52,7 +52,7 @@ jobs:
 
             if [ -z "$versions" ]; 
             then
-              echo "::debug::calVersion is not properly defined"
+              echo "::error::calVersion is not properly defined"
               exit 1
             fi
 
@@ -67,9 +67,13 @@ jobs:
                    echo "File $url is accessible for calVersion: $v."
                 else
                    echo "::error::File $url not found or inaccessible for calVersion: $v."
-                   exit 1
+                   exit_code=1
                 fi
             done
+            if [[ "$exit_code" == 1 ]];
+            then
+              echo "::error:: check failed"
+            fi
 
           else
             echo "No 'calVersion' found in the last commit content. Exiting successfully."
