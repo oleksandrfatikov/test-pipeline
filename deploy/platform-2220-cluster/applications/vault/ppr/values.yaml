@@ -34,7 +34,7 @@ appset:
       targetRevision: 8.11.14
       inlineValues:
         custom:
-          calVersion: 2025.40.2645
+          calVersion: 
         hsmSanityCheck:
           enabled: false
         serviceAccount:

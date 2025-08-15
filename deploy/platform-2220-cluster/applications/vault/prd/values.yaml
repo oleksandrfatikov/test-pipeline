@@ -31,7 +31,7 @@ appset:
       repoUrl: https://github.com/LedgerHQ/ledger-vault-api
       inlineValues:
         custom:
-          calVersion: 2025.40.2645
+          calVersion: 2025.40.2655
         env:
           VAULT_BALANCE_TTL: 10
           VAULT_MAX_NUMBER_OF_PROCESSES: 16
