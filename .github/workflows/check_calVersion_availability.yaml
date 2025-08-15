@@ -56,26 +56,31 @@ jobs:
               exit 1
             fi
 
-            for v in $(echo $versions) ;
-            do
-                v=$(echo $v | sed 's/\n//g')
-                url="https://ledger-crypto-assets.s3.eu-west-1.amazonaws.com/atps/$v/versions.json"
-                curl -s "$url";
-                stat=$(curl -s -o /dev/null -w '%{http_code}' "$url")
-
-                if [[ "$stat" =~ ^2[0-9]{2}$ ]]; then
-                   echo "File $url is accessible for calVersion: $v."
-                else
-                   echo "::error::File $url not found or inaccessible for calVersion: $v."
-                   exit_code=1
-                fi
-            done
-            if [[ "$exit_code" == 1 ]];
-            then
-              exit 1
-            fi
+            echo "::set-output name=calVersions::$versions"
 
           else
             echo "No 'calVersion' found in the last commit content. Exiting successfully."
           fi
 
+
+      - name: Validate File Accessibility
+        id: check_file_accessibility
+        run: |
+          for v in ${{ steps.extract.outputs.calVersions }}; ;
+          do
+              v=$(echo $v | sed 's/\n//g')
+              url="https://ledger-crypto-assets.s3.eu-west-1.amazonaws.com/atps/$v/versions.json"
+              curl -s "$url";
+              stat=$(curl -s -o /dev/null -w '%{http_code}' "$url")
+
+              if [[ "$stat" =~ ^2[0-9]{2}$ ]]; then
+                echo "File $url is accessible for calVersion: $v."
+              else
+                echo "::error::File $url not found or inaccessible for calVersion: $v."
+                exit_code=1
+              fi
+          done
+          if [[ "$exit_code" == 1 ]];
+          then
+            exit 1
+          fi
