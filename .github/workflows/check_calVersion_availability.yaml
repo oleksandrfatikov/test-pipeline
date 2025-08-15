@@ -48,7 +48,7 @@ jobs:
             versions=$(echo "$COMMIT_CONTENT" | egrep calVersion: | awk -F ': ' '{print $2};' | sort | uniq)
             versions=$(echo "$versions" | tr '\n' ' ')
 
-            echo "::info::versions: $versions"
+            echo "versions: $versions"
 
             if [ -z "$versions" ]; 
             then
