@@ -72,7 +72,6 @@ jobs:
             done
             if [[ "$exit_code" == 1 ]];
             then
-              echo "::error:: check failed"
               exit 1
             fi
 
