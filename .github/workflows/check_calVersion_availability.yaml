@@ -48,9 +48,11 @@ jobs:
             versions=$(echo "$COMMIT_CONTENT" | egrep calVersion: | awk -F ': ' '{print $2};' | sort | uniq)
             versions=$(echo "$versions" | tr '\n' ' ')
 
+            echo "::debug::versions: $versions"
+
             if [ -z "$versions" ]; 
             then
-              echo "::error: calVersion is not properly defined"
+              echo "::error::calVersion is not properly defined"
               exit 1
             fi
 
