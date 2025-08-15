@@ -45,7 +45,7 @@ jobs:
           if echo "$COMMIT_CONTENT" | grep -q "calVersion:"; then
             echo "::debug::calVersion found in the commit"
 
-            versions=$(echo "$COMMIT_CONTENT" | egrep calVersion: | awk -F ': ' '{print $2};')
+            versions=$(echo "$COMMIT_CONTENT" | egrep calVersion: | awk -F ': ' '{print $2};' | sort | uniq)
             versions=$(echo "$versions" | tr '\n' ' ')
 
             if [ -z "$versions" ]; 
