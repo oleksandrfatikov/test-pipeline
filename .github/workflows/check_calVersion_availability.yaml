@@ -52,7 +52,7 @@ jobs:
 
             if [ -z "$versions" ]; 
             then
-              echo "::error::calVersion is not properly defined"
+              echo "::info::calVersion is not properly defined"
               exit 1
             fi
 
